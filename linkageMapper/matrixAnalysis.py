@@ -26,12 +26,14 @@ arrayFilePaths = [os.path.join(options.inputDirectory, File)
 
 heatmaps = [np.load(filePath) for filePath in arrayFilePaths]
 heatmaps = [1-x for x in heatmaps]
-labels = np.load("labels.npy")
 
-Distances = [skdist.DistanceMatrix(h, labels) for h in heatmaps]
+heatmapLabels = np.load(os.path.join(options.inputDirectory,
+                                     "heatmap_labels.npy"))
+
+Distances = [skdist.DistanceMatrix(h, heatmapLabels) for h in heatmaps]
 
 grouping = []
-for l in labels:
+for l in heatmapLabels:
     g = len(l.split("_")[-1])
     grouping.append(g)
 

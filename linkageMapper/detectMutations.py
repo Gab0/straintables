@@ -87,7 +87,9 @@ def storeMatrixData(MATRIX, baseFileName, subtitle=None):
 
     # SAVE HEATMAP MATRIX;
     np.save(baseFileName, MATRIX)
-    np.save("labels", np.array(sequenceNames))
+
+    labelsPath = os.path.join(os.path.basedir(baseFileName, "heatmap_labels"))
+    np.save(labelsPath, np.array(sequenceNames))
 
 
 if __name__ == "__main__":

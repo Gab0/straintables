@@ -4,35 +4,32 @@ linkageMapper is a tool that helps evaluate the difference among gene loci acros
 
 ## Setup
 
-### Requirements
+### Install Python Requirements
 1. Clone this repository.
 
 2. Install python dependencies: `$sudo pip install -r requirements.txt`
 
 3. Make sure you have clustalW2 on your path.
 
-### Fetch annotation files
+### Fetch genomes and annotation files
+
+The following code downloads all required genomes and annotations from NCBI.
+```
+$ pyhton linkageMapper/downloadGenomic
+
+```
+Instead, you can manually add desired genomes and annotations.
+
+#### Annotations
 
 * The annotation file serves as a guide for the analysis, as they contain most loci names for *T. gondii*.
 * Recommended annotation is the one for TGME49, which at the moment seems to be the most complete one.
 * Annotation file names should be like `genomes/chromosome_X` and onwards.
 
-```
-place at annotations folder.
-TBD.
-
-```
-
-### Fetch genomes
+#### Genomes
 
 * The genomes file are the root of the analysis.
 * They should be placed at the `genomes` folder.
-
-```
-
-TBD.
-
-```
 
 
 ## Usage

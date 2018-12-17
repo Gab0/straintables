@@ -281,12 +281,17 @@ if __name__ == "__main__":
 
     # LOAD GENOME FEATURES;
     featureFolderPath = "annotations"
-    genomeFeatures = os.listdir(featureFolderPath)
-    genomeFeatures = [os.path.join(featureFolderPath, File)
-                      for File in genomeFeatures]
+    genomeFeatureFiles = [
+        os.path.join(featureFolderPath, File)
+        for File in os.listdir(featureFolderPath)
+        if not File.startswith(".")
+    ]
 
-    genomeFeatures = [SeqIO.read(File, "genbank")
-                      for File in genomeFeatures]
+    genomeFeatures = [
+        SeqIO.read(File, "genbank")
+        for File in genomeFeatureFiles
+    ]
+
     genomeFeaturesChromosomes =\
         [chromosome.features[0].qualifiers['chromosome'][0].upper()
          for chromosome in genomeFeatures]

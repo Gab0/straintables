@@ -19,9 +19,11 @@ arrayFilePaths = [os.path.join(options.inputDirectory, File)
                   for File in allFiles if File.endswith(".aln.npy")]
 
 heatmaps = [np.load(filePath) for filePath in arrayFilePaths]
-labels = np.load("labels.npy")
+
+
+heatmapLabels = np.load(os.path.join(options.inputDirectory, "heatmap_labels.npy"))
 heatmap = 1 - np.abs(heatmaps[0] - heatmaps[1])
 
 outputDir = os.path.dirname(sys.argv[1])
 outputPath = os.path.join(outputDir, "discrepancy_matrix.pdf")
-detectMutations.plotHeatmap(heatmap, labels, outputPath)
+detectMutations.plotHeatmap(heatmap, heatmapLabels, outputPath)
