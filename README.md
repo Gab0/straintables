@@ -15,12 +15,11 @@ linkageMapper is a tool that helps evaluate the difference among gene loci acros
 
 The following code downloads all required genomes and annotations from NCBI.
 ```
-$ pyhton linkageMapper/downloadGenomic
-
+$ python linkageMapper/downloadGenomic.py
 ```
-Instead, you can manually add desired genomes and annotations.
+Instead, you can manually add desired genomes and annotations, as explained in the next subsections:
 
-#### Annotations
+#### Annotationsa
 
 * The annotation file serves as a guide for the analysis, as they contain most loci names for *T. gondii*.
 * Recommended annotation is the one for TGME49, which at the moment seems to be the most complete one.
