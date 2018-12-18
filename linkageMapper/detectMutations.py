@@ -16,7 +16,7 @@ import optparse
 
 def heatmapToAxis(MATRIX, ax, labels=None):
     ax.matshow(MATRIX, cmap='gray')
-
+    MATRIX = np.asmatrix(MATRIX)
     SIZE = MATRIX.shape[0]
 
     # MINOR TICKS -> GRID;
@@ -31,7 +31,7 @@ def heatmapToAxis(MATRIX, ax, labels=None):
     ax.set_yticks(range(SIZE))
 
     # SET LABELS;
-    if labels:
+    if labels is not None:
         ax.set_xticklabels(labels, rotation=90)
         ax.set_yticklabels(labels)
 
@@ -88,7 +88,7 @@ def storeMatrixData(MATRIX, baseFileName, subtitle=None):
     # SAVE HEATMAP MATRIX;
     np.save(baseFileName, MATRIX)
 
-    labelsPath = os.path.join(os.path.basedir(baseFileName, "heatmap_labels"))
+    labelsPath = os.path.join(os.path.dirname(baseFileName), "heatmap_labels")
     np.save(labelsPath, np.array(sequenceNames))
 
 

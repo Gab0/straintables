@@ -312,7 +312,6 @@ if __name__ == "__main__":
 
     AllLociAmpliconSet = {}
     AllLociPrimerSet = OrderedDict()
-    AllLociSuccessEvaluation = OrderedDict()
 
     # brute force primer count limiter;
     BFPCL = 36
@@ -428,10 +427,11 @@ if __name__ == "__main__":
 
                 # export amplicon and primer data;
                 AllLociAmpliconSet[locus_name] = LocusAmpliconSet
+
+                primerPair["RebootCount"] = RebootCount
                 matchedPrimerSequences.append(primerPair)
                 AllLociPrimerSet[locus_name] = matchSuccess
 
-                AllLociSuccessEvaluation[locus_name] = RebootCount
                 # exit loop...
                 break
 
@@ -474,7 +474,8 @@ if __name__ == "__main__":
     # BUILD MATCHED PRIMER DATABASE;
     outputFile = os.path.splitext(os.path.basename(options.primerFile))[0] + "_real.csv"
     outputFilePath = os.path.join(options.outputPath, outputFile)
-    data = pd.DataFrame(matchedPrimerSequences, columns=["LocusName"] + PrimerTypes)
+    data = pd.DataFrame(matchedPrimerSequences,
+                        columns=["LocusName", *PrimerTypes, "RebootCount"])
     data.to_csv(outputFilePath, index=False)
 
     # Primer Maps on Guide Genome:
@@ -484,7 +485,6 @@ if __name__ == "__main__":
         for Primer in AllLociPrimerSet[Locus]:
             row = Primer[0].to_dict(Locus)
             del row["Chromosome"]
-
             PrimerData.append(row)
             allPrimers.append(Primer)
 
@@ -496,4 +496,3 @@ if __name__ == "__main__":
     MasterGenome = [g for g in genomes if "ME49" in g.name][0]
     # geneGraphs.plotGeneArea(allPrimers, MasterGenome)
 
-    print(json.dumps(AllLociSuccessEvaluation, indent=2))

@@ -63,13 +63,14 @@ for P in range(PWMData.shape[0]):
         data = [PrimerData[PrimerData.Locus == name.replace("LOCI_", "")].iloc[0]
                 for name in [a_name, b_name]]
     except IndexError:
-        print(a_name)
+        print("Failure on %s" % a_name)
         continue
 
     Title = [
         "Distance = %ibp" % (abs(data[0].PositionStart - data[1].PositionStart)),
         "%s vs %s" % (a_name, b_name),
         "Mantel=%.4f     p=%.4f" % (d["mantel"], d["mantel_p"]),
+        "DIFF=%i" % d["matrix_ranking_diff"],
         " "
     ]
     plt.title("\n".join(Title))

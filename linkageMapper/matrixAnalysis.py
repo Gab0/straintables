@@ -55,23 +55,57 @@ PWM.index = pd.MultiIndex.from_tuples(PWM_Index_Labels)
 Associations = []
 Mantels = []
 MantelsP = []
+RankingDiff = []
+
+
+def matrixRankings(MATRIX):
+    orderMatrix = []
+    for row in MATRIX:
+        row = list(row)
+
+        order = [row.index(v) for v in sorted(row)]
+        orderMatrix.append(order)
+    return orderMatrix
+
+
+def compareMatrixRankings(mat0, mat1):
+    mat0 = matrixRankings(mat0)
+    mat1 = matrixRankings(mat1)
+
+    diff = 0
+    for i in range(len(mat0)):
+        for j in range(len(mat0)):
+            diff += abs(mat0[i][j] - mat1[i][j])
+
+    return diff
+
 
 # ITERATE pwm_indices;
 for IFA, IFB in PWM_Index_Indices:
+
+    # FIRST EVALUATION;
     D = np.cov(heatmaps[IFA], heatmaps[IFB])
     D = sum(sum(D))
     Associations.append(D)
 
+    # SECOND EVALUATION;
     M = skdist.mantel(heatmaps[IFA], heatmaps[IFB])
 
     Mantels.append(M[0])
     MantelsP.append(M[1])
 
+    # THIRD EVALUATION;
+    MDF = compareMatrixRankings(heatmaps[IFA], heatmaps[IFB])
+    RankingDiff.append(MDF)
+
 PWM["associations"] = Associations
 
 PWM["mantel"] = Mantels
 PWM["mantel_p"] = MantelsP
+PWM["matrix_ranking_diff"] = RankingDiff
 
+
+# cleanup dataframe;
 del PWM["permutations"]
 
 print(PWM.to_string())

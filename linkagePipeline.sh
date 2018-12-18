@@ -8,6 +8,7 @@ OUTPUT_DIR="Alignments/${PRIMER_CODE}"
 mkdir -p "${OUTPUT_DIR}"
 
 if python linkageMapper/primerFinder.py -r Primers/"${PRIMER_CODE}".csv -o "${OUTPUT_DIR}" -p;
+#if ps aux; 
 then
     echo Proceeding analysis...
 else
@@ -17,14 +18,14 @@ fi
 
 # THIS GETS ALL LOCI NAMES FROM .csv PRIMER DESCRIPTOR!
 # WORKS LIKE THIS -> LOCI=(SAG2 ROP32 BIN3)
-readarray -t LOCI < <(cat Primers/"${PRIMER_CODE}".csv|awk -F"," '{print $1}'|tail -n +2)
+readarray -t LOCI < <(cat "${OUTPUT_DIR}"/"${PRIMER_CODE}"_real.csv|awk -F"," '{print $1}'|tail -n +2)
 
 
 ALNMODE=$2
 
 CLONAL=$3
 
-if [ -z $CLONAL ]
+if [ -z $CLONAL ];
 then
     EXPLICT_CLONAL=""
 else
@@ -41,9 +42,9 @@ do
         tcoffee -in "${OUTPUT_FILE_PREFIX}".fasta -out "${OUTPUT_DIR}"
     fi
 
-    if [ $ALNMODE = "clustal" || -z $ALNMODE];
+    if [ $ALNMODE = "clustal" ] || [ -z $ALNMODE ];
     then
-        clustalw2 -INFILE="${OUTPUT_FILE_PREFIX}".fasta -OUTFILE="${OUTPUT_FILE_PREFIX}".aln
+        clustalw2 -INFILE="${OUTPUT_FILE_PREFIX}".fasta -OUTFILE="${OUTPUT_FILE_PREFIX}".aln 2 >> "${OUYPUT_DIR}"/clustal_warnings.txt
     fi
 
     if [ $ALNMODE = "muscle" ];

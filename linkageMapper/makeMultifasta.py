@@ -26,7 +26,7 @@ ReferenceLocus = REF if REF else options.LocusName
 for i in range(loci_data.shape[0]):
     d = loci_data.iloc[i]
     sequence = d[options.LocusName]
-    name = d["Genome"]
+    name = d["Genome"] + ".fasta"
 
     try:
         GenotypeNumber = genotypeData[genotypeData.Genome == name].iloc[0].ToxoDB

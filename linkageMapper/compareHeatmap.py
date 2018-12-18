@@ -20,7 +20,6 @@ arrayFilePaths = [os.path.join(options.inputDirectory, File)
 
 heatmaps = [np.load(filePath) for filePath in arrayFilePaths]
 
-
 heatmapLabels = np.load(os.path.join(options.inputDirectory, "heatmap_labels.npy"))
 heatmap = 1 - np.abs(heatmaps[0] - heatmaps[1])
 
