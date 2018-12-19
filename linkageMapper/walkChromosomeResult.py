@@ -34,6 +34,7 @@ def fixArrayFilename(f):
 
 
 last = None
+heatmapLabels = np.load(os.path.join(options.inputDirectory, "heatmap_labels.npy"))
 for P in range(PWMData.shape[0]):
 
     d = PWMData.iloc[P]
@@ -55,13 +56,18 @@ for P in range(PWMData.shape[0]):
     fig = plt.figure()
 
     ax_a = fig.add_subplot(212)
-    detectMutations.heatmapToAxis(ma, ax_a)
-    ax_b = fig.add_subplot(211)
-    detectMutations.heatmapToAxis(mb, ax_b)
+    detectMutations.heatmapToAxis(ma, ax_a, labels=heatmapLabels)
+    ax_a.set_title(a_name, loc='left', pad=-240)
+
+    ax_b = fig.add_subplot(221)
+    detectMutations.heatmapToAxis(mb, ax_b, labels=heatmapLabels)
+    ax_b.set_title(b_name, loc='left', pad=-240)
 
     try:
-        data = [PrimerData[PrimerData.Locus == name.replace("LOCI_", "")].iloc[0]
-                for name in [a_name, b_name]]
+        data = [
+            PrimerData[PrimerData.Locus == name.replace("LOCI_", "")].iloc[0]
+            for name in [a_name, b_name]
+        ]
     except IndexError:
         print("Failure on %s" % a_name)
         continue
@@ -73,7 +79,21 @@ for P in range(PWMData.shape[0]):
         "DIFF=%i" % d["matrix_ranking_diff"],
         " "
     ]
-    plt.title("\n".join(Title))
+
+    Title = "\n".join(Title)
+
+    ax_t = fig.add_subplot(222)
+
+    ax_t.text(-0.2,
+              0.6,
+              s=Title,
+              clip_on=False
+    )
+    ax_t.axis("off")
+
+    plt.title("")
+    # plt.tight_layout()
+
     plt.show()
 
     last = a

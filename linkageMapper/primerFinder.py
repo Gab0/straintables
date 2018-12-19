@@ -317,7 +317,7 @@ if __name__ == "__main__":
     BFPCL = 36
 
     # after this number of tries, we give up on matching primers for the locus.
-    RebootLocusTolerance = 150
+    RebootLocusTolerance = 13
     matchedPrimerSequences = []
     # ITERATE LOCI;
     

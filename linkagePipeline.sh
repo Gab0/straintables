@@ -44,7 +44,7 @@ do
 
     if [ $ALNMODE = "clustal" ] || [ -z $ALNMODE ];
     then
-        clustalw2 -INFILE="${OUTPUT_FILE_PREFIX}".fasta -OUTFILE="${OUTPUT_FILE_PREFIX}".aln 2 >> "${OUYPUT_DIR}"/clustal_warnings.txt
+        clustalw2 -INFILE="${OUTPUT_FILE_PREFIX}".fasta -OUTFILE="${OUTPUT_FILE_PREFIX}".aln 2>>"${OUTPUT_DIR}/clustal_warnings.txt"
     fi
 
     if [ $ALNMODE = "muscle" ];
