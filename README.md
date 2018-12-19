@@ -14,16 +14,17 @@ linkageMapper is a tool that helps evaluate the difference among gene loci acros
 ### Fetch genomes and annotation files
 
 The following code downloads all required genomes and annotations from NCBI.
+
 ```
 $ python linkageMapper/downloadGenomic.py
 ```
+
 Instead, you can manually add desired genomes and annotations, as explained in the next subsections:
 
 #### Annotationsa
 
 * The annotation file serves as a guide for the analysis, as they contain most loci names for *T. gondii*.
 * Recommended annotation is the one for TGME49, which at the moment seems to be the most complete one.
-* Annotation file names should be like `genomes/chromosome_X` and onwards.
 
 #### Genomes
 
@@ -43,21 +44,16 @@ Instead, you can manually add desired genomes and annotations, as explained in t
 ### Example 1
 
 ```
-
-$ python linkageMapper/initializePrimerFile.py -i annotations/chromosome_X -o Primers/walk_chromosome_X
+$ python linkageMapper/initializePrimerFile.py -i annotations/chromosome_X -o Primers/walk_chromosome_X.csv
 $ bash linkagePipeline.sh walk_chromosome_X
 $ python linkageMapper/walkChromosomeResult.py -i Alignments/walk_chromosome_X
-
 ```
 ### Example 2
 
-* First make your own primer file, with custom primers or blank primer fields. That's the file `Primers/chr_X` for this example.
+* First make your own primer file, with custom primers or blank primer fields. The primer file will be named `Primers/chr_X.csv` for this example.
 
 ```
-
 $ bash linkagePipeline.sh chr_X
-
-
 ```
 
 * Then view similarity matrixes and phylogenetic trees on `pdf` files at `Alignments/chr_X` folder.
@@ -70,7 +66,6 @@ $ bash linkagePipeline.sh chr_X
 
 ```
 $ bash linkagePipelinea.sh chr_XII clustal SAG3
-
 ```
 
 * Then view similarity matrixes and phylogenetic trees on `pdf` files at `Alignments/chr_X` folder.
