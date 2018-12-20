@@ -5,10 +5,12 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 
+import shutil
 import sys
 import copy
 import re
 import os
+import math
 import geneGraphs
 
 import optparse
@@ -118,6 +120,9 @@ if __name__ == "__main__":
     for s in range(len(Alignment[0].seq)):
         window = [dna.seq[s] for dna in Alignment]
         if len(list(set(window))) > 1:
+
+            # Special Cases: HUGE INSERTIONS AT THE BEGINNING OR END OF ANY SEQUENCE;
+            # TBD
             print(window)
             Windows.append(window)
             InfoWindows.append([s] + window)
@@ -132,6 +137,20 @@ if __name__ == "__main__":
 
     sequenceNames, _Windows = sortAlignments(sequenceNames, _Windows)
 
+    def isLetter(v):
+        v = v.lower()
+        if v in ['a', 'c', 't', 'g', 'u', 'n']:
+            return True
+        return False
+
+    def isUknown(v):
+        v = v.lower()
+        if v == 'n':
+            return True
+        return False
+
+
+    # PROCESS VARIATION WINDOWS;
     mat = range(len(_Windows))
     nb_snp = len(_Windows[0])
     print(len(Windows))
@@ -143,12 +162,30 @@ if __name__ == "__main__":
             for k in range(nb_snp):
                 A = _Windows[i][k]
                 B = _Windows[j][k]
+
                 if A == B:
                     similarity += 1
-            similarity /= nb_snp
+                elif isUknown(A) and isLetter(B):
+                    similarity += 1
+                elif isUknown(B) and isLetter(A):
+                    similarity += 1
+
+            similarity = similarity / nb_snp
+
             MATRIX[i][j] = similarity
 
     d = np.matrix(MATRIX)
+
+
+    # CHECK MATRIX HEALTH
+    globalMean = np.mean(MATRIX)
+    healthFail = False
+    matrixRowMeans = []
+    for row in MATRIX:
+        rm = np.mean(row)
+        matrixRowMeans.append(rm)
+        if rm < (globalMean / 2):
+            healthFail = True
 
     # SHOW SIMILARITY MATRIX;
     print(d.shape)
@@ -173,3 +210,12 @@ if __name__ == "__main__":
     # SAVE SNP INFO DATA FILE;
     DATA = pd.DataFrame(InfoWindows, columns=["POS"] + sequenceNames)
     DATA.to_csv(alignPath + ".csv", index=False)
+
+    # SHOW OUTCOMES
+    if healthFail:
+        print("SIMILARITY MATRIX IS NOT HEALTHY.")
+        problematicDirectory = os.path.join(os.path.dirname(options.InputFile), "problematic")
+        if not os.path.isdir(problematicDirectory):
+            os.mkdir(problematicDirectory)
+        shutil.copyfile(options.InputFile, os.path.join(problematicDirectory, os.path.basename(options.InputFile)))
+    print(matrixRowMeans)
