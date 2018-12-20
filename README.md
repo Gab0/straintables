@@ -21,14 +21,16 @@ $ python linkageMapper/downloadGenomic.py
 
 Instead, you can manually add desired genomes and annotations, as explained in the next subsections:
 
-#### Annotationsa
+#### Annotations
 
 * The annotation file serves as a guide for the analysis, as they contain most loci names for *T. gondii*.
 * Recommended annotation is the one for TGME49, which at the moment seems to be the most complete one.
+* All `.gff` annotation files, one for each chromosome, should be placed at `annotations` folder.
 
 #### Genomes
 
-* The genomes file are the root of the analysis.
+* The genome files are the root of the analysis.
+* One multifasta file per strain.
 * They should be placed at the `genomes` folder.
 
 
@@ -48,6 +50,7 @@ $ python linkageMapper/initializePrimerFile.py -i annotations/chromosome_X -o Pr
 $ bash linkagePipeline.sh walk_chromosome_X
 $ python linkageMapper/walkChromosomeResult.py -i Alignments/walk_chromosome_X
 ```
+
 ### Example 2
 
 * First make your own primer file, with custom primers or blank primer fields. The primer file will be named `Primers/chr_X.csv` for this example.
@@ -71,5 +74,21 @@ $ bash linkagePipelinea.sh chr_XII clustal SAG3
 * Then view similarity matrixes and phylogenetic trees on `pdf` files at `Alignments/chr_X` folder.
 
 ## Results
+
+* As the linkagePipeline.sh unfolds, `Alignments/[primer batch name]` folder will be created and populated with files of various kinds, in this order:
+
+1. `.fasta` Sequence files, one holding the amplicon found for each loci.
+2. `.aln` Alignment files, one for each loci.
+3. `.aln.npy` Similarity Matrix files, one for each loci.
+4. `.pdf` Similarity Matrix Plot files, one for each loci;
+
+
+### Result Analysis Tools
+
+Some python scripts are not called within linkagePipeline.sh, and should be launched by the user. Those comprise tools to help result evaluation.
+
+1. `linkagePipeline/walkChromosomeResult.py` The basic one. This will build a slide presentation of plots, each plot showing a pair of similarity matrixes.
+The matrix show will start with the first locus against the second locus chosen, in the order of the Primer file, along with some extra information. Then, the second locus will be compared to the third and so it goes on.
+
 
 TBD.
