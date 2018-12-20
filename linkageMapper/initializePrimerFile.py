@@ -14,7 +14,10 @@ parser.add_option("-i",
 parser.add_option("-o",
                   dest="outputFile")
 
-
+parser.add_option("-c",
+        dest="locusProbability",
+        type="float",
+        default=0.1)
 options, args = parser.parse_args()
 
 
@@ -23,7 +26,7 @@ allFeatures = annotationManager.loadFeatures(options.inputAnnotation)
 chosenFeatures = []
 for feature in allFeatures:
     COND1 = "gene" in feature.qualifiers.keys()
-    COND2 = random.random() < 0.03
+    COND2 = random.random() < options.locusProbability
     NAME = None
     if COND1:
         NAME = feature.qualifiers["gene"][0]

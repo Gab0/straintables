@@ -8,6 +8,9 @@ from optparse import OptionParser
 
 import matplotlib.pyplot as plt
 
+import fastcluster
+import scipy
+
 import detectMutations
 
 parser = OptionParser()
@@ -33,78 +36,149 @@ def fixArrayFilename(f):
     return f.split('.')[0]
 
 
-last = None
-heatmapLabels = np.load(os.path.join(options.inputDirectory, "heatmap_labels.npy"))
-for P in range(PWMData.shape[0]):
+def seriation(Z, N, cur_index):
+    '''
+        input:
+            - Z is a hierarchical tree (dendrogram)
+            - N is the number of points given to the clustering process
+            - cur_index is the position in the tree for the recursive traversal
+        output:
+            - order implied by the hierarchical tree Z
 
-    d = PWMData.iloc[P]
-    a = d["Unnamed: 0"]
-    b = d["Unnamed: 1"]
+        seriation computes the order implied by a hierarchical tree (dendrogram)
+    '''
+    if cur_index < N:
+        return [cur_index]
+    else:
+        left = int(Z[cur_index - N,0])
+        right = int(Z[cur_index - N, 1])
+        return (seriation(Z, N, left) + seriation(Z, N, right))
 
-    # walk loci by loci mode.
-    if a == last:
-        continue
 
-    # EXTRACR LOCUS NAMES;
-    a_name, b_name = fixArrayFilename(a), fixArrayFilename(b)
+def compute_serial_matrix(dist_mat, method="ward"):
+    '''
+        input:
+            - dist_mat is a distance matrix
+            - method = ["ward","single","average","complete"]
+        output:
+            - seriated_dist is the input dist_mat,
+              but with re-ordered rows and columns
+              according to the seriation, i.e. the
+              order implied by the hierarchical tree
+            - res_order is the order implied by
+              the hierarhical tree
+            - res_linkage is the hierarhical tree (dendrogram)
 
-    # LOAD MATRIX DATA;
-    ma = np.load(buildArrayPath(a))
-    mb = np.load(buildArrayPath(b))
+        compute_serial_matrix transforms a distance matrix into 
+        a sorted distance matrix according to the order implied 
+        by the hierarchical tree (dendrogram)
+    '''
+    N = len(dist_mat)
+    flat_dist_mat = scipy.spatial.distance.squareform(dist_mat)
+    res_linkage = fastcluster.linkage(flat_dist_mat, method=method, preserve_input=True)
+    res_order = seriation(res_linkage, N, N + N-2)
+    seriated_dist = np.zeros((N, N))
+    a, b = np.triu_indices(N, k=1)
+    seriated_dist[a, b] = dist_mat[ [res_order[i] for i in a], [res_order[j] for j in b]]
+    seriated_dist[b, a] = seriated_dist[a, b]
 
-    # labels = buildArrayPath("labels.")
-    fig = plt.figure()
+    return seriated_dist, res_order, res_linkage
 
-    ax_a = fig.add_subplot(212)
-    detectMutations.heatmapToAxis(ma, ax_a, labels=heatmapLabels)
-    ax_a.set_title(a_name, loc='left', pad=-240)
 
-    ax_b = fig.add_subplot(221)
-    detectMutations.heatmapToAxis(mb, ax_b, labels=heatmapLabels)
-    ax_b.set_title(b_name, loc='left', pad=-240)
+def createSubplot(fig, position, name, matrix, labels, Reorder):
+    new_ax = fig.add_subplot(position)
+    if Reorder:
+        # REORDER MATRIX
+        matrix, matrix_order, B = compute_serial_matrix(1-matrix, method="complete")
+        labels = heatmapLabels[matrix_order]
 
-    try:
-        data = [
-            PrimerData[PrimerData.Locus == name.replace("LOCI_", "")].iloc[0]
-            for name in [a_name, b_name]
-        ]
-    except IndexError:
-        print("Failure on %s" % a_name)
-        continue
+    detectMutations.heatmapToAxis(matrix, new_ax, labels=labels)
 
-    Title = [
-        "Distance = %ibp" % (abs(data[0].PositionStart - data[1].PositionStart)),
-        "%s vs %s" % (a_name, b_name),
-        "Mantel=%.4f     p=%.4f" % (d["mantel"], d["mantel_p"]),
-        "DIFF=%i" % d["matrix_ranking_diff"],
-        " "
-    ]
+    new_ax.set_xlabel(name)
 
-    Title = "\n".join(Title)
 
-    ax_t = fig.add_subplot(222)
+if __name__ == "__main__":
+    last = None
 
-    ax_t.text(-0.2,
-              0.6,
-              s=Title,
-              clip_on=False
+    # FETCH ORIGINAL HEATMAP GENOME LABELS;
+    heatmapLabelsFilePath = os.path.join(
+        options.inputDirectory,
+        "heatmap_labels.npy"
     )
-    ax_t.axis("off")
+    heatmapLabels = np.load(heatmapLabelsFilePath)
 
-    plt.title("")
-    # plt.tight_layout()
+    # ITERATE PWM ANALYSIS DATA;
+    for P in range(PWMData.shape[0]):
 
-    plt.show()
+        d = PWMData.iloc[P]
+        a = d["Unnamed: 0"]
+        b = d["Unnamed: 1"]
 
-    last = a
+        # walk loci by loci mode.
+        if a == last:
+            continue
+
+        # EXTRACR LOCUS NAMES;
+        a_name, b_name = fixArrayFilename(a), fixArrayFilename(b)
+
+        try:
+            data = [
+                PrimerData[PrimerData.Locus == name.replace("LOCI_", "")].iloc[0]
+                for name in [a_name, b_name]
+            ]
+        except IndexError:
+            print("Failure on %s" % a_name)
+            continue
+
+        # LOAD MATRIX DATA;
+        ma = np.load(buildArrayPath(a))
+        mb = np.load(buildArrayPath(b))
+
+        # INITIALIZE PLOT FIGURE;
+        fig = plt.figure()
+
+        # ORIGINAL MATRIXES;
+        createSubplot(fig, 331, a_name, ma, heatmapLabels, True)
+        createSubplot(fig, 333, b_name, mb, heatmapLabels, True)
+
+        # REORDERED MATRIXES;
+        createSubplot(fig, 337, a_name, ma, heatmapLabels, False)
+        createSubplot(fig, 339, b_name, mb, heatmapLabels, False)
+
+        # BUILD SHOWN INFO;
+        Title = [
+            "Distance = %ibp" % (abs(data[0].PositionStart - data[1].PositionStart)),
+            "%s vs %s" % (a_name, b_name),
+            "Mantel=%.4f     p=%.4f" % (d["mantel"], d["mantel_p"]),
+            "DIFF=%i" % d["matrix_ranking_diff"],
+            " "
+        ]
+
+        Title = "\n".join(Title)
+
+        ax_t = fig.add_subplot(335)
+
+        ax_t.text(-0.2,
+                  0.6,
+                  s=Title,
+                  clip_on=False
+        )
+        ax_t.axis("off")
+
+        plt.title("")
+        # plt.tight_layout()
+
+        plt.show()
+
+        last = a
 
 
-"""
-for P in range(PrimerData.shape[0]):
-    if not P % 2:
-        Primer = PrimerData.iloc[P]
-        matrixFile = os.path.join(options.inputDirectory,
-                                  "LOCI_%s.aln.pdf" % Primer["Locus"])
+    """
+    for P in range(PrimerData.shape[0]):
+        if not P % 2:
+            Primer = PrimerData.iloc[P]
+            matrixFile = os.path.join(options.inputDirectory,
+                                      "LOCI_%s.aln.pdf" % Primer["Locus"])
 
-        subprocess.run(["okular", matrixFile])
-"""
+            subprocess.run(["okular", matrixFile])
+    """
