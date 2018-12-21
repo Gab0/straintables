@@ -11,15 +11,16 @@ import copy
 import re
 import os
 import math
-import geneGraphs
+
+import DrawGraphics
 
 import optparse
 
 
 def heatmapToAxis(MATRIX, ax, labels=None):
-    ax.matshow(MATRIX, cmap='gray')
-    MATRIX = np.asmatrix(MATRIX)
-    SIZE = MATRIX.shape[0]
+    ax.matshow(MATRIX, cmap='binary')
+
+    SIZE = len(MATRIX)
 
     # MINOR TICKS -> GRID;
     DIV = SIZE // 3
@@ -38,7 +39,7 @@ def heatmapToAxis(MATRIX, ax, labels=None):
         ax.set_yticklabels(labels)
 
 
-# BUILD HEATAP;
+# BUILD HEATMAP;
 def plotHeatmap(MATRIX, sequenceNames, filename=None, subtitle=None):
     fig = plt.figure()
     ax = fig.add_subplot(111)
@@ -58,8 +59,8 @@ def plotHeatmap(MATRIX, sequenceNames, filename=None, subtitle=None):
     else:
         watermarkLabel = os.path.split(filename)[-1].split(".")[0]
 
-    geneGraphs.watermarkAndSave(watermarkLabel, filename,
-                                subtitle=subtitle, verticalLabel=340)
+    DrawGraphics.geneGraphs.watermarkAndSave(watermarkLabel, filename,
+                                             subtitle=subtitle, verticalLabel=340)
 
 
 # reorder windows and sequenceNames;
@@ -172,10 +173,9 @@ if __name__ == "__main__":
 
             similarity = similarity / nb_snp
 
-            MATRIX[i][j] = similarity
+            MATRIX[i][j] = 1 - similarity
 
     d = np.matrix(MATRIX)
-
 
     # CHECK MATRIX HEALTH
     globalMean = np.mean(MATRIX)

@@ -8,9 +8,10 @@ from Bio import SeqIO
 from reportlab.lib import colors
 from reportlab.pdfgen import canvas
 
-import annotationManager
+# from ..Database import annotationManager
 import pdfrw
 
+import re
 import numpy as np
 
 

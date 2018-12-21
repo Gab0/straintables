@@ -25,7 +25,6 @@ arrayFilePaths = [os.path.join(options.inputDirectory, File)
                   for File in arrayFiles]
 
 heatmaps = [np.load(filePath) for filePath in arrayFilePaths]
-heatmaps = [1-x for x in heatmaps]
 
 heatmapLabels = np.load(os.path.join(options.inputDirectory,
                                      "heatmap_labels.npy"))

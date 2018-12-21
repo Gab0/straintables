@@ -7,13 +7,19 @@ OUTPUT_DIR="Alignments/${PRIMER_CODE}"
 
 mkdir -p "${OUTPUT_DIR}"
 
-if python linkageMapper/primerFinder.py -r Primers/"${PRIMER_CODE}".csv -o "${OUTPUT_DIR}" -p;
-#if ps aux; 
+DO_ALIGN=1
+
+if [ $DO_ALIGN = 1 ];
 then
-    echo Proceeding analysis...
-else
-    echo Failure.
-    exit
+    if python linkageMapper/primerFinder.py \
+              -r Primers/"${PRIMER_CODE}".csv \
+              -o "${OUTPUT_DIR}" -p;
+    then
+        echo Proceeding analysis...
+    else
+        echo Failure.
+        exit
+    fi
 fi
 
 # THIS GETS ALL LOCI NAMES FROM .csv PRIMER DESCRIPTOR!
@@ -44,7 +50,10 @@ do
 
     if [ $ALNMODE = "clustal" ] || [ -z $ALNMODE ];
     then
-        clustalw2 -INFILE="${OUTPUT_FILE_PREFIX}".fasta -OUTFILE="${OUTPUT_FILE_PREFIX}".aln 2>>"${OUTPUT_DIR}/clustal_warnings.txt"
+        clustalw2 \
+            -INFILE="${OUTPUT_FILE_PREFIX}".fasta \
+            -OUTFILE="${OUTPUT_FILE_PREFIX}".aln \
+            2>>"${OUTPUT_DIR}/clustal_warnings.txt"
     fi
 
     if [ $ALNMODE = "muscle" ];
@@ -56,8 +65,13 @@ do
     clustalw2 -INFILE="${OUTPUT_FILE_PREFIX}".aln -tree
 
     # POST-ALIGN ANALYSIS;
-    python linkageMapper/drawTree.py "${OUTPUT_FILE_PREFIX}".ph
-    python linkageMapper/detectMutations.py -i "${OUTPUT_FILE_PREFIX}".aln "${EXPLICIT_CLONAL}"
+    python linkageMapper/DrawGraphics/drawTree.py \
+           -i "${OUTPUT_FILE_PREFIX}".ph \
+           -o "${OUTPUT_FILE_PREFIX}".pdf
+
+    python linkageMapper/detectMutations.py \
+           -i "${OUTPUT_FILE_PREFIX}".aln \
+           "${EXPLICIT_CLONAL}"
 done
 
 #SIMILARITY MATRIX DIFFERENCES;

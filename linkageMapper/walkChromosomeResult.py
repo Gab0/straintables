@@ -89,7 +89,7 @@ def createSubplot(fig, position, name, matrix, labels, Reorder):
     new_ax = fig.add_subplot(position)
     if Reorder:
         # REORDER MATRIX
-        matrix, matrix_order, B = compute_serial_matrix(1-matrix, method="complete")
+        matrix, matrix_order, B = compute_serial_matrix(matrix, method="complete")
         labels = heatmapLabels[matrix_order]
 
     detectMutations.heatmapToAxis(matrix, new_ax, labels=labels)
