@@ -12,7 +12,6 @@ from collections import OrderedDict
 from Bio.SeqFeature import SeqFeature, FeatureLocation
 from Bio import SeqIO
 
-import downloadGene
 import PrimerEngine
 
 from optparse import OptionParser

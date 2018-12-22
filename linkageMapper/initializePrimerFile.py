@@ -4,7 +4,7 @@ import pandas as pd
 
 from optparse import OptionParser
 
-import annotationManager
+from Database import annotationManager
 
 parser = OptionParser()
 
