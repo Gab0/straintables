@@ -5,6 +5,7 @@ linkageMapper is a tool that helps evaluate the difference among gene loci acros
 ## Setup
 
 ### Install Python Requirements
+
 1. Clone this repository.
 
 2. Install python dependencies: `$sudo pip install -r requirements.txt`
