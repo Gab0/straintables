@@ -15,9 +15,10 @@ parser.add_option("-o",
                   dest="outputFile")
 
 parser.add_option("-c",
-        dest="locusProbability",
-        type="float",
-        default=0.1)
+                  dest="locusProbability",
+                  type="float",
+                  default=0.1)
+
 options, args = parser.parse_args()
 
 
