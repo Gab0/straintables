@@ -13,19 +13,71 @@ import scipy
 
 import detectMutations
 
-parser = OptionParser()
+import gi
+gi.require_version('Gtk', '3.0')
+from gi.repository import Gtk
 
-parser.add_option("-i",
-                  dest="inputDirectory")
+from matplotlib.figure import Figure
+from matplotlib.backends.backend_gtk3agg import FigureCanvas
+from matplotlib.backends.backend_gtk3 import (
+    NavigationToolbar2GTK3 as NavigationToolbar)
 
-options, args = parser.parse_args()
 
+class matrixViewer():
+    def __init__(self, PWMData, drawPlotIndex):
+        self.PWMData = PWMData
+        self.drawPlot = drawPlotIndex
 
-PrimerFilePath = os.path.join(options.inputDirectory, "PrimerData.csv")
-PWMFilePath = os.path.join(options.inputDirectory, "PWMAnalysis.csv")
+        win = Gtk.Window()
+        win.connect("destroy", lambda x: Gtk.main_quit())
+        win.set_default_size(400, 300)
+        win.set_title("Embedding in GTK")
 
-PrimerData = pd.read_csv(PrimerFilePath)
-PWMData = pd.read_csv(PWMFilePath)
+        vbox = Gtk.VBox()
+        win.add(vbox)
+
+        # INITIALIZE PLOT FIGURE;
+        self.figure = plt.figure()
+
+        self.drawPlot(self.figure, self.PWMData, 0)
+
+        self.figurecanvas = FigureCanvas(self.figure)  # a Gtk.DrawingArea
+        self.figurecanvas.mpl_connect('button_press_event', self.nav_forward)
+        self.index = 0
+
+        vbox.pack_start(self.figurecanvas, True, True, 0)
+        self.toolbar = NavigationToolbar(self.figurecanvas, win)
+        self.toolbar.forward = self.nav_forward
+        self.toolbar.back = self.nav_back
+        self.toolbar.set_history_buttons()
+
+        buttonBox = Gtk.HBox(True, 2)
+        self.btn_back = Gtk.Button(label="<")
+        self.btn_back.connect("clicked", self.nav_back)
+        self.btn_next = Gtk.Button(label=">")
+        self.btn_next.connect("clicked", self.nav_forward)
+
+        buttonBox.add(self.btn_back)
+        buttonBox.add(self.btn_next)
+
+        vbox.pack_start(buttonBox, False, False, 0)
+        vbox.pack_start(self.toolbar, False, False, 0)
+
+        win.show_all()
+        Gtk.main()
+
+    def nav_forward(self, d):
+        self.change(self.index+1)
+        self.index += 1
+
+    def nav_back(self):
+        pass
+
+    def change(self, I):
+        self.figure.clf()
+        self.drawPlot(self.figure, self.PWMData, I)
+        self.figurecanvas.draw()
+        self.figurecanvas.flush_events()
 
 
 def buildArrayPath(f):
@@ -97,8 +149,80 @@ def createSubplot(fig, position, name, matrix, labels, Reorder):
     new_ax.set_xlabel(name)
 
 
+def plotPwmIndex(fig, PWMData, I):
+    d = PWMData.iloc[I]
+    a = d["Unnamed: 0"]
+    b = d["Unnamed: 1"]
+
+    # walk loci by loci mode.
+
+    # EXTRACR LOCUS NAMES;
+    a_name, b_name = fixArrayFilename(a), fixArrayFilename(b)
+
+    try:
+        data = [
+            PrimerData[PrimerData.Locus == name.replace("LOCI_", "")].iloc[0]
+            for name in [a_name, b_name]
+        ]
+    except IndexError:
+        print("Failure on %s" % a_name)
+
+    # LOAD MATRIX DATA;
+    ma = np.load(buildArrayPath(a))
+    mb = np.load(buildArrayPath(b))
+
+
+    # ORIGINAL MATRIXES;
+    createSubplot(fig, 331, a_name, ma, heatmapLabels, True)
+    createSubplot(fig, 333, b_name, mb, heatmapLabels, True)
+
+    # REORDERED MATRIXES;
+    createSubplot(fig, 337, a_name, ma, heatmapLabels, False)
+    createSubplot(fig, 339, b_name, mb, heatmapLabels, False)
+
+    # BUILD SHOWN INFO;
+    Title = [
+        "Distance = %ibp" % (abs(data[0].PositionStart - data[1].PositionStart)),
+        "%s vs %s" % (a_name, b_name),
+        "Mantel=%.4f     p=%.4f" % (d["mantel"], d["mantel_p"]),
+        "DIFF=%i" % d["matrix_ranking_diff"],
+        " "
+    ]
+
+    Title = "\n".join(Title)
+
+    ax_t = fig.add_subplot(335)
+
+    ax_t.text(-0.2,
+              0.6,
+              s=Title,
+              clip_on=False
+    )
+    ax_t.axis("off")
+
+    plt.title("")
+    # plt.tight_layout()
+
+    # plt.show()
+    return fig
+
+
 if __name__ == "__main__":
     last = None
+    parser = OptionParser()
+
+    parser.add_option("-i",
+                      dest="inputDirectory")
+
+    options, args = parser.parse_args()
+
+
+    PrimerFilePath = os.path.join(options.inputDirectory, "PrimerData.csv")
+    PWMFilePath = os.path.join(options.inputDirectory, "PWMAnalysis.csv")
+
+    PrimerData = pd.read_csv(PrimerFilePath)
+    PWMData = pd.read_csv(PWMFilePath)
+
 
     # FETCH ORIGINAL HEATMAP GENOME LABELS;
     heatmapLabelsFilePath = os.path.join(
@@ -108,77 +232,12 @@ if __name__ == "__main__":
     heatmapLabels = np.load(heatmapLabelsFilePath)
 
     # ITERATE PWM ANALYSIS DATA;
+    viewer = matrixViewer(PWMData, plotPwmIndex)
+    """
     for P in range(PWMData.shape[0]):
 
-        d = PWMData.iloc[P]
-        a = d["Unnamed: 0"]
-        b = d["Unnamed: 1"]
-
-        # walk loci by loci mode.
         if a == last:
             continue
 
-        # EXTRACR LOCUS NAMES;
-        a_name, b_name = fixArrayFilename(a), fixArrayFilename(b)
-
-        try:
-            data = [
-                PrimerData[PrimerData.Locus == name.replace("LOCI_", "")].iloc[0]
-                for name in [a_name, b_name]
-            ]
-        except IndexError:
-            print("Failure on %s" % a_name)
-            continue
-
-        # LOAD MATRIX DATA;
-        ma = np.load(buildArrayPath(a))
-        mb = np.load(buildArrayPath(b))
-
-        # INITIALIZE PLOT FIGURE;
-        fig = plt.figure()
-
-        # ORIGINAL MATRIXES;
-        createSubplot(fig, 331, a_name, ma, heatmapLabels, True)
-        createSubplot(fig, 333, b_name, mb, heatmapLabels, True)
-
-        # REORDERED MATRIXES;
-        createSubplot(fig, 337, a_name, ma, heatmapLabels, False)
-        createSubplot(fig, 339, b_name, mb, heatmapLabels, False)
-
-        # BUILD SHOWN INFO;
-        Title = [
-            "Distance = %ibp" % (abs(data[0].PositionStart - data[1].PositionStart)),
-            "%s vs %s" % (a_name, b_name),
-            "Mantel=%.4f     p=%.4f" % (d["mantel"], d["mantel_p"]),
-            "DIFF=%i" % d["matrix_ranking_diff"],
-            " "
-        ]
-
-        Title = "\n".join(Title)
-
-        ax_t = fig.add_subplot(335)
-
-        ax_t.text(-0.2,
-                  0.6,
-                  s=Title,
-                  clip_on=False
-        )
-        ax_t.axis("off")
-
-        plt.title("")
-        # plt.tight_layout()
-
-        plt.show()
-
         last = a
-
-
-    """
-    for P in range(PrimerData.shape[0]):
-        if not P % 2:
-            Primer = PrimerData.iloc[P]
-            matrixFile = os.path.join(options.inputDirectory,
-                                      "LOCI_%s.aln.pdf" % Primer["Locus"])
-
-            subprocess.run(["okular", matrixFile])
     """

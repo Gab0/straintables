@@ -98,16 +98,21 @@ if __name__ == "__main__":
 
         overallProgress = (i + 1, lociPrimerList.shape[0])
         LocusAmpliconSet, matchSuccess, primerPair =\
-            PrimerEngine.PrimerDock.matchLocusOnGenomes(locus_name,
-                                                        locus_info,
-                                                        genomes,
-                                                        overallProgress)
+            PrimerEngine.PrimerDock.matchLocusOnGenomes(
+                locus_name,
+                locus_info,
+                genomes,
+                overallProgress
+            )
 
         if LocusAmpliconSet is not None:
-            # record amplicon and primer data;
-            AllLociAmpliconSet[locus_name] = LocusAmpliconSet
-            matchedPrimerSequences.append(primerPair)
-            AllLociPrimerSet[locus_name] = matchSuccess
+            if PrimerEngine.PrimerDock.evaluateSetOfAmplicons(LocusAmpliconSet):
+                # record amplicon and primer data;
+                AllLociAmpliconSet[locus_name] = LocusAmpliconSet
+                matchedPrimerSequences.append(primerPair)
+                AllLociPrimerSet[locus_name] = matchSuccess
+            else:
+                print("Bad Amplicon set for %s! Ignoring...." % locus_name)
 
     # SHOW AMPLICON DATABASE;
     print(json.dumps(AllLociAmpliconSet, indent=2))

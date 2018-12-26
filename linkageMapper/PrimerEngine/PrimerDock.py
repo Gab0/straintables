@@ -266,3 +266,16 @@ def matchLocusOnGenomes(locus_name, locus_info,
         # IF IT FAILS ENOUGH, SKIP LOCUS;
         elif RebootCount > rebootTolerance:
             return None, None, None
+
+
+def evaluateSetOfAmplicons(LocusAmpliconSet):
+    allLengths = []
+    for genome in LocusAmpliconSet.keys():
+        length = len(LocusAmpliconSet[genome])
+        allLengths.append(length)
+
+    std = np.std(allLengths) / np.mean(allLengths)
+    if std > 0.4:
+        return False
+
+    return True
