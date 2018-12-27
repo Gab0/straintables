@@ -24,9 +24,10 @@ from matplotlib.backends.backend_gtk3 import (
 
 
 class matrixViewer():
-    def __init__(self, PWMData, drawPlotIndex):
+    def __init__(self, PWMData, drawPlotIndex, allowedIndexes):
         self.PWMData = PWMData
         self.drawPlot = drawPlotIndex
+        self.allowedIndexes = allowedIndexes
 
         win = Gtk.Window()
         win.connect("destroy", lambda x: Gtk.main_quit())
@@ -51,7 +52,7 @@ class matrixViewer():
         self.toolbar.back = self.nav_back
         self.toolbar.set_history_buttons()
 
-        buttonBox = Gtk.HBox(True, 2)
+        buttonBox = Gtk.HBox(homogeneous=True, spacing=2)
         self.btn_back = Gtk.Button(label="<")
         self.btn_back.connect("clicked", self.nav_back)
         self.btn_next = Gtk.Button(label=">")
@@ -66,14 +67,23 @@ class matrixViewer():
         win.show_all()
         Gtk.main()
 
+    def cycleIndexes(self, amt):
+        self.index += amt
+
+        while self.index not in self.allowedIndexes:
+            self.index += amt
+            if self.index > max(self.allowedIndexes):
+                self.index = min(self.allowedIndexes)
+
     def nav_forward(self, d):
-        self.change(self.index+1)
-        self.index += 1
+        self.cycleIndexes(1)
+        self.changeView(self.index)
 
-    def nav_back(self):
-        pass
+    def nav_back(self, d):
+        self.cycleIndexes(-1)
+        self.changeView(self.index)
 
-    def change(self, I):
+    def changeView(self, I):
         self.figure.clf()
         self.drawPlot(self.figure, self.PWMData, I)
         self.figurecanvas.draw()
@@ -231,13 +241,15 @@ if __name__ == "__main__":
     )
     heatmapLabels = np.load(heatmapLabelsFilePath)
 
-    # ITERATE PWM ANALYSIS DATA;
-    viewer = matrixViewer(PWMData, plotPwmIndex)
-    """
-    for P in range(PWMData.shape[0]):
-
+    # FETCH VIEWABLE DATA INDEXES;
+    allowedIndexes = []
+    for I in range(PWMData.shape[0]):
+        d = PWMData.iloc[I]
+        a = d["Unnamed: 0"]
         if a == last:
             continue
-
+        allowedIndexes.append(I)
         last = a
-    """
+
+    # ITERATE PWM ANALYSIS DATA;
+    viewer = matrixViewer(PWMData, plotPwmIndex, allowedIndexes)

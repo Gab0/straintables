@@ -45,7 +45,9 @@ for d, D in enumerate(Distances):
     allResults.append(res)
     print("\n")
 
-PWM = skdist.pwmantel(Distances)
+print("Executing PWMantel analysis...")
+
+PWM = skdist.pwmantel(Distances, permutations=0)
 PWM_Index_Indices = [(x[0], x[1]) for x in PWM.index]
 PWM_Index_Labels = [(arrayFiles[x[0]], arrayFiles[x[1]]) for x in PWM.index]
 PWM.index = pd.MultiIndex.from_tuples(PWM_Index_Labels)
@@ -112,6 +114,8 @@ print(PWM.to_string())
 for IFA, IFB in PWM_Index_Indices:
     pass
 
+
+print("Writing output files...")
 # WRITE OUTPUT PWM FILE;
 pwmPath = os.path.join(options.inputDirectory, "PWMAnalysis.csv")
 PWM.to_csv(pwmPath)

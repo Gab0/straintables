@@ -44,8 +44,9 @@ echo ""
 if [ $DO_AMPLICON = 1 ];
 then
     if python linkageMapper/primerFinder.py \
-              -r Primers/"${PRIMER_CODE}".csv \
-              -o "${OUTPUT_DIR}" -p;
+              -i Primers/"${PRIMER_CODE}".csv \
+              -o "${OUTPUT_DIR}" -p \
+              -r "${LOCI[0]}"
     then
         echo "Proceeding analysis..."
     else
@@ -56,7 +57,7 @@ fi
 
 # THIS GETS ALL LOCI NAMES FROM .csv PRIMER DESCRIPTOR!
 # WORKS LIKE THIS -> LOCI=(SAG2 ROP32 BIN3)
-readarray -t LOCI < <(cat "${OUTPUT_DIR}"/"${PRIMER_CODE}"_real.csv|awk -F"," '{print $1}'|tail -n +2)
+readarray -t LOCI < <(cat "${OUTPUT_DIR}"/MatchedPrimers.csv|awk -F"," '{print $1}'|tail -n +2)
 
 CLONAL=$3
 
@@ -70,56 +71,52 @@ fi
 for _L in "${LOCI[@]}"
 do
     OUTPUT_FILE_PREFIX="${OUTPUT_DIR}/LOCI_${_L}"
-    if python linkageMapper/makeMultifasta.py \
-              -l "${_L}" \
-              -r "${LOCI[0]}" \
-              -i "${OUTPUT_DIR}"/Sequences.csv
+
+    # DEPRECATED;
+    # python linkageMapper/makeMultifasta.py -i "${OUTPUT_DIR}/Sequences.csv" -l $_L
+
+    echo "Running alignment for ${OUTPUT_FILE_PREFIX}"
+    echo ""
+    if [ $DO_ALIGNMENT = 1 ];
     then
-        echo "Running alignment for ${OUTPUT_FILE_PREFIX}"
-        echo ""
-        if [ $DO_ALIGNMENT = 1 ];
+        if [ $ALNMODE = "tcoffee" ];
         then
-            if [ $ALNMODE = "tcoffee" ];
-            then
-                tcoffee -in "${OUTPUT_FILE_PREFIX}".fasta -out "${OUTPUT_DIR}"
-            fi
-
-            if [ $ALNMODE = "clustal" ] || [ -z $ALNMODE ];
-            then
-               clustalw2 \
-                   -INFILE="./${OUTPUT_FILE_PREFIX}".fasta \
-                   -OUTFILE="${OUTPUT_FILE_PREFIX}".aln
-               #2>>"${OUTPUT_DIR}/clustal_warnings.txt"
-            fi
-
-            if [ $ALNMODE = "muscle" ];
-            then
-                muscle -in "${OUTPUT_FILE_PREFIX}".fasta -out "${OUTPUT_FILE_PREFIX}".aln
-            fi
-        fi
-        # BUILD TREE;
-        echo "Building tree...."
-        if clustalw2 -INFILE="${OUTPUT_FILE_PREFIX}".aln -tree;
-        then
-            echo "Tree built."
-            echo ""
-            echo ""
-        else
-            echo "Tree fails."
-            exit
+            tcoffee -in "${OUTPUT_FILE_PREFIX}".fasta -out "${OUTPUT_DIR}"
         fi
 
-        # POST-ALIGN ANALYSIS;
-        python linkageMapper/DrawGraphics/drawTree.py \
-               -i "${OUTPUT_FILE_PREFIX}".ph \
-               -o "${OUTPUT_FILE_PREFIX}".pdf
+        if [ $ALNMODE = "clustal" ] || [ -z $ALNMODE ];
+        then
+            clustalw2 \
+                -INFILE="./${OUTPUT_FILE_PREFIX}".fasta \
+                -OUTFILE="${OUTPUT_FILE_PREFIX}".aln
+            #2>>"${OUTPUT_DIR}/clustal_warnings.txt"
+        fi
 
-        python linkageMapper/detectMutations.py \
-               -i "${OUTPUT_FILE_PREFIX}".aln \
-               "${EXPLICIT_CLONAL}"
-    else
-        echo "Invalid amplicon for ${_L}"
+        if [ $ALNMODE = "muscle" ];
+        then
+            muscle -in "${OUTPUT_FILE_PREFIX}".fasta -out "${OUTPUT_FILE_PREFIX}".aln
+        fi
     fi
+    # BUILD TREE;
+    echo "Building tree...."
+    if clustalw2 -INFILE="${OUTPUT_FILE_PREFIX}".aln -tree;
+    then
+        echo "Tree built."
+        echo ""
+        echo ""
+    else
+        echo "Tree fails."
+        exit
+    fi
+
+    # POST-ALIGN ANALYSIS;
+    python linkageMapper/DrawGraphics/drawTree.py \
+           -i "${OUTPUT_FILE_PREFIX}".ph \
+           -o "${OUTPUT_FILE_PREFIX}".pdf
+
+    python linkageMapper/detectMutations.py \
+           -i "${OUTPUT_FILE_PREFIX}".aln \
+           "${EXPLICIT_CLONAL}"
 done
 
 #SIMILARITY MATRIX DIFFERENCES;

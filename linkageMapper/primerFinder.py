@@ -10,7 +10,7 @@ import pandas as pd
 from collections import OrderedDict
 
 from Bio.SeqFeature import SeqFeature, FeatureLocation
-from Bio import SeqIO
+from Bio import Seq, SeqIO
 
 import PrimerEngine
 
@@ -27,16 +27,70 @@ parser.add_option("-l",
                   dest="WantedLoci",
                   default="")
 
-parser.add_option("-r",
+parser.add_option("-i",
                   dest="primerFile")
 
 parser.add_option("-o",
                   dest="outputPath")
 
+parser.add_option("-r",
+                  "--locusref",
+                  dest="LocusReference")
+
+parser.add_option("-w",
+                  "--rewrite",
+                  dest="RewriteFasta")
 options, args = parser.parse_args()
 
 
+class clonalTypeReference():
+    def __init__(self):
+        self.genotypeData = pd.read_csv("genomes_haplogroups.csv")
+        self.rflpGenotypes = pd.read_csv("genotypes.csv")
+
+    def getGenotypeNumber(self, name):
+        found = self.genotypeData[self.genotypeData.Genome == name]
+        GenotypeNumber = found.iloc[0].ToxoDB
+
+        return GenotypeNumber
+
+    def getRFLPLocus(self, genotypeNumber, referenceLocus):
+
+        found = self.rflpGenotypes[
+            self.rflpGenotypes.Genotype == genotypeNumber]
+        RFLPLocus = found.iloc[0][referenceLocus]
+        return RFLPLocus
+
+
+def writeFastaFile(outputPath, locusName, locusSequences):
+    fastaSequences = []
+
+    for genome in locusSequences.keys():
+        Name = genome + ".fasta"
+        try:
+            REF = options.LocusReference
+            referenceLocus = REF if REF else options.LocusName
+
+            GN = clonalReference.getGenotypeNumber(Name)
+            RFLPLocus = clonalReference.getRFLPLocus(GN, REF)
+            Name += "___%s" % RFLPLocus
+            print("Loci data found for %s" % Name)
+        except Exception as e:
+            pass
+
+        sequence = SeqIO.SeqRecord(Seq.Seq(locusSequences[genome]),
+                                   id=genome, name=genome, description="")
+        fastaSequences.append(sequence)
+
+    with open(outputPath, "w") as output_handle:
+        SeqIO.write(fastaSequences, output_handle, "fasta")
+
+
 if __name__ == "__main__":
+
+    # LOAD CLONAL TYPE LOCUS INFORMATION (Su et al.);
+    clonalReference = clonalTypeReference()
+
     # CHECK DECLARATION OF PRIMER FILE;
     if not options.primerFile:
         print("FATAL: No primer file specified.")
@@ -89,6 +143,13 @@ if __name__ == "__main__":
         locus_info = lociPrimerList.iloc[i]
         locus_name = locus_info["LocusName"]
 
+        # ASSIGN OUTPUT FASTA FILE NAME AND CHECK IF EXISTS;
+        outputFastaName = "LOCI_%s.fasta" % locus_name
+
+        outputFastaPath = os.path.join(options.outputPath, outputFastaName)
+        if os.path.isfile(outputFastaName):
+            print("Skipping locus %s. Already exists..." % locus_name)
+
         # MAYBE WE WANT TO SKIP GIVEN LOCUS?
         if options.WantedLoci:
             WantedLoci = options.WantedLoci.split(',')
@@ -108,7 +169,8 @@ if __name__ == "__main__":
         if LocusAmpliconSet is not None:
             if PrimerEngine.PrimerDock.evaluateSetOfAmplicons(LocusAmpliconSet):
                 # record amplicon and primer data;
-                AllLociAmpliconSet[locus_name] = LocusAmpliconSet
+                # AllLociAmpliconSet[locus_name] = LocusAmpliconSet
+                writeFastaFile(outputFastaPath, locus_name, LocusAmpliconSet)
                 matchedPrimerSequences.append(primerPair)
                 AllLociPrimerSet[locus_name] = matchSuccess
             else:
@@ -117,6 +179,7 @@ if __name__ == "__main__":
     # SHOW AMPLICON DATABASE;
     print(json.dumps(AllLociAmpliconSet, indent=2))
 
+    """
     # BUILD OUTPUT AMPLICON DATABASE;
     LOCI_SEQUENCE_DATA = []
     data_columns = ["Genome"]
@@ -145,10 +208,10 @@ if __name__ == "__main__":
     outputPath = os.path.join(options.outputPath, "Sequences.csv")
     data = pd.DataFrame(LOCI_SEQUENCE_DATA, columns=data_columns)
     data.to_csv(outputPath, index=False)
+    """
 
     # BUILD MATCHED PRIMER DATABASE;
-    outputFile = os.path.splitext(os.path.basename(options.primerFile))[0] + "_real.csv"
-    outputFilePath = os.path.join(options.outputPath, outputFile)
+    outputFilePath = os.path.join(options.outputPath, "MatchedPrimers.csv")
     data = pd.DataFrame(matchedPrimerSequences,
                         columns=["LocusName", *PrimerTypes, "RebootCount"])
     data.to_csv(outputFilePath, index=False)
