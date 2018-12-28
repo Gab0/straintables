@@ -107,7 +107,8 @@ def searchPrimerPairOnGenome(locusName, primerPair, genome):
         except ValueError:
             return "", [False, False]
 
-        return amplicon.Sequence, (matchedPrimers[PrimerTypes[0]], matchedPrimers[PrimerTypes[1]])
+        mp = (matchedPrimers[PrimerTypes[0]], matchedPrimers[PrimerTypes[1]])
+        return amplicon.Sequence, mp
     else:
         return "", matchSuccess
 
@@ -270,9 +271,27 @@ def matchLocusOnGenomes(locus_name, locus_info,
 
 def evaluateSetOfAmplicons(LocusAmpliconSet):
     allLengths = []
+    allUknownBasePercentages = []
+
+    # ITERATE AMPLICONS;
     for genome in LocusAmpliconSet.keys():
+        # MEASURE AMPLICON LENGHTS
         length = len(LocusAmpliconSet[genome])
         allLengths.append(length)
 
+        # MEASURE AMPLICON UKNOWN BASES;
+        ns = [base for base in LocusAmpliconSet[genome] if base in ['N', 'n']]
+        pct = len(ns) / length * 100
+        allUknownBasePercentages.append(pct)
+
     std = np.std(allLengths) / np.mean(allLengths)
-    return std
+
+    lenDiff = max(allLengths) - min(allLengths) / np.mean(allLengths)
+
+    # Compute Score;
+    Score = 100
+    Score -= lenDiff * 5
+    Score -= sum(allUknownBasePercentages)
+    Score = max(0, Score)
+
+    return Score

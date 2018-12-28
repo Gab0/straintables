@@ -172,7 +172,7 @@ if __name__ == "__main__":
             # AllLociAmpliconSet[locus_name] = LocusAmpliconSet
             writeFastaFile(outputFastaPath, locus_name, LocusAmpliconSet)
 
-            primerPair["Quality"] = score
+            primerPair["AlignmentHealth"] = score
             matchedPrimerSequences.append(primerPair)
             AllLociPrimerSet[locus_name] = matchSuccess
             # print("Bad Amplicon set for %s! Ignoring...." % locus_name)
@@ -180,41 +180,13 @@ if __name__ == "__main__":
     # SHOW AMPLICON DATABASE;
     print(json.dumps(AllLociAmpliconSet, indent=2))
 
-    """
-    # BUILD OUTPUT AMPLICON DATABASE;
-    LOCI_SEQUENCE_DATA = []
-    data_columns = ["Genome"]
-
-    # TRANPOSE AMPLICON DATABASE!
-    TALAS = {}
-    for Loci in AllLociAmpliconSet.keys():
-        for Genome in AllLociAmpliconSet[Loci].keys():
-            if Genome not in TALAS.keys():
-                TALAS[Genome] = {}
-            TALAS[Genome][Loci] = AllLociAmpliconSet[Loci][Genome]
-
-    AllLociAmpliconSet = TALAS
-
-    for Genome in AllLociAmpliconSet.keys():
-        row = {
-            "Genome": Genome
-        }
-        for locus in AllLociAmpliconSet[Genome].keys():
-            row[locus] = AllLociAmpliconSet[Genome][locus]
-            if locus not in data_columns:
-                data_columns.append(locus)
-        LOCI_SEQUENCE_DATA.append(row)
-
-    # BUILD OUTPUT AMPLICON DATABASE PATH AND SAVE.
-    outputPath = os.path.join(options.outputPath, "Sequences.csv")
-    data = pd.DataFrame(LOCI_SEQUENCE_DATA, columns=data_columns)
-    data.to_csv(outputPath, index=False)
-    """
-
     # BUILD MATCHED PRIMER DATABASE;
     outputFilePath = os.path.join(options.outputPath, "MatchedPrimers.csv")
     data = pd.DataFrame(matchedPrimerSequences,
-                        columns=["LocusName", *PrimerTypes, "RebootCount", "Quality"])
+                        columns=["LocusName",
+                                 *PrimerTypes,
+                                 "RebootCount",
+                                 "Quality"])
     data.to_csv(outputFilePath, index=False)
 
     # Primer Maps on Guide Genome:

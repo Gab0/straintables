@@ -163,6 +163,29 @@ def createSubplot(fig, position, name, matrix, labels):
     new_ax.set_xlabel(name)
 
 
+def singleLocusStatus(axis, locus_name):
+    Info = "Sequence Health: %.2f%%"
+    Health = MatchData[MatchData.LocusName == locus_name].iloc[0].AlignmentHealth
+
+    colorRanges = {
+        "red": (0, 50),
+        "yellow": (51, 70),
+        "green": (71, 100)
+    }
+
+    for anycolor in colorRanges.keys():
+        v = colorRanges[anycolor]
+        if v[0] <= Health <= v[1]:
+            color = anycolor
+
+    axis.text(-0.2,
+              0.6,
+              s=Info % Health,
+              clip_on=False, color=color, fontsize=15)
+    
+    axis.axis("off")
+
+
 def plotPwmIndex(fig, PWMData, I):
     d = PWMData.iloc[I]
     a = d["Unnamed: 0"]
@@ -222,6 +245,13 @@ def plotPwmIndex(fig, PWMData, I):
 
     ax_t.axis("off")
 
+    # ALIGNMENT HEALTH INFORMATION FIGURE;
+    ax_ha = fig.add_subplot(334)
+    ax_hb = fig.add_subplot(336)
+
+    singleLocusStatus(ax_ha, a_name)
+    singleLocusStatus(ax_hb, b_name)
+
     plt.title("")
 
     return fig
@@ -237,10 +267,13 @@ if __name__ == "__main__":
     options, args = parser.parse_args()
 
     PrimerFilePath = os.path.join(options.inputDirectory, "PrimerData.csv")
+    MatchedPrimerFilePath = os.path.join(options.inputDirectory, "MatchedPrimers.csv")
     PWMFilePath = os.path.join(options.inputDirectory, "PWMAnalysis.csv")
 
+    # LOAD RELEVANT DATABASES;
     PrimerData = pd.read_csv(PrimerFilePath)
     PWMData = pd.read_csv(PWMFilePath)
+    MatchData = pd.read_csv(MatchedPrimerFilePath)
 
     # FETCH ORIGINAL HEATMAP GENOME LABELS;
     heatmapLabelsFilePath = os.path.join(
