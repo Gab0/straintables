@@ -3,7 +3,7 @@
 
 PRIMER_CODE=$1
 
-OUTPUT_DIR="Alignments/${PRIMER_CODE}"
+OUTPUT_DIR="analysisResults/${PRIMER_CODE}"
 
 mkdir -p "${OUTPUT_DIR}"
 

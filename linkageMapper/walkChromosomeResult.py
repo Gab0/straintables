@@ -221,18 +221,16 @@ if __name__ == "__main__":
     last = None
     parser = OptionParser()
 
-    parser.add_option("-i",
+    parser.add_option("-d",
                       dest="inputDirectory")
 
     options, args = parser.parse_args()
-
 
     PrimerFilePath = os.path.join(options.inputDirectory, "PrimerData.csv")
     PWMFilePath = os.path.join(options.inputDirectory, "PWMAnalysis.csv")
 
     PrimerData = pd.read_csv(PrimerFilePath)
     PWMData = pd.read_csv(PWMFilePath)
-
 
     # FETCH ORIGINAL HEATMAP GENOME LABELS;
     heatmapLabelsFilePath = os.path.join(

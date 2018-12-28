@@ -18,8 +18,11 @@ if not options.inputDirectory:
     exit(1)
 
 # LOAD RESULT FILES;
-allFiles = os.listdir(options.inputDirectory)
-arrayFiles = [File for File in allFiles if File.endswith(".aln.npy")]
+matchedLociData = pd.read_csv(os.path.join(options.inputDirectory,
+                                           "MatchedPrimers.csv"))
+matchedLoci = matchedLociData["LocusName"]
+
+arrayFiles = ["LOCI_%s.aln.npy" % Locus for Locus in matchedLoci]
 
 arrayFilePaths = [os.path.join(options.inputDirectory, File)
                   for File in arrayFiles]
