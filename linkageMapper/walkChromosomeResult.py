@@ -23,6 +23,7 @@ from matplotlib.backends.backend_gtk3 import (
     NavigationToolbar2GTK3 as NavigationToolbar)
 
 
+# COMPLEX DISSIMILARITY MATRIX VIEWER GTK APPLICATION;
 class matrixViewer():
     def __init__(self, PWMData, drawPlotIndex, allowedIndexes):
         self.PWMData = PWMData
@@ -43,7 +44,6 @@ class matrixViewer():
         self.drawPlot(self.figure, self.PWMData, 0)
 
         self.figurecanvas = FigureCanvas(self.figure)  # a Gtk.DrawingArea
-        self.figurecanvas.mpl_connect('button_press_event', self.nav_forward)
         self.index = 0
 
         vbox.pack_start(self.figurecanvas, True, True, 0)
@@ -117,6 +117,16 @@ def seriation(Z, N, cur_index):
         return (seriation(Z, N, left) + seriation(Z, N, right))
 
 
+def reorderMatrix(original_matrix, res_order):
+    N = len(original_matrix)
+    reordered_matrix = np.zeros((N, N))
+
+    a, b = np.triu_indices(N, k=1)
+    reordered_matrix[a, b] = original_matrix[[res_order[i] for i in a], [res_order[j] for j in b]]
+    reordered_matrix[b, a] = reordered_matrix[a, b]
+    return reordered_matrix
+
+
 def compute_serial_matrix(dist_mat, method="ward"):
     '''
         input:
@@ -139,20 +149,14 @@ def compute_serial_matrix(dist_mat, method="ward"):
     flat_dist_mat = scipy.spatial.distance.squareform(dist_mat)
     res_linkage = fastcluster.linkage(flat_dist_mat, method=method, preserve_input=True)
     res_order = seriation(res_linkage, N, N + N-2)
-    seriated_dist = np.zeros((N, N))
-    a, b = np.triu_indices(N, k=1)
-    seriated_dist[a, b] = dist_mat[ [res_order[i] for i in a], [res_order[j] for j in b]]
-    seriated_dist[b, a] = seriated_dist[a, b]
+
+    seriated_dist = reorderMatrix(dist_mat, res_order)
 
     return seriated_dist, res_order, res_linkage
 
 
-def createSubplot(fig, position, name, matrix, labels, Reorder):
+def createSubplot(fig, position, name, matrix, labels):
     new_ax = fig.add_subplot(position)
-    if Reorder:
-        # REORDER MATRIX
-        matrix, matrix_order, B = compute_serial_matrix(matrix, method="complete")
-        labels = heatmapLabels[matrix_order]
 
     detectMutations.heatmapToAxis(matrix, new_ax, labels=labels)
 
@@ -181,18 +185,24 @@ def plotPwmIndex(fig, PWMData, I):
     ma = np.load(buildArrayPath(a))
     mb = np.load(buildArrayPath(b))
 
+    # REORDERED MATRIXES;
+    ordered_ma, matrix_order, B = compute_serial_matrix(ma, method="complete")
+    ordered_mb = reorderMatrix(mb, matrix_order)
+    orderedLabels = heatmapLabels[matrix_order]
+
+    # plot;
+    createSubplot(fig, 331, a_name, ordered_ma, orderedLabels)
+    createSubplot(fig, 333, b_name, ordered_mb, orderedLabels)
 
     # ORIGINAL MATRIXES;
-    createSubplot(fig, 331, a_name, ma, heatmapLabels, True)
-    createSubplot(fig, 333, b_name, mb, heatmapLabels, True)
-
-    # REORDERED MATRIXES;
-    createSubplot(fig, 337, a_name, ma, heatmapLabels, False)
-    createSubplot(fig, 339, b_name, mb, heatmapLabels, False)
+    # plot;
+    createSubplot(fig, 337, a_name, ma, heatmapLabels)
+    createSubplot(fig, 339, b_name, mb, heatmapLabels)
 
     # BUILD SHOWN INFO;
+    distance = abs(data[0].PositionStart - data[1].PositionStart)
     Title = [
-        "Distance = %ibp" % (abs(data[0].PositionStart - data[1].PositionStart)),
+        "Distance = {:,} bp".format(distance),
         "%s vs %s" % (a_name, b_name),
         "Mantel=%.4f     p=%.4f" % (d["mantel"], d["mantel_p"]),
         "DIFF=%i" % d["matrix_ranking_diff"],
@@ -201,6 +211,7 @@ def plotPwmIndex(fig, PWMData, I):
 
     Title = "\n".join(Title)
 
+    # ADDITIONAL INFORMATION FIGURE;
     ax_t = fig.add_subplot(335)
 
     ax_t.text(-0.2,
@@ -208,12 +219,11 @@ def plotPwmIndex(fig, PWMData, I):
               s=Title,
               clip_on=False
     )
+
     ax_t.axis("off")
 
     plt.title("")
-    # plt.tight_layout()
 
-    # plt.show()
     return fig
 
 
@@ -249,5 +259,5 @@ if __name__ == "__main__":
         allowedIndexes.append(I)
         last = a
 
-    # ITERATE PWM ANALYSIS DATA;
+    # SHOW DATA;
     viewer = matrixViewer(PWMData, plotPwmIndex, allowedIndexes)

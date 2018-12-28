@@ -200,7 +200,7 @@ def matchLocusOnGenomes(locus_name, locus_info,
             AmpliconSequence, matchSuccess =\
                 searchPrimerPairOnGenome(locus_name, primerPair, Genome)
 
-            print(matchSuccess)
+            # print(matchSuccess)
 
         # FAILURE ON MATCHING A PRIMER?
         if not all(matchSuccess):
@@ -275,7 +275,4 @@ def evaluateSetOfAmplicons(LocusAmpliconSet):
         allLengths.append(length)
 
     std = np.std(allLengths) / np.mean(allLengths)
-    if std > 0.4:
-        return False
-
-    return True
+    return std

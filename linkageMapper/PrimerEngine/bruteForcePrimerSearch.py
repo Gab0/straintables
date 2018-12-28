@@ -87,7 +87,7 @@ def launchBruteForcePrimerSearch(locus_name, chromosomes, Reverse):
 
 
 def findPrimerBruteForce(genome, gene_sequence,
-                         Reverse=False, maximumPrimerCount=36):
+                         Reverse=False, maximumPrimerCount=36, Verbose=False):
     PRIMER_LENGTH = 20
     SEARCH_STEP = 5
 
@@ -112,11 +112,13 @@ def findPrimerBruteForce(genome, gene_sequence,
         for c, _chr in enumerate(genome):
             matches, sequenceVariationName = PrimerDock.findPrimer(_chr, primer_sequence)
             if len(matches) > 1:
-                print("Leak.")
+                if Verbose:
+                    print("Leak.")
                 continue
             if matches:
-                print(matches[0][0].upper())
-                print(sequenceVariationName)
+                if Verbose:
+                    print(matches[0][0].upper())
+                    print(sequenceVariationName)
                 foundPrimers.append(matches[0])
                 if len(foundPrimers) > maximumPrimerCount:
                     return foundPrimers

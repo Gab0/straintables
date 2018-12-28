@@ -167,14 +167,15 @@ if __name__ == "__main__":
             )
 
         if LocusAmpliconSet is not None:
-            if PrimerEngine.PrimerDock.evaluateSetOfAmplicons(LocusAmpliconSet):
-                # record amplicon and primer data;
-                # AllLociAmpliconSet[locus_name] = LocusAmpliconSet
-                writeFastaFile(outputFastaPath, locus_name, LocusAmpliconSet)
-                matchedPrimerSequences.append(primerPair)
-                AllLociPrimerSet[locus_name] = matchSuccess
-            else:
-                print("Bad Amplicon set for %s! Ignoring...." % locus_name)
+            score = PrimerEngine.PrimerDock.evaluateSetOfAmplicons(LocusAmpliconSet)
+            # record amplicon and primer data;
+            # AllLociAmpliconSet[locus_name] = LocusAmpliconSet
+            writeFastaFile(outputFastaPath, locus_name, LocusAmpliconSet)
+
+            primerPair["Quality"] = score
+            matchedPrimerSequences.append(primerPair)
+            AllLociPrimerSet[locus_name] = matchSuccess
+            # print("Bad Amplicon set for %s! Ignoring...." % locus_name)
 
     # SHOW AMPLICON DATABASE;
     print(json.dumps(AllLociAmpliconSet, indent=2))
@@ -213,7 +214,7 @@ if __name__ == "__main__":
     # BUILD MATCHED PRIMER DATABASE;
     outputFilePath = os.path.join(options.outputPath, "MatchedPrimers.csv")
     data = pd.DataFrame(matchedPrimerSequences,
-                        columns=["LocusName", *PrimerTypes, "RebootCount"])
+                        columns=["LocusName", *PrimerTypes, "RebootCount", "Quality"])
     data.to_csv(outputFilePath, index=False)
 
     # Primer Maps on Guide Genome:
