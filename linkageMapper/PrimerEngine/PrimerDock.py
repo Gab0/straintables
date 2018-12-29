@@ -9,15 +9,18 @@ from Bio.Seq import Seq
 
 from . import GeneticEntities
 from . import bruteForcePrimerSearch
-"""
-
-findPrimer:
-returns the list of matched primers along with the sequence modification on the primer that resulted in match.
-
-"""
 
 
 PrimerTypes = ["ForwardPrimer", "ReversePrimer"]
+
+
+"""
+
+findPrimer(string, string):
+returns the list of matched primers along with the sequence modification
+ on the primer that resulted in match.
+
+"""
 
 
 def findPrimer(genome_segment, primer_sequence):
@@ -286,12 +289,12 @@ def evaluateSetOfAmplicons(LocusAmpliconSet):
 
     std = np.std(allLengths) / np.mean(allLengths)
 
-    lenDiff = max(allLengths) - min(allLengths) / np.mean(allLengths)
+    lenDiff = (max(allLengths) - min(allLengths)) / np.mean(allLengths)
 
     # Compute Score;
     Score = 100
-    Score -= lenDiff * 5
-    Score -= sum(allUknownBasePercentages)
+    Score -= lenDiff * 2
+    Score -= sum(allUknownBasePercentages) * 20
     Score = max(0, Score)
 
     return Score

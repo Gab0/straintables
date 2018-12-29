@@ -4,6 +4,8 @@ import os
 import pandas as pd
 import numpy as np
 
+import subprocess
+
 from optparse import OptionParser
 
 import matplotlib.pyplot as plt
@@ -64,6 +66,8 @@ class matrixViewer():
         vbox.pack_start(buttonBox, False, False, 0)
         vbox.pack_start(self.toolbar, False, False, 0)
 
+        cid = self.figurecanvas.mpl_connect('button_press_event', self.onclickCanvas)
+
         win.show_all()
         Gtk.main()
 
@@ -74,7 +78,7 @@ class matrixViewer():
             self.index += amt
             if self.index > max(self.allowedIndexes):
                 self.index = min(self.allowedIndexes)
-
+                
     def nav_forward(self, d):
         self.cycleIndexes(1)
         self.changeView(self.index)
@@ -88,6 +92,28 @@ class matrixViewer():
         self.drawPlot(self.figure, self.PWMData, I)
         self.figurecanvas.draw()
         self.figurecanvas.flush_events()
+
+    def onclickCanvas(self, event):
+        print(event)
+        if event.inaxes:
+            Data = self.PWMData.iloc[self.index]
+
+            bbox = self.figure.get_window_extent().transformed(
+                self.figure.dpi_scale_trans.inverted())
+            width, height = bbox.width*self.figure.dpi, bbox.height*self.figure.dpi
+
+            if event.x < width // 2:
+                KeyName = "Unnamed: 0"
+            else:
+                KeyName = "Unnamed: 1"
+
+            LocusName = Data[KeyName]
+            alignmentFilePath = os.path.join(options.inputDirectory,
+                                             LocusName.replace(".npy", ""))
+            command = ["aliview", alignmentFilePath]
+            print(command)
+
+            subprocess.run(command)
 
 
 def buildArrayPath(f):
@@ -164,25 +190,42 @@ def createSubplot(fig, position, name, matrix, labels):
 
 
 def singleLocusStatus(axis, locus_name):
-    Info = "Sequence Health: %.2f%%"
-    Health = MatchData[MatchData.LocusName == locus_name].iloc[0].AlignmentHealth
 
+    # FETCH HEALTH SCORE FOR LOCUS;
+    locus_identifier = locus_name.replace("LOCI_", "")
+    Health = MatchData[MatchData.LocusName == locus_identifier]
+    if not Health.empty:
+        Health = Health.iloc[0]["AlignmentHealth"]
+
+    # DECLARE DISPLAY COLORS;
     colorRanges = {
         "red": (0, 50),
-        "yellow": (51, 70),
+        "orange": (51, 70),
         "green": (71, 100)
     }
 
+    # SELECT DISPLAY COLORS;
     for anycolor in colorRanges.keys():
         v = colorRanges[anycolor]
         if v[0] <= Health <= v[1]:
             color = anycolor
 
+    # PRINT ADJACENT TEXT;
     axis.text(-0.2,
               0.6,
-              s=Info % Health,
-              clip_on=False, color=color, fontsize=15)
-    
+              s="Sequence Health:",
+              clip_on=False,
+              fontsize=12)
+
+    # PRINT COLORED HEALTH VALUE TEXT;
+    axis.text(0.4,
+              0.6,
+              s="%.2f%%" % Health,
+              clip_on=False,
+              color=color,
+              fontsize=15)
+
+    # DISABLE AXIS XY RULERS;
     axis.axis("off")
 
 
@@ -246,11 +289,12 @@ def plotPwmIndex(fig, PWMData, I):
     ax_t.axis("off")
 
     # ALIGNMENT HEALTH INFORMATION FIGURE;
-    ax_ha = fig.add_subplot(334)
-    ax_hb = fig.add_subplot(336)
+    if "AlignmentHealth" in MatchData.keys():
+        ax_ha = fig.add_subplot(334)
+        ax_hb = fig.add_subplot(336)
 
-    singleLocusStatus(ax_ha, a_name)
-    singleLocusStatus(ax_hb, b_name)
+        singleLocusStatus(ax_ha, a_name)
+        singleLocusStatus(ax_hb, b_name)
 
     plt.title("")
 

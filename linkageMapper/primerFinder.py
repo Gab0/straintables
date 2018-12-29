@@ -168,8 +168,9 @@ if __name__ == "__main__":
 
         if LocusAmpliconSet is not None:
             score = PrimerEngine.PrimerDock.evaluateSetOfAmplicons(LocusAmpliconSet)
+            print("\tAlignment Health = %.2f%%" % score)
+            print()
             # record amplicon and primer data;
-            # AllLociAmpliconSet[locus_name] = LocusAmpliconSet
             writeFastaFile(outputFastaPath, locus_name, LocusAmpliconSet)
 
             primerPair["AlignmentHealth"] = score
@@ -186,7 +187,7 @@ if __name__ == "__main__":
                         columns=["LocusName",
                                  *PrimerTypes,
                                  "RebootCount",
-                                 "Quality"])
+                                 "AlignmentHealth"])
     data.to_csv(outputFilePath, index=False)
 
     # Primer Maps on Guide Genome:

@@ -5,9 +5,9 @@ linkageMapper is a tool that helps evaluate the difference among gene loci acros
 It takes fully sequenced genomes for diverse strains of *T. gondii*, then find Amplicons inside a pair of Primers on those genomes.
 The primers may be user-defined or found by the software when a locus name but no primers are defined.
 <br>
-Then it counts the SNPs that diverge from the amplicons found, and builds one Dissimilarity Matrix for each gene/loci (Primer Pair) that shows how the genomes are different the amplicon regions.
+Then it counts the SNPs that diverge from the amplicons found, and builds one Dissimilarity Matrix for each Amplicon/Gene/Primer_Pair that shows how the genomes are different at those regions.
 <br>
-More analysis on the Dissimilarity Matrixes are carried, a step which is under construction.
+More statistical analysis on the Dissimilarity Matrixes are carried, mostly using python's `skbio` module. The interpretation of analysis is under construction.
 <br>
 By looking at a pair of D. Matrixes at a time, both corresponding to locus that are neighbors, the user may have an idea of the recombination frequence of the studied organism.
 
