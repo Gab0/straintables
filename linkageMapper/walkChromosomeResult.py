@@ -64,7 +64,13 @@ class matrixViewer():
         buttonBox.add(self.btn_next)
 
         vbox.pack_start(buttonBox, False, False, 0)
-        vbox.pack_start(self.toolbar, False, False, 0)
+
+        panelBox = Gtk.HBox(homogeneous=False, spacing=2)
+        infoText = Gtk.Label.new(options.inputDirectory)
+        panelBox.add(self.toolbar)
+        panelBox.add(infoText)
+
+        vbox.pack_start(panelBox, False, False, 0)
 
         cid = self.figurecanvas.mpl_connect('button_press_event', self.onclickCanvas)
 
@@ -78,7 +84,7 @@ class matrixViewer():
             self.index += amt
             if self.index > max(self.allowedIndexes):
                 self.index = min(self.allowedIndexes)
-                
+
     def nav_forward(self, d):
         self.cycleIndexes(1)
         self.changeView(self.index)
@@ -94,7 +100,7 @@ class matrixViewer():
         self.figurecanvas.flush_events()
 
     def onclickCanvas(self, event):
-        print(event)
+        # print(event)
         if event.inaxes:
             Data = self.PWMData.iloc[self.index]
 
@@ -148,7 +154,8 @@ def reorderMatrix(original_matrix, res_order):
     reordered_matrix = np.zeros((N, N))
 
     a, b = np.triu_indices(N, k=1)
-    reordered_matrix[a, b] = original_matrix[[res_order[i] for i in a], [res_order[j] for j in b]]
+    reordered_matrix[a, b] = original_matrix[[res_order[i] for i in a],
+                                             [res_order[j] for j in b]]
     reordered_matrix[b, a] = reordered_matrix[a, b]
     return reordered_matrix
 
@@ -200,11 +207,12 @@ def singleLocusStatus(axis, locus_name):
     # DECLARE DISPLAY COLORS;
     colorRanges = {
         "red": (0, 50),
-        "orange": (51, 70),
-        "green": (71, 100)
+        "orange": (50, 70),
+        "green": (70, 100)
     }
 
     # SELECT DISPLAY COLORS;
+    color = "black"
     for anycolor in colorRanges.keys():
         v = colorRanges[anycolor]
         if v[0] <= Health <= v[1]:
@@ -213,7 +221,7 @@ def singleLocusStatus(axis, locus_name):
     # PRINT ADJACENT TEXT;
     axis.text(-0.2,
               0.6,
-              s="Sequence Health:",
+              s="Amplicon Health:",
               clip_on=False,
               fontsize=12)
 
@@ -295,6 +303,27 @@ def plotPwmIndex(fig, PWMData, I):
 
         singleLocusStatus(ax_ha, a_name)
         singleLocusStatus(ax_hb, b_name)
+
+        # Additional info on secondary axis
+        RecombinationMessage = "True" if d["recombination"] else "False"
+        Message = "Recombination? %s" % RecombinationMessage
+        ax_hb.text(0.8, 1, s=Message)
+
+    # RECOMBINATION FIGURE;
+    if d["recombination"]:
+        a = []
+        b = []
+        for x in range(-50, 50, 1):
+            y = x ** 2 + 2 * x + 2
+            a.append(x)
+            b.append(y)
+
+        ax_symbol = fig.add_subplot(332)
+        b = np.array(b)
+        d = 500
+        ax_symbol.plot(b - d, a, color='gray')
+        ax_symbol.plot(-b + d, a, color='brown')
+        ax_symbol.axis("off")
 
     plt.title("")
 

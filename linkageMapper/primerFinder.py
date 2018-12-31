@@ -167,7 +167,7 @@ if __name__ == "__main__":
             )
 
         if LocusAmpliconSet is not None:
-            score = PrimerEngine.PrimerDock.evaluateSetOfAmplicons(LocusAmpliconSet)
+            score = PrimerEngine.ampliconSanity.evaluateSetOfAmplicons(LocusAmpliconSet)
             print("\tAlignment Health = %.2f%%" % score)
             print()
             # record amplicon and primer data;

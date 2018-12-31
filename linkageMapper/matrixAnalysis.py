@@ -7,60 +7,6 @@ from optparse import OptionParser
 
 import skbio.stats.distance as skdist
 
-parser = OptionParser()
-parser.add_option("-d", dest="inputDirectory")
-
-options, args = parser.parse_args()
-
-# CHECK INPUT ARGUMENTS;
-if not options.inputDirectory:
-    print("FATAL: No input directory.")
-    exit(1)
-
-# LOAD RESULT FILES;
-matchedLociData = pd.read_csv(os.path.join(options.inputDirectory,
-                                           "MatchedPrimers.csv"))
-matchedLoci = matchedLociData["LocusName"]
-
-arrayFiles = ["LOCI_%s.aln.npy" % Locus for Locus in matchedLoci]
-
-arrayFilePaths = [os.path.join(options.inputDirectory, File)
-                  for File in arrayFiles]
-
-heatmaps = [np.load(filePath) for filePath in arrayFilePaths]
-
-heatmapLabels = np.load(os.path.join(options.inputDirectory,
-                                     "heatmap_labels.npy"))
-
-Distances = [skdist.DistanceMatrix(h, heatmapLabels) for h in heatmaps]
-
-grouping = []
-for l in heatmapLabels:
-    g = len(l.split("_")[-1])
-    grouping.append(g)
-
-allResults = []
-for d, D in enumerate(Distances):
-    print(arrayFilePaths[d])
-    res = skdist.anosim(D, grouping=grouping)
-    print(res)
-    res["Locus"] = arrayFiles[d]
-    allResults.append(res)
-    print("\n")
-
-print("Executing PWMantel analysis...")
-
-PWM = skdist.pwmantel(Distances, permutations=0)
-PWM_Index_Indices = [(x[0], x[1]) for x in PWM.index]
-PWM_Index_Labels = [(arrayFiles[x[0]], arrayFiles[x[1]]) for x in PWM.index]
-PWM.index = pd.MultiIndex.from_tuples(PWM_Index_Labels)
-
-# INITIALIZE RESULT LISTS;
-Associations = []
-Mantels = []
-MantelsP = []
-RankingDiff = []
-
 
 def matrixRankings(MATRIX):
     orderMatrix = []
@@ -84,49 +30,193 @@ def compareMatrixRankings(mat0, mat1):
     return diff
 
 
-# ITERATE pwm_indices;
-for IFA, IFB in PWM_Index_Indices:
+def checkRecombination(ma, mb, Verbose=False):
+    """
+    DEPRECATED
+    mean_a = np.mean(ma)
+    mean_b = np.mean(mb)
 
-    # FIRST EVALUATION;
-    D = np.cov(heatmaps[IFA], heatmaps[IFB])
-    D = sum(sum(D))
-    Associations.append(D)
+    gap = 0.85
+    gapA = gap * mean_a / 2
+    gapB = gap * mean_b / 2
 
-    # SECOND EVALUATION;
-    M = skdist.mantel(heatmaps[IFA], heatmaps[IFB])
+    if Verbose:
+        print(gap)
+        print("Matrix A stats: mean/gap")
+        print(mean_a)
+        print(gapA)
 
-    Mantels.append(M[0])
-    MantelsP.append(M[1])
+        print("Matrix B stats: mean/gap")
+        print(mean_b)
+        print(gapB)
+        print()
 
-    # THIRD EVALUATION;
-    MDF = compareMatrixRankings(heatmaps[IFA], heatmaps[IFB])
-    RankingDiff.append(MDF)
+    """
 
-PWM["associations"] = Associations
+    def isZero(v):
+        if v < 0.05:
+            return True
+        else:
+            return False
 
-PWM["mantel"] = Mantels
-PWM["mantel_p"] = MantelsP
-PWM["matrix_ranking_diff"] = RankingDiff
+    RecombinationDetected = False
+    for i, row in enumerate(ma):
+        Pre1 = False
+        Pre2 = False
+
+        for j, v in enumerate(row):
+            if isZero(ma[i, j]) and not isZero(mb[i, j]):
+                if Verbose:
+                    print("Pre1 at %i %i" % (i, j))
+                    print(ma[i, j])
+                    print(mb[i, j])
+                    print()
+                if Pre2:
+                    RecombinationDetected = True
+                    # return True
+                Pre1 = True
+
+            if not isZero(ma[i, j]) and isZero(mb[i, j]):
+                if Verbose:
+                    print("Pre2 at %i %i" % (i, j))
+                    print(ma[i, j])
+                    print(mb[i, j])
+                    print()
+                if Pre1:
+                    RecombinationDetected = True
+                    # return True
+                Pre2 = True
+
+    return RecombinationDetected
 
 
-# cleanup dataframe;
-del PWM["permutations"]
+if __name__ == "__main__":
+    parser = OptionParser()
+    parser.add_option("-d", dest="inputDirectory")
+    parser.add_option("--update", dest='updateOnly', action='store_true')
 
-print(PWM.to_string())
+    options, args = parser.parse_args()
 
-for IFA, IFB in PWM_Index_Indices:
-    pass
+    # CHECK INPUT ARGUMENTS;
+    if not options.inputDirectory:
+        print("FATAL: No input directory.")
+        exit(1)
+
+    # LOAD RESULT FILES;
+    matchedLociData = pd.read_csv(os.path.join(options.inputDirectory,
+                                               "MatchedPrimers.csv"))
+    matchedLoci = matchedLociData["LocusName"]
+
+    arrayFiles = ["LOCI_%s.aln.npy" % Locus for Locus in matchedLoci]
+
+    arrayFilePaths = [os.path.join(options.inputDirectory, File)
+                      for File in arrayFiles]
+
+    heatmaps = [np.load(filePath) for filePath in arrayFilePaths]
+
+    heatmapLabels = np.load(os.path.join(options.inputDirectory,
+                                         "heatmap_labels.npy"))
+
+    Distances = [skdist.DistanceMatrix(h, heatmapLabels) for h in heatmaps]
+
+    grouping = []
+    for l in heatmapLabels:
+        g = len(l.split("_")[-1])
+        grouping.append(g)
+
+    allResults = []
+    for d, D in enumerate(Distances):
+        print(arrayFilePaths[d])
+        res = skdist.anosim(D, grouping=grouping)
+        print(res)
+        res["Locus"] = arrayFiles[d]
+        allResults.append(res)
+        print("\n")
+
+    # LOAD OR BUILD NEW PWM ANALYSIS DATA FRAME;
+    pwmPath = os.path.join(options.inputDirectory, "PWMAnalysis.csv")
+
+    PWM = None
+    if options.updateOnly:
+        if os.path.isfile(pwmPath):
+            PWM = pd.read_csv(pwmPath)
+            PWM_Index_Labels = [(PWM.iloc[x]["Unnamed: 0"], PWM.iloc[x]["Unnamed: 1"])
+                                for x in range(PWM.shape[0])]
+            PWM_Index_Indices = [(arrayFiles.index(x[0]), arrayFiles.index(x[1]))
+                                 for x in PWM_Index_Labels]
+
+            PWM.index = pd.MultiIndex.from_tuples(PWM_Index_Labels)
+            print("PWM File loaded.")
+        else:
+            print("No PWM file found at %s" % pwmPath)
+
+    if PWM is None:
+        print("Executing PWMantel analysis...")
+        PWM = skdist.pwmantel(Distances, permutations=0)
+
+        PWM_Index_Indices = [(x[0], x[1]) for x in PWM.index]
+        PWM_Index_Labels = [(arrayFiles[x[0]], arrayFiles[x[1]]) for x in PWM.index]
+        PWM.index = pd.MultiIndex.from_tuples(PWM_Index_Labels)
+
+    # INITIALIZE RESULT LISTS;
+    Associations = []
+    Mantels = []
+    MantelsP = []
+    RankingDiff = []
+    Recombinations = []
 
 
-print("Writing output files...")
-# WRITE OUTPUT PWM FILE;
-pwmPath = os.path.join(options.inputDirectory, "PWMAnalysis.csv")
-PWM.to_csv(pwmPath)
 
-outputData = pd.DataFrame(allResults,
-                          columns=["Locus"] + list(allResults[0].keys())[:-1])
 
-outputPath = os.path.join(options.inputDirectory, "HeatmapAnalysis.csv")
-outputData.to_csv(outputPath, index=False)
+    # ITERATE pwm_indices;
+    for IFA, IFB in PWM_Index_Indices:
 
-print("Wrote %s analysis file." % outputPath)
+        # FIRST EVALUATION;
+        D = np.cov(heatmaps[IFA], heatmaps[IFB])
+        D = sum(sum(D))
+        Associations.append(D)
+
+        # SECOND EVALUATION;
+        M = skdist.mantel(heatmaps[IFA], heatmaps[IFB])
+
+        Mantels.append(M[0])
+        MantelsP.append(M[1])
+
+        # THIRD EVALUATION;
+        MDF = compareMatrixRankings(heatmaps[IFA], heatmaps[IFB])
+        RankingDiff.append(MDF)
+
+        # FOURTH EVALUATION;
+        REC = checkRecombination(heatmaps[IFA], heatmaps[IFB])
+        Recombinations.append(REC)
+
+    PWM["associations"] = Associations
+
+    PWM["mantel"] = Mantels
+    PWM["mantel_p"] = MantelsP
+    PWM["matrix_ranking_diff"] = RankingDiff
+    PWM["recombination"] = Recombinations
+
+    # cleanup dataframe;
+    try:
+        del PWM["permutations"]
+    except Exception:
+        pass
+
+    print(PWM.to_string())
+
+    for IFA, IFB in PWM_Index_Indices:
+        pass
+
+
+    print("Writing output files...")
+    # WRITE OUTPUT PWM FILE;
+    PWM.to_csv(pwmPath)
+
+    outputData = pd.DataFrame(allResults,
+                              columns=["Locus"] + list(allResults[0].keys())[:-1])
+
+    outputPath = os.path.join(options.inputDirectory, "HeatmapAnalysis.csv")
+    outputData.to_csv(outputPath, index=False)
+
+    print("Wrote %s analysis file." % outputPath)
