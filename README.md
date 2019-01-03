@@ -24,10 +24,12 @@ By looking at a pair of D. Matrixes at a time, both corresponding to locus that 
 
 ### Fetch genomes and annotation files
 
-The following code downloads all required genomes and annotations from NCBI.
+The following code downloads all required genomes and annotations from NCBI,
+populating the folders `genomes` and `annotations`. Standard usage requires this
+execution only once.
 
 ```
-$ python linkageMapper/downloadGenomic.py
+$python linkageMapper/fetchDataNCBI.py
 ```
 
 Instead, you can manually add desired genomes and annotations, as explained in the next subsections:
