@@ -48,7 +48,7 @@ Instead, you can manually add desired genomes and annotations, as explained in t
 
 ### Setup ClustalW2
 
-The alignment step of `linkageMapper` requires ![ClustalW2](http://www.clustal.org/clustal2/) installed on your
+The alignment step of `linkageMapper` requires [ClustalW2](http://www.clustal.org/clustal2/) installed on your
 system.
 # Usage
 
