@@ -111,13 +111,15 @@ if __name__ == "__main__":
         for File in genomeFeatureFiles
     ]
 
+    # APPLY GENOME FEATURES TO MODULE;
     PrimerEngine.bruteForcePrimerSearch.genomeFeatures = genomeFeatures
 
+    # FETCH GENOME NAMES;
     genomeFeaturesChromosomes =\
         [chromosome.features[0].qualifiers['chromosome'][0].upper()
          for chromosome in genomeFeatures]
 
-    print(genomeFeaturesChromosomes)
+    # print(genomeFeaturesChromosomes)
 
     # load source data;
     lociPrimerList = pd.read_csv(options.primerFile)
@@ -130,6 +132,8 @@ if __name__ == "__main__":
                        if genomeFile.endswith('.fasta')]
     genomes = [PrimerEngine.GeneticEntities.Genome(genomeFilePath)
                for genomeFilePath in genomeFilePaths]
+
+    print("Loaded %i genomes." % len(genomes))
 
     AllLociAmpliconSet = {}
     AllLociPrimerSet = OrderedDict()
@@ -158,7 +162,7 @@ if __name__ == "__main__":
                 continue
 
         overallProgress = (i + 1, lociPrimerList.shape[0])
-        LocusAmpliconSet, matchSuccess, primerPair =\
+        (LocusAmpliconSet, matchSuccess, primerPair) =\
             PrimerEngine.PrimerDock.matchLocusOnGenomes(
                 locus_name,
                 locus_info,

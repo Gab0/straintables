@@ -1,6 +1,8 @@
 #!/bin/bash
 
 
+cat logo.txt
+
 PRIMER_CODE=$1
 
 OUTPUT_DIR="analysisResults/${PRIMER_CODE}"
@@ -86,9 +88,9 @@ do
 
         if [ $ALNMODE = "clustal" ] || [ -z $ALNMODE ];
         then
-            clustalw2 \
+            timeout 300 clustalw2 \
                 -INFILE="./${OUTPUT_FILE_PREFIX}".fasta \
-                -OUTFILE="${OUTPUT_FILE_PREFIX}".aln
+                -OUTFILE="./${OUTPUT_FILE_PREFIX}".aln
             #2>>"${OUTPUT_DIR}/clustal_warnings.txt"
         fi
 
@@ -99,7 +101,7 @@ do
     fi
     # BUILD TREE;
     echo "Building tree...."
-    if clustalw2 -INFILE="${OUTPUT_FILE_PREFIX}".aln -tree;
+    if clustalw2 -INFILE="./${OUTPUT_FILE_PREFIX}".aln -tree;
     then
         echo "Tree built."
         echo ""

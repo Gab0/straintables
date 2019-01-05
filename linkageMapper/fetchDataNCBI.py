@@ -123,7 +123,15 @@ def downloadAssembly(ID, downloadDirectory='',
         print('\n'.join(remoteFiles))
 
     for remoteFileName in remoteFileNames:
-        localfilepath = os.path.join(downloadDirectory, remoteFileName)
+        localFileName = re.findall("TG[A-Z0-9]+", remoteFileName)
+        if localFileName:
+            localFileName = localFileName[0] + ".fasta"
+            if remoteFileName.endswith(".gz"):
+                localFileName += ".gz"
+        else:
+            localFileName = remoteFileName
+
+        localfilepath = os.path.join(downloadDirectory, localFileName)
         debug("Writing assembly to %s" % localfilepath)
         localFile = open(localfilepath, 'wb')
 
