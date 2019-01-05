@@ -112,7 +112,12 @@ if __name__ == "__main__":
     arrayFilePaths = [os.path.join(options.inputDirectory, File)
                       for File in arrayFiles]
 
-    heatmaps = [np.load(filePath) for filePath in arrayFilePaths]
+    # LOAD HEATMAPS FOR LOCI THAT SUCCEEDED THE ALIGNMENT (SO .aln.npy FILE EXISTS);
+    heatmaps = [
+        np.load(filePath)
+        for filePath in arrayFilePaths
+        if os.path.isfile(filePath)
+    ]
 
     heatmapLabels = np.load(os.path.join(options.inputDirectory,
                                          "heatmap_labels.npy"))

@@ -1,21 +1,25 @@
 #!/bin/bash
 
-
+# SHOW BEAUTIFUL ASCII ART;
 cat logo.txt
 
 PRIMER_CODE=$1
 
+# DEFINE OUTPUT DIRECTORY;
 OUTPUT_DIR="analysisResults/${PRIMER_CODE}"
 
+# MAKE SURE OUTPUT DIRECTORY EXISTS;
 mkdir -p "${OUTPUT_DIR}"
 
+# INITIALIZE COMMAND LINE OPTIONS;
 DO_AMPLICON=1
 DO_ALIGNMENT=1
 ALNMODE="clustal"
 
-# PARSE COMMAND LINE ARGUMENTS;
+# FETCH COMMAND LINE ARGUMENTS;
 ALL_ARGS=($1 $2 $3 $4 $5 $6 $7)
 
+# PARSE COMMAND LINE ARGUMENTS;
 for OPT in "${ALL_ARGS[@]}"
 do
 
@@ -43,6 +47,7 @@ echo ""
 echo "Running pipeline..."
 echo ""
 
+# RUN AMPLICON SEARCH IF NOT DISABLED BY OPTIONS;
 if [ $DO_AMPLICON = 1 ];
 then
     if python linkageMapper/primerFinder.py \
@@ -55,6 +60,8 @@ then
         echo "Failure."
         exit 1
     fi
+else
+    echo "No amplicon Mode!"
 fi
 
 # THIS GETS ALL LOCI NAMES FROM .csv PRIMER DESCRIPTOR!
@@ -70,13 +77,13 @@ else
     EXPLICIT_CLONAL="-s 'vs clonal ${CLONAL}'"
 fi
 
+# ITERATE ALL LOCI FROM MatchedPrimers.csv;
 for _L in "${LOCI[@]}"
 do
     OUTPUT_FILE_PREFIX="${OUTPUT_DIR}/LOCI_${_L}"
 
-    # DEPRECATED;
-    # python linkageMapper/makeMultifasta.py -i "${OUTPUT_DIR}/Sequences.csv" -l $_L
 
+    # RUN ALIGNMENT IF NOT DISABLED BY OPTIONS;
     echo "Running alignment for ${OUTPUT_FILE_PREFIX}"
     echo ""
     if [ $DO_ALIGNMENT = 1 ];
@@ -88,9 +95,16 @@ do
 
         if [ $ALNMODE = "clustal" ] || [ -z $ALNMODE ];
         then
-            timeout 300 clustalw2 \
+            if timeout 60 clustalw2 \
                 -INFILE="./${OUTPUT_FILE_PREFIX}".fasta \
-                -OUTFILE="./${OUTPUT_FILE_PREFIX}".aln
+                -OUTFILE="./${OUTPUT_FILE_PREFIX}".aln;
+            then
+                echo "Alignment Done!"
+            else
+                echo "Alignment Fails!"
+                continue
+            fi
+
             #2>>"${OUTPUT_DIR}/clustal_warnings.txt"
         fi
 
@@ -99,6 +113,7 @@ do
             muscle -in "${OUTPUT_FILE_PREFIX}".fasta -out "${OUTPUT_FILE_PREFIX}".aln
         fi
     fi
+
     # BUILD TREE;
     echo "Building tree...."
     if clustalw2 -INFILE="./${OUTPUT_FILE_PREFIX}".aln -tree;
@@ -108,20 +123,21 @@ do
         echo ""
     else
         echo "Tree fails."
-        exit
+        exit 1 
     fi
 
-    # POST-ALIGN ANALYSIS;
+    # DRAW PHYLOGENETIC TREES FROM .ph CLUSTALW2 FILES;
     python linkageMapper/DrawGraphics/drawTree.py \
            -i "${OUTPUT_FILE_PREFIX}".ph \
            -o "${OUTPUT_FILE_PREFIX}".pdf
 
+    # INTERPRETE MUTATIONS AS DISSIMILARITY MATRIXES;
     python linkageMapper/detectMutations.py \
            -i "${OUTPUT_FILE_PREFIX}".aln \
            "${EXPLICIT_CLONAL}"
 done
 
-#SIMILARITY MATRIX DIFFERENCES;
+# SIMILARITY MATRIX DIFFERENCES;
 python linkageMapper/compareHeatmap.py -d "${OUTPUT_DIR}"
 
 # ANALYZE MATRIX DIFFERENCES
