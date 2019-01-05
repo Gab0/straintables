@@ -12,7 +12,7 @@ More statistical analysis on the Dissimilarity Matrixes are carried, mostly usin
 By looking at a pair of D. Matrixes at a time, both corresponding to locus that are neighbors, the user may have an idea of the recombination frequence of the studied organism.
 
 
-## Setup
+# Setup
 
 ### Install Python Requirements
 
@@ -46,8 +46,11 @@ Instead, you can manually add desired genomes and annotations, as explained in t
 * One multifasta file per strain.
 * They should be placed at the `genomes` folder.
 
+### Setup ClustalW2
 
-## Usage
+The alignment step of `linkageMapper` requires ![ClustalW2](http://www.clustal.org/clustal2/) installed on your
+system.
+# Usage
 
 1. Put the wanted Locus names, ForwardPrimers and ReversePrimers on a `.csv` file inside the `Primer` folder. The primer sequences are optional, leave blank to trigger the automatic primer search. Look for the examples.
 
