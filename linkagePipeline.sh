@@ -11,7 +11,7 @@ OUTPUT_DIR="analysisResults/${PRIMER_CODE}"
 # MAKE SURE OUTPUT DIRECTORY EXISTS;
 mkdir -p "${OUTPUT_DIR}"
 
-# INITIALIZE COMMAND LINE OPTIONS;
+# INITIALIZE DEFAULT COMMAND LINE OPTIONS;
 DO_AMPLICON=1
 DO_ALIGNMENT=1
 ALNMODE="clustal"
@@ -27,6 +27,7 @@ do
     then
         DO_AMPLICON=0
     fi
+
     if [ $OPT = "noalign" ];
     then
         DO_ALIGNMENT=0
@@ -135,6 +136,11 @@ do
     python linkageMapper/detectMutations.py \
            -i "${OUTPUT_FILE_PREFIX}".aln \
            "${EXPLICIT_CLONAL}"
+
+    # MESHCLUST CLUSTERS;
+    meshclust "${OUTPUT_FILE_PREFIX}".fasta \
+              --output "${OUTPUT_FILE_PREFIX}".clst \
+              --id 0.999 --align
 done
 
 # SIMILARITY MATRIX DIFFERENCES;

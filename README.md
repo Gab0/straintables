@@ -50,6 +50,12 @@ Instead, you can manually add desired genomes and annotations, as explained in t
 
 The alignment step of `linkageMapper` requires [ClustalW2](http://www.clustal.org/clustal2/) installed on your
 system.
+
+### Setup MeShClust
+
+The recombination analysis step of `linkageMapper` has [MeShClust](https://github.com/TulsaBioinformaticsToolsmith/MeShClust) as an optional dependency, having it installed on your system will add depth on matrix visualization.
+
+
 # Usage
 
 1. Put the wanted Locus names, ForwardPrimers and ReversePrimers on a `.csv` file inside the `Primer` folder. The primer sequences are optional, leave blank to trigger the automatic primer search. Look for the examples.
@@ -89,7 +95,7 @@ $ bash linkagePipelinea.sh chr_XII clustal SAG3
 
 * Then view similarity matrixes and phylogenetic trees on `pdf` files at `Alignments/chr_X` folder.
 
-## Results
+# Results
 
 * As the linkagePipeline.sh unfolds, `Alignments/[primer batch name]` folder will be created and populated with files of various kinds, in this order:
 
@@ -99,7 +105,7 @@ $ bash linkagePipelinea.sh chr_XII clustal SAG3
 4. `.pdf` Dissimilarity Matrix Plot files, one for each loci;
 
 
-### Result Analysis Tools
+## Result Analysis Tools
 
 Some python scripts on the main module are not called within linkagePipeline.sh. They are optional analysis tools and should be launched by the user.
 

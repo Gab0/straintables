@@ -1,5 +1,5 @@
 #!/bin/python
-
+import re
 import os
 import pandas as pd
 import numpy as np
@@ -31,7 +31,7 @@ class matrixViewer():
         self.PWMData = PWMData
         self.drawPlot = drawPlotIndex
         self.allowedIndexes = allowedIndexes
-
+        
         win = Gtk.Window()
         win.connect("destroy", lambda x: Gtk.main_quit())
         win.set_default_size(400, 300)
@@ -46,14 +46,15 @@ class matrixViewer():
         self.drawPlot(self.figure, self.PWMData, 0)
 
         self.figurecanvas = FigureCanvas(self.figure)  # a Gtk.DrawingArea
-        self.index = 0
 
         vbox.pack_start(self.figurecanvas, True, True, 0)
-        self.toolbar = NavigationToolbar(self.figurecanvas, win)
-        self.toolbar.forward = self.nav_forward
-        self.toolbar.back = self.nav_back
-        self.toolbar.set_history_buttons()
 
+        # INITIALIZE STATE;
+        self.labelColorsOn = 1
+        self.index = 0
+
+
+        # SHOW LOCUS NAVIGATION TOOLBAR;
         buttonBox = Gtk.HBox(homogeneous=True, spacing=2)
         self.btn_back = Gtk.Button(label="<")
         self.btn_back.connect("clicked", self.nav_back)
@@ -65,9 +66,24 @@ class matrixViewer():
 
         vbox.pack_start(buttonBox, False, False, 0)
 
+        # MODIFY MATPLOTLIB TOOLBAR;
+        self.toolbar = NavigationToolbar(self.figurecanvas, win)
+        self.toolbar.forward = self.nav_forward
+        self.toolbar.back = self.nav_back
+        self.toolbar.set_history_buttons()
+
+        # SET BOTTOM TOOLBAR, WHICH INCLUDE MATPLOTLIB BAR;
         panelBox = Gtk.HBox(homogeneous=False, spacing=2)
+        toggleColor = Gtk.ToggleButton(label=None, image=Gtk.Image(stock=Gtk.STOCK_COLOR_PICKER))
+        toggleColor.set_tooltip_text("Show Matrix Label Colors")
+        toggleColor.set_active(True)
+        toggleColor.connect("clicked", self.toggleColor)
+
         infoText = Gtk.Label.new(options.inputDirectory)
-        panelBox.add(self.toolbar)
+
+        panelBox.pack_start(self.toolbar, expand=False, fill=False, padding=0)
+        panelBox.pack_start(toggleColor, False, False, 0)
+
         panelBox.add(infoText)
 
         vbox.pack_start(panelBox, False, False, 0)
@@ -75,6 +91,10 @@ class matrixViewer():
         cid = self.figurecanvas.mpl_connect('button_press_event', self.onclickCanvas)
 
         win.show_all()
+
+        # HIDE THIS ANNOYING THING.
+        self.toolbar.message.hide()
+
         Gtk.main()
 
     def cycleIndexes(self, amt):
@@ -93,9 +113,13 @@ class matrixViewer():
         self.cycleIndexes(-1)
         self.changeView(self.index)
 
+    def toggleColor(self, d):
+        self.labelColorsOn = 1 - self.labelColorsOn
+        self.changeView(self.index)
+
     def changeView(self, I):
         self.figure.clf()
-        self.drawPlot(self.figure, self.PWMData, I)
+        self.drawPlot(self.figure, self.PWMData, I, showLabelColors=self.labelColorsOn)
         self.figurecanvas.draw()
         self.figurecanvas.flush_events()
 
@@ -195,6 +219,8 @@ def createSubplot(fig, position, name, matrix, labels):
 
     new_ax.set_xlabel(name)
 
+    return new_ax
+
 
 def singleLocusStatus(axis, locus_name):
 
@@ -237,7 +263,22 @@ def singleLocusStatus(axis, locus_name):
     axis.axis("off")
 
 
-def plotPwmIndex(fig, PWMData, I):
+def parseMeshcluster(clusterFilePath):
+    clusterData = open(clusterFilePath).read().split("\n")
+    clusterOutputData = {}
+    for line in clusterData:
+        if ">Cluster" in line:
+            key = int(re.findall(">Cluster (\d+)", line)[0])
+        if "nt," in line:
+            if key not in clusterOutputData.keys():
+                clusterOutputData[key] = []
+            Individual = re.findall(">([\w\d]+)...", line)[0]
+            clusterOutputData[key].append(Individual)
+    # print(clusterOutputData)
+    return clusterOutputData
+
+
+def plotPwmIndex(fig, PWMData, I, showLabelColors=True):
     d = PWMData.iloc[I]
     a = d["Unnamed: 0"]
     b = d["Unnamed: 1"]
@@ -265,13 +306,44 @@ def plotPwmIndex(fig, PWMData, I):
     orderedLabels = heatmapLabels[matrix_order]
 
     # plot;
-    createSubplot(fig, 331, a_name, ordered_ma, orderedLabels)
-    createSubplot(fig, 333, b_name, ordered_mb, orderedLabels)
+    r_axis1 = createSubplot(fig, 331, a_name, ordered_ma, orderedLabels)
+    r_axis2 = createSubplot(fig, 333, b_name, ordered_mb, orderedLabels)
+
 
     # ORIGINAL MATRIXES;
     # plot;
-    createSubplot(fig, 337, a_name, ma, heatmapLabels)
-    createSubplot(fig, 339, b_name, mb, heatmapLabels)
+    o_axis1 = createSubplot(fig, 337, a_name, ma, heatmapLabels)
+    o_axis2 = createSubplot(fig, 339, b_name, mb, heatmapLabels)
+
+
+    # COLORIZE MATRIX LABELS BY MESHCLUSTER;
+    if showLabelColors:
+        plotFilenames = [
+            (r_axis1, a_name),
+            (r_axis2, b_name),
+            (o_axis1, a_name),
+            (o_axis2, b_name)
+        ]
+
+        colorMap = plt.get_cmap("Set1")
+
+        for (Axis, LocusName) in plotFilenames:
+            clusterFilePath = buildArrayPath(LocusName) + ".clst"
+            if os.path.isfile(clusterFilePath):
+                clusterOutputData = parseMeshcluster(clusterFilePath)
+                NB_Groups = len(clusterOutputData.keys())
+                GroupColors = [colorMap(x / NB_Groups)
+                               for x in range(NB_Groups)]
+
+                # COLORIZE LABELS;
+                for (labelx, labely) in zip(Axis.get_xticklabels(),
+                                            Axis.get_yticklabels()):
+                    text = labelx.get_text()
+                    for key in clusterOutputData.keys():
+                        if text in clusterOutputData[key]:
+                            labelx.set_color(GroupColors[key])
+                            labely.set_color(GroupColors[key])
+                            break
 
     # BUILD SHOWN INFO;
     distance = abs(data[0].PositionStart - data[1].PositionStart)
@@ -330,22 +402,17 @@ def plotPwmIndex(fig, PWMData, I):
     return fig
 
 
-if __name__ == "__main__":
-    last = None
-    parser = OptionParser()
-
-    parser.add_option("-d",
-                      dest="inputDirectory")
-
-    options, args = parser.parse_args()
-
+def Execute(options):
     PrimerFilePath = os.path.join(options.inputDirectory, "PrimerData.csv")
     MatchedPrimerFilePath = os.path.join(options.inputDirectory, "MatchedPrimers.csv")
     PWMFilePath = os.path.join(options.inputDirectory, "PWMAnalysis.csv")
 
     # LOAD RELEVANT DATABASES;
+    global PrimerData
     PrimerData = pd.read_csv(PrimerFilePath)
     PWMData = pd.read_csv(PWMFilePath)
+
+    global MatchData
     MatchData = pd.read_csv(MatchedPrimerFilePath)
 
     # FETCH ORIGINAL HEATMAP GENOME LABELS;
@@ -353,7 +420,11 @@ if __name__ == "__main__":
         options.inputDirectory,
         "heatmap_labels.npy"
     )
+
+    global heatmapLabels
     heatmapLabels = np.load(heatmapLabelsFilePath)
+
+    last = None
 
     # FETCH VIEWABLE DATA INDEXES;
     allowedIndexes = []
@@ -367,3 +438,14 @@ if __name__ == "__main__":
 
     # SHOW DATA;
     viewer = matrixViewer(PWMData, plotPwmIndex, allowedIndexes)
+
+
+if __name__ == "__main__":
+    parser = OptionParser()
+
+    parser.add_option("-d",
+                      dest="inputDirectory")
+
+    options, args = parser.parse_args()
+
+    Execute(options)
