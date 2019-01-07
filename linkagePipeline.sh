@@ -15,6 +15,7 @@ mkdir -p "${OUTPUT_DIR}"
 DO_AMPLICON=1
 DO_ALIGNMENT=1
 ALNMODE="clustal"
+DO_MESHCLUST=1
 
 # FETCH COMMAND LINE ARGUMENTS;
 ALL_ARGS=($1 $2 $3 $4 $5 $6 $7)
@@ -42,9 +43,21 @@ do
     fi
 done
 
+
+
 # OUTPUT INFO;
 echo "Alignment mode is $ALNMODE"
 echo ""
+
+if meshclust;
+then
+    echo "MeShClust enabled!"
+else
+    echo "MeShClust not found!"
+    DO_MESHCLUST=0
+fi
+
+echo '\n'
 echo "Running pipeline..."
 echo ""
 
@@ -138,9 +151,12 @@ do
            "${EXPLICIT_CLONAL}"
 
     # MESHCLUST CLUSTERS;
-    meshclust "${OUTPUT_FILE_PREFIX}".fasta \
-              --output "${OUTPUT_FILE_PREFIX}".clst \
-              --id 0.999 --align
+    if [ $DO_MESHCLUST == 1 ];
+       then
+           meshclust "${OUTPUT_FILE_PREFIX}".fasta \
+                     --output "${OUTPUT_FILE_PREFIX}".clst \
+                     --id 0.999 --align
+    fi
 done
 
 # SIMILARITY MATRIX DIFFERENCES;

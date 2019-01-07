@@ -3,6 +3,7 @@ import re
 import os
 import pandas as pd
 import numpy as np
+import array
 
 import subprocess
 
@@ -14,10 +15,11 @@ import fastcluster
 import scipy
 
 import detectMutations
+import graphic
 
 import gi
 gi.require_version('Gtk', '3.0')
-from gi.repository import Gtk
+from gi.repository import Gtk, GdkPixbuf
 
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_gtk3agg import FigureCanvas
@@ -31,70 +33,111 @@ class matrixViewer():
         self.PWMData = PWMData
         self.drawPlot = drawPlotIndex
         self.allowedIndexes = allowedIndexes
-        
+
         win = Gtk.Window()
         win.connect("destroy", lambda x: Gtk.main_quit())
         win.set_default_size(400, 300)
         win.set_title("Embedding in GTK")
 
-        vbox = Gtk.VBox()
-        win.add(vbox)
 
-        # INITIALIZE PLOT FIGURE;
-        self.figure = plt.figure()
-
-        self.drawPlot(self.figure, self.PWMData, 0)
-
-        self.figurecanvas = FigureCanvas(self.figure)  # a Gtk.DrawingArea
-
-        vbox.pack_start(self.figurecanvas, True, True, 0)
-
-        # INITIALIZE STATE;
+        # INITIALIZE STATE VARIABLES;
         self.labelColorsOn = 1
         self.index = 0
 
 
-        # SHOW LOCUS NAVIGATION TOOLBAR;
-        buttonBox = Gtk.HBox(homogeneous=True, spacing=2)
+        # PREPARE BUTTON ICON IMAGE;
+        source_image = graphic.dna_icon
+
+        source_image = source_image.tobytes()
+        dnd = array.array('B', source_image)
+        width, height = graphic.dna_icon.size
+        dna_icon_data = GdkPixbuf.Pixbuf.new_from_data(dnd, GdkPixbuf.Colorspace.RGB, True, 8, width, height, width * 4)
+
+        dna_icon_left = Gtk.Image()
+        dna_icon_left.set_from_pixbuf(dna_icon_data)
+        dna_icon_right = Gtk.Image()
+        dna_icon_right.set_from_pixbuf(dna_icon_data)
+
+        # INITIALIZE BUTTONS;
+        self.openSequenceLeft = Gtk.Button()
+        self.openSequenceLeft.connect("clicked", lambda d: self.launchAlignViewer(0))
+        self.openSequenceLeft.add(dna_icon_left)
+
+        self.openSequenceRight = Gtk.Button()
+        self.openSequenceRight.connect("clicked", lambda d: self.launchAlignViewer(1))
+        self.openSequenceRight.add(dna_icon_right)
+
         self.btn_back = Gtk.Button(label="<")
         self.btn_back.connect("clicked", self.nav_back)
+
         self.btn_next = Gtk.Button(label=">")
         self.btn_next.connect("clicked", self.nav_forward)
 
-        buttonBox.add(self.btn_back)
-        buttonBox.add(self.btn_next)
-
-        vbox.pack_start(buttonBox, False, False, 0)
-
-        # MODIFY MATPLOTLIB TOOLBAR;
-        self.toolbar = NavigationToolbar(self.figurecanvas, win)
-        self.toolbar.forward = self.nav_forward
-        self.toolbar.back = self.nav_back
-        self.toolbar.set_history_buttons()
-
-        # SET BOTTOM TOOLBAR, WHICH INCLUDE MATPLOTLIB BAR;
-        panelBox = Gtk.HBox(homogeneous=False, spacing=2)
         toggleColor = Gtk.ToggleButton(label=None, image=Gtk.Image(stock=Gtk.STOCK_COLOR_PICKER))
         toggleColor.set_tooltip_text("Show Matrix Label Colors")
         toggleColor.set_active(True)
         toggleColor.connect("clicked", self.toggleColor)
 
+        # INITIALIZE PLOT FIGURE;
+        self.figure = plt.figure()
+
+        #self.drawPlot(self.figure, self.PWMData, 0)
+        self.changeView(0)
+        self.figurecanvas = FigureCanvas(self.figure)
+
+        self.figurecanvas.mpl_connect('button_press_event', self.onclickCanvas)
+
+        # BUILD INTERFACE;
+        vbox = Gtk.VBox()
+        vbox.pack_start(self.figurecanvas, expand=True, fill=True, padding=0)
+
+
+        # SHOW LOCUS NAVIGATION TOOLBAR;
+        buttonBox = Gtk.HBox(homogeneous=False, spacing=2)
+
+        OSLC = Gtk.Alignment(xalign=0, xscale=0)
+        OSLC.add(self.openSequenceLeft)
+
+        OSRC = Gtk.Alignment(xalign=1, xscale=0)
+        OSRC.add(self.openSequenceRight)
+
+        buttonBox.pack_start(OSLC, expand=False, fill=False, padding=0)
+
+        main = Gtk.HBox(homogeneous=True, spacing=2)
+
+        main.pack_start(self.btn_back, expand=True, fill=True, padding=0)
+        main.pack_start(self.btn_next, expand=True, fill=True, padding=0)
+
+        buttonBox.pack_start(main, expand=True, fill=True, padding=0)
+
+        buttonBox.pack_start(OSRC, expand=False, fill=False, padding=0)
+
+        vbox.pack_start(buttonBox, expand=False, fill=False, padding=0)
+
+        # MODIFY MATPLOTLIB TOOLBAR;
+        self.toolbar = NavigationToolbar(self.figurecanvas, win)
+        self.toolbar.set_history_buttons()
+
+        # SET BOTTOM TOOLBAR, WHICH INCLUDE MATPLOTLIB BAR;
+        panelBox = Gtk.HBox(homogeneous=False, spacing=2)
+
         infoText = Gtk.Label.new(options.inputDirectory)
 
         panelBox.pack_start(self.toolbar, expand=False, fill=False, padding=0)
-        panelBox.pack_start(toggleColor, False, False, 0)
+        panelBox.pack_start(toggleColor, expand=False, fill=False, padding=0)
 
         panelBox.add(infoText)
 
         vbox.pack_start(panelBox, False, False, 0)
 
-        cid = self.figurecanvas.mpl_connect('button_press_event', self.onclickCanvas)
-
+        # SHOW ALL;
+        win.add(vbox)
         win.show_all()
 
         # HIDE THIS ANNOYING THING.
         self.toolbar.message.hide()
 
+        # LAUNCH!
         Gtk.main()
 
     def cycleIndexes(self, amt):
@@ -102,6 +145,8 @@ class matrixViewer():
 
         while self.index not in self.allowedIndexes:
             self.index += amt
+            if self.index < 0:
+                self.index = self.PWMData.shape[0] - 1
             if self.index > max(self.allowedIndexes):
                 self.index = min(self.allowedIndexes)
 
@@ -120,30 +165,41 @@ class matrixViewer():
     def changeView(self, I):
         self.figure.clf()
         self.drawPlot(self.figure, self.PWMData, I, showLabelColors=self.labelColorsOn)
-        self.figurecanvas.draw()
-        self.figurecanvas.flush_events()
+        try:
+            self.figurecanvas.draw()
+            self.figurecanvas.flush_events()
+        except AttributeError:
+            pass
+
+        LocusNames = self.getLocusNames()
+        self.openSequenceLeft.set_tooltip_text("View Alignment For %s" % LocusNames[0])
+        self.openSequenceRight.set_tooltip_text("View Alignment For %s" % LocusNames[1])
 
     def onclickCanvas(self, event):
         # print(event)
         if event.inaxes:
-            Data = self.PWMData.iloc[self.index]
-
             bbox = self.figure.get_window_extent().transformed(
                 self.figure.dpi_scale_trans.inverted())
             width, height = bbox.width*self.figure.dpi, bbox.height*self.figure.dpi
 
-            if event.x < width // 2:
-                KeyName = "Unnamed: 0"
-            else:
-                KeyName = "Unnamed: 1"
+            side = 0 if event.x < width // 2 else 1
 
-            LocusName = Data[KeyName]
-            alignmentFilePath = os.path.join(options.inputDirectory,
-                                             LocusName.replace(".npy", ""))
-            command = ["aliview", alignmentFilePath]
-            print(command)
+            #self.launchAlignViewer(side)
 
-            subprocess.run(command)
+    def getLocusNames(self):
+        Data = self.PWMData.iloc[self.index]
+        KeyNames = ["Unnamed: 0", "Unnamed: 1"]
+        return [Data[kn].replace(".npy", "") for kn in KeyNames]
+
+    def launchAlignViewer(self, side):
+        LocusNames = self.getLocusNames()
+        LocusName = LocusNames[side]
+
+        alignmentFilePath = os.path.join(options.inputDirectory, LocusName)
+        command = ["aliview", alignmentFilePath]
+        print(command)
+
+        subprocess.run(command)
 
 
 def buildArrayPath(f):
@@ -309,41 +365,53 @@ def plotPwmIndex(fig, PWMData, I, showLabelColors=True):
     r_axis1 = createSubplot(fig, 331, a_name, ordered_ma, orderedLabels)
     r_axis2 = createSubplot(fig, 333, b_name, ordered_mb, orderedLabels)
 
+    reordered_axis = [r_axis1, r_axis2]
 
     # ORIGINAL MATRIXES;
     # plot;
     o_axis1 = createSubplot(fig, 337, a_name, ma, heatmapLabels)
     o_axis2 = createSubplot(fig, 339, b_name, mb, heatmapLabels)
 
+    original_axis = [o_axis1, o_axis2]
 
     # COLORIZE MATRIX LABELS BY MESHCLUSTER;
     if showLabelColors:
-        plotFilenames = [
-            (r_axis1, a_name),
-            (r_axis2, b_name),
-            (o_axis1, a_name),
-            (o_axis2, b_name)
-        ]
-
         colorMap = plt.get_cmap("Set1")
+        symbolMap = [chr(945 + x) for x in range(20)]
 
-        for (Axis, LocusName) in plotFilenames:
+        for N, LocusName in enumerate([a_name, b_name]):
             clusterFilePath = buildArrayPath(LocusName) + ".clst"
             if os.path.isfile(clusterFilePath):
-                clusterOutputData = parseMeshcluster(clusterFilePath)
-                NB_Groups = len(clusterOutputData.keys())
-                GroupColors = [colorMap(x / NB_Groups)
-                               for x in range(NB_Groups)]
+                for Axis in [reordered_axis[N], original_axis[N]]:
+                    clusterOutputData = parseMeshcluster(clusterFilePath)
+                    NB_Groups = len(clusterOutputData.keys())
+                    GroupColors = [colorMap(x / NB_Groups)
+                                   for x in range(NB_Groups)]
 
-                # COLORIZE LABELS;
-                for (labelx, labely) in zip(Axis.get_xticklabels(),
-                                            Axis.get_yticklabels()):
-                    text = labelx.get_text()
-                    for key in clusterOutputData.keys():
-                        if text in clusterOutputData[key]:
-                            labelx.set_color(GroupColors[key])
-                            labely.set_color(GroupColors[key])
-                            break
+                    # COLORIZE LABELS;
+                    axisLabels = list(zip(Axis.get_xticklabels(), Axis.get_yticklabels()))
+                    for idx, (labelx, labely) in enumerate(axisLabels):
+                        text = labelx.get_text()
+                        for key in clusterOutputData.keys():
+                            if text in clusterOutputData[key]:
+                                labelx.set_text(symbolMap[key] + "sad " + text)
+                                labely.set_text(symbolMap[key] + " " + text)
+
+                                # fetch current state of labels;
+                                xcurrentState = Axis.get_xticklabels()
+                                ycurrentState = Axis.get_yticklabels()
+
+                                # modify current label;
+                                xcurrentState[idx] = symbolMap[key] + "   " + text
+                                ycurrentState[idx] = text + "   " + symbolMap[key]
+
+                                # apply new state to labels;
+                                Axis.set_xticklabels(xcurrentState)
+                                Axis.set_yticklabels(ycurrentState)
+
+                                labelx.set_color(GroupColors[key])
+                                labely.set_color(GroupColors[key])
+                                break
 
     # BUILD SHOWN INFO;
     distance = abs(data[0].PositionStart - data[1].PositionStart)

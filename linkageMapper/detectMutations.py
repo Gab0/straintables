@@ -81,10 +81,11 @@ def sortAlignments(sequenceNames, _Windows):
     a = sorted(a, key=stackEngine)
     sequenceNames = [x[0] for x in a]
     _Windows = [x[1] for x in a]
+
     return sequenceNames, _Windows
 
 
-def storeMatrixData(MATRIX, baseFileName, subtitle=None):
+def storeMatrixData(MATRIX, baseFileName, sequenceNames, subtitle=None):
     # SAVE HEATMAP GRAPHIC;
     plotHeatmap(MATRIX, sequenceNames, baseFileName + ".pdf", subtitle=subtitle)
 
@@ -95,20 +96,7 @@ def storeMatrixData(MATRIX, baseFileName, subtitle=None):
     np.save(labelsPath, np.array(sequenceNames))
 
 
-if __name__ == "__main__":
-
-    parser = optparse.OptionParser()
-
-    parser.add_option('-i', dest="InputFile")
-    parser.add_option('-s', dest="PlotSubtitle")
-
-    options, args = parser.parse_args()
-
-    alignPath = options.InputFile
-    if not alignPath:
-        print("No input file specified!")
-        exit(1)
-
+def Execute(options):
     # LOAD ALIGNMENT;
     Alignment = AlignIO.read(open(alignPath), "clustal")
 
@@ -204,7 +192,7 @@ if __name__ == "__main__":
             _MATRIX[i][j] = new_v
 
     # SAVE DIVERSE VERSIONS OF THE MATRIX;
-    storeMatrixData(MATRIX, alignPath, subtitle=options.PlotSubtitle)
+    storeMatrixData(MATRIX, alignPath, sequenceNames, subtitle=options.PlotSubtitle)
     #storeMatrixData(_MATRIX, alignPath + "alt")
 
     # SAVE SNP INFO DATA FILE;
@@ -219,3 +207,20 @@ if __name__ == "__main__":
             os.mkdir(problematicDirectory)
         shutil.copyfile(options.InputFile, os.path.join(problematicDirectory, os.path.basename(options.InputFile)))
     print(matrixRowMeans)
+
+
+if __name__ == "__main__":
+
+    parser = optparse.OptionParser()
+
+    parser.add_option('-i', dest="InputFile")
+    parser.add_option('-s', dest="PlotSubtitle")
+
+    options, args = parser.parse_args()
+
+    alignPath = options.InputFile
+    if not alignPath:
+        print("No input file specified!")
+        exit(1)
+
+    Execute(options)
