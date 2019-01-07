@@ -49,7 +49,9 @@ done
 echo "Alignment mode is $ALNMODE"
 echo ""
 
-if meshclust;
+# JUST CHECK IF EXISTS;
+meshclust > null
+if [ $? == 1 ]
 then
     echo "MeShClust enabled!"
 else

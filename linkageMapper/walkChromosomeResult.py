@@ -43,7 +43,7 @@ class matrixViewer():
         # INITIALIZE STATE VARIABLES;
         self.labelColorsOn = 1
         self.index = 0
-
+        self.zoomedPlot = None
 
         # PREPARE BUTTON ICON IMAGE;
         source_image = graphic.dna_icon
@@ -178,6 +178,41 @@ class matrixViewer():
     def onclickCanvas(self, event):
         # print(event)
         if event.inaxes:
+            Axis = event.inaxes
+            #if event.button is 1:
+            if self.zoomedPlot is None:
+                Axis._orig_position = Axis.get_position()
+                Axis.set_position([0, 0, 1, 1])
+                self.zoomedPlot = Axis
+
+                if False:
+                    self.figure.clf()
+                    print(Axis)
+                    self.figure.axes.append(Axis)
+                    print(self.figure.axes)
+                    self.figurecanvas.draw()
+                    #self.figurecanvas.flush_events()
+
+
+                for otherAxis in event.canvas.figure.axes:
+                    if otherAxis is not Axis:
+                        otherAxis.set_visible(False)
+
+            #if event.button is 3:
+
+            elif self.zoomedPlot is not None:
+                # JUST REDRAW... SLOWER BUT GUARANTEED (matplotlib is mystical);
+                self.changeView(self.index)
+                self.zoomedPlot = None
+                """
+                    self.zoomedPlot.set_position(self.zoomedPlot._orig_position)
+                    for Axis in event.canvas.figure.axes:
+                        Axis.set_visible(True)
+                    self.zoomedPlot = None
+                    """
+        else:
+            print("OFF AXIS.;")
+        """
             bbox = self.figure.get_window_extent().transformed(
                 self.figure.dpi_scale_trans.inverted())
             width, height = bbox.width*self.figure.dpi, bbox.height*self.figure.dpi
@@ -185,6 +220,7 @@ class matrixViewer():
             side = 0 if event.x < width // 2 else 1
 
             #self.launchAlignViewer(side)
+        """
 
     def getLocusNames(self):
         Data = self.PWMData.iloc[self.index]
@@ -401,16 +437,24 @@ def plotPwmIndex(fig, PWMData, I, showLabelColors=True):
                                 xcurrentState = Axis.get_xticklabels()
                                 ycurrentState = Axis.get_yticklabels()
 
+                                # BLACK COLOR AND NULL SYMBOL FOR ONE INDIVIDUAL GROUPS;
+                                if len(clusterOutputData[key]) == 1:
+                                    Symbol = " "
+                                # COLOR AND GREEK SYMBOL FOR MULTI INDIVIDUAL GROUPS;
+                                else:
+                                    Symbol = symbolMap[key]
+                                    labelx.set_color(GroupColors[key])
+                                    labely.set_color(GroupColors[key])
+                                    
                                 # modify current label;
-                                xcurrentState[idx] = symbolMap[key] + "   " + text
-                                ycurrentState[idx] = text + "   " + symbolMap[key]
+                                xcurrentState[idx] = Symbol + "   " + text
+                                ycurrentState[idx] = text + "   " + Symbol
+
+
 
                                 # apply new state to labels;
                                 Axis.set_xticklabels(xcurrentState)
                                 Axis.set_yticklabels(ycurrentState)
-
-                                labelx.set_color(GroupColors[key])
-                                labely.set_color(GroupColors[key])
                                 break
 
     # BUILD SHOWN INFO;
@@ -444,10 +488,11 @@ def plotPwmIndex(fig, PWMData, I, showLabelColors=True):
         singleLocusStatus(ax_ha, a_name)
         singleLocusStatus(ax_hb, b_name)
 
-        # Additional info on secondary axis
-        RecombinationMessage = "True" if d["recombination"] else "False"
-        Message = "Recombination? %s" % RecombinationMessage
-        ax_hb.text(0.8, 1, s=Message)
+        # Additional info on secondary axis DEPRECATED;
+        if False:
+            RecombinationMessage = "True" if d["recombination"] else "False"
+            Message = "Recombination? %s" % RecombinationMessage
+            ax_hb.text(0.8, 1, s=Message)
 
     # RECOMBINATION FIGURE;
     if d["recombination"]:
