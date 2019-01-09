@@ -13,7 +13,7 @@ import re
 import random
 
 from ftplib import FTP
-
+import optparse
 Entrez.email = 'researcher_%i@one-time-use.cn' % random.randrange(0, 1000)
 
 
@@ -103,11 +103,13 @@ def downloadAssembly(ID, downloadDirectory='',
             '_genomic.fna'
         ]
 
+    remoteFileExtension = None
     remoteFileNames = []
     for File in remoteFiles:
         for wantedFileType in wantedFileTypes:
             if wantedFileType in File:
                 remoteFileNames.append(File)
+                remoteFileExtension = "." + wantedFileType.split(".")[-1]
 
     # download only the file with shortest name among matched files at FTP directory;
     remoteFileNames = sorted(remoteFileNames,
@@ -123,9 +125,11 @@ def downloadAssembly(ID, downloadDirectory='',
         print('\n'.join(remoteFiles))
 
     for remoteFileName in remoteFileNames:
+        # REVIEW THIS! MAY YIELD BUGS LATER.
         localFileName = re.findall("TG[A-Z0-9]+", remoteFileName)
         if localFileName:
-            localFileName = localFileName[0] + ".fasta"
+
+            localFileName = localFileName[0] + remoteFileExtension
             if remoteFileName.endswith(".gz"):
                 localFileName += ".gz"
         else:
@@ -154,8 +158,8 @@ def downloadAssembly(ID, downloadDirectory='',
                 localfilepath = decompressedPath
                 print('\n')
 
-        # ANNOTATION FILE - split by scaffold;
-        if localfilepath.endswith(".gbff"):
+        # ANNOTATION FILE - split by scaffold (unused);
+        if False and localfilepath.endswith(".gbff"):
             with open(localfilepath) as af:
                 data = list(SeqIO.parse(af, 'gb'))
                 for chromosome in data:
@@ -197,16 +201,31 @@ def strainToDatabase(species):
 
 
 if __name__ == "__main__":
+
+    parser = optparse.OptionParser()
+    parser.add_option("--nogenome", dest='downloadGenomes',
+                      action='store_false',
+                      default=True,
+                      help="Skip genome downloads.")
+
+    parser.add_option("--noannotation",
+                      dest='downloadAnnotations',
+                      action='store_false',
+                      default=True,
+                      help="Skip annotation downloads.")
+
+    options, args = parser.parse_args()
+
+    dataTypes = []
     # Fetch Genome IDs;
-    D = findAssemblyList("Toxoplasma gondii")
+    if options.downloadGenomes:
+        D = findAssemblyList("Toxoplasma gondii")
+        dataTypes.append((D, "genomes", ["_genomic.fna"]))
 
     # Fetch Annotation IDs;
-    A = findAssemblyList("Toxoplasma gondii ME49")
-
-    dataTypes = [
-        #(D, "genomes", ["_genomic.fna"]),
-        (A, "annotations", ["_genomic.gbff"])
-    ]
+    if options.downloadAnnotations:
+        A = findAssemblyList("Toxoplasma gondii ME49")
+        dataTypes.append((A, "annotations", ["_genomic.gbff"]))
 
     for (IDS, typeName, fileExtensions) in dataTypes:
         for d, ID in enumerate(IDS):
