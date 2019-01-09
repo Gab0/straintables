@@ -20,8 +20,6 @@ By looking at a pair of D. Matrixes at a time, both corresponding to locus that 
 
 2. Install python dependencies: `$sudo pip install -r requirements.txt`
 
-3. Make sure you have clustalW2 on your path.
-
 ### Fetch genomes and annotation files
 
 The following code downloads all required genomes and annotations from NCBI,
@@ -51,7 +49,7 @@ Instead, you can manually add desired genomes and annotations, as explained in t
 The alignment step of `linkageMapper` requires [ClustalW2](http://www.clustal.org/clustal2/) installed on your
 system.
 
-### Setup MeShClust
+### Setup MeShClust [optional/recommended]
 
 The recombination analysis step of `linkageMapper` has [MeShClust](https://github.com/TulsaBioinformaticsToolsmith/MeShClust) as an optional dependency, having it installed on your system will add depth on matrix visualization.
 

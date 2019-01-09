@@ -5,6 +5,7 @@ import pandas as pd
 import numpy as np
 import array
 
+import json
 import subprocess
 
 from optparse import OptionParser
@@ -370,6 +371,149 @@ def parseMeshcluster(clusterFilePath):
     return clusterOutputData
 
 
+# well... this function can be..... simplified.
+def matchPairOfClusterOutputData(clusterOutputData):
+    masterData = clusterOutputData[0]
+    slaveData = clusterOutputData[1]
+
+    # STEP ZERO: REORDER BY GROUP SIZE;
+    def byGroupSize(Data):
+        _Data = [(k, v) for k, v in Data.items()]
+        _Data = sorted(_Data, key=lambda x: len(x[1]), reverse=True)
+        _Data = [(idx, value[1]) for idx, value in enumerate(_Data)]
+        _Data = dict(_Data)
+
+        return _Data
+
+    masterData = byGroupSize(masterData)
+    slaveData = byGroupSize(slaveData)
+
+    # 1st STEP: COMPUTE SCORES;
+    def computeScores(masterData, slaveData):
+        keyScores = [[0 for y in slaveData if len(slaveData[y]) > 1]
+                     for x in masterData if len(masterData[x]) > 1]
+        for mkey in range(len(keyScores)):
+            for skey in range(len(keyScores[mkey])):
+                score = 0
+                for ind in masterData[mkey]:
+                    if ind in slaveData[skey]:
+                        score += 1
+                #score = score / len(masterData[mkey])
+                keyScores[mkey][skey] = score
+
+        return keyScores
+
+    keyScores = computeScores(masterData, slaveData)
+
+    # DEBUG: VIEW SCORES;
+    # clusterOutputData = [masterData, slaveData]
+    # print(json.dumps(clusterOutputData, indent=2))
+    for i in keyScores:
+        for j in i:
+            print("%i " % j, end="")
+        print()
+
+    print(keyScores)
+
+    # 2nd STEP: SWAP POSITIONS @ SLAVE;
+    TargetReplacementCount = (1, 4)
+    ReplacementCount = 0
+    Replaced = []
+    for k in range(TargetReplacementCount[1]):
+        for mkey in range(len(keyScores)):
+            if mkey in Replaced:
+                continue
+
+            MAX = max(keyScores[mkey])
+            MIN = min(keyScores[mkey])
+            if len(keyScores[mkey]) >= len(keyScores):
+                if keyScores[mkey][mkey] == max(keyScores[mkey]):
+                    print("GOOD!")
+                    continue
+            for skey in range(len(keyScores[mkey])):
+                if keyScores[mkey][skey] == MAX:
+                        poorIndex = mkey
+                        goodIndex = skey
+
+                        good = slaveData[goodIndex]
+                        poor = slaveData[poorIndex]
+
+                        slaveData[poorIndex] = good
+                        slaveData[goodIndex] = poor
+
+                        keyScores = computeScores(masterData, slaveData)
+
+                        ReplacementCount += 1
+                        Replaced.append(mkey)
+                        print("Replaced! %i %i" % (mkey, skey))
+
+        ReplacementCount += 1
+        if ReplacementCount >= TargetReplacementCount[0]:
+            break
+
+    # 3rd STEP: CREATE NEW GROUPS @ SLAVE TO NOT REPEAT GROUPS FROM MASTER;
+    # IF THEY DON'T SHARE A SINGLE GENOME;
+
+    def doShareCommon(masterDataEntry, slaveDataEntry):
+        shareCommon = False
+        for Individue in masterDataEntry:
+            if Individue in slaveDataEntry:
+                shareCommon = True
+                break
+        return shareCommon
+
+    masterDataLength = len(list(masterData.keys()))
+    slaveDataLength = len(list(slaveData.keys()))
+    for k in range(min(masterDataLength, slaveDataLength)):
+        if not len(masterData[k]) > 1 or k not in masterData.keys():
+            continue
+        if not len(slaveData[k]) > 1 or k not in slaveData.keys():
+            continue
+
+        shareCommon = doShareCommon(masterData[k], slaveData[k])
+
+        # IF NO GENOME IS SHARED, THIS STEP WILL END WITH THE DELETION OF K KEY FROM SLAVE DATA;
+        # AND SLAVE DATA [K] WILL BE REASSIGNED TO RIGHT BEFORE THE LONE INDIVIDUES ARE, OR TO THE LAST POSITION;
+        if not shareCommon:
+            # Reassign possible existing group key to new:
+            reassignedKey = None
+            lastResourceKey = max(list(slaveData.keys())) + 1
+            for skey in range(lastResourceKey):
+                if skey in slaveData.keys():
+                    if len(slaveData[skey]) == 1:
+                        reassignedKey = skey
+                        slaveData[lastResourceKey] = slaveData[reassignedKey]
+                        slaveData[reassignedKey] = slaveData[k]
+                        break
+                elif skey in masterData.keys():
+                    if doShareCommon(masterData[skey], slaveData[k]):
+                        reassignedKey = skey
+                        slaveData[skey] = slaveData[k]
+                        break
+
+            if reassignedKey is None:
+                slaveData[lastResourceKey] = slaveData[k]
+
+            if k in slaveData.keys():
+                del slaveData[k]
+
+    # clusterOutputData = [masterData, slaveData]
+    # print(json.dumps(clusterOutputData, indent=2))
+
+    #keyScores = computeScores(masterData, slaveData)
+    # DEBUG: VIEW SCORES;
+    clusterOutputData = [masterData, slaveData]
+    print(json.dumps(clusterOutputData, indent=2))
+    for i in keyScores:
+        for j in i:
+            print("%i " % j, end="")
+        print()
+
+    print(keyScores)
+
+    return clusterOutputData
+
+
 def plotPwmIndex(fig, PWMData, I, showLabelColors=True):
     d = PWMData.iloc[I]
     a = d["Unnamed: 0"]
@@ -412,45 +556,56 @@ def plotPwmIndex(fig, PWMData, I, showLabelColors=True):
 
     # COLORIZE MATRIX LABELS BY MESHCLUSTER;
     if showLabelColors:
-        colorMap = plt.get_cmap("Set1")
+        # color map from matplotlib;
+        colorMap = plt.get_cmap("tab20")
+
+        GroupColors = [colorMap(x / 20)
+                       for x in range(20)]
+
+        # lower case greek letters for niceness;
         symbolMap = [chr(945 + x) for x in range(20)]
 
+        clusterOutputData = [None for n in range(2)]
+        # ITERATE LOCUS NAMES ON VIEW (TWO) iteration to load clusterOutputData;
         for N, LocusName in enumerate([a_name, b_name]):
             clusterFilePath = buildArrayPath(LocusName) + ".clst"
             if os.path.isfile(clusterFilePath):
+                locusClusterOutputData = parseMeshcluster(clusterFilePath)
+                clusterOutputData[N] = locusClusterOutputData
+
+        # REORGANIZE CLUSTER OUTPUT DATA;
+        if all(clusterOutputData):
+            clusterOutputData = matchPairOfClusterOutputData(clusterOutputData)
+
+        # NEW ITERATION OF LOCUS NAMES, TO APPLY CLUSTER OUTPUT DATA INTO VIEW;
+        for N, LocusName in enumerate([a_name, b_name]):
+            if clusterOutputData[N] is not None:
+                NB_Groups = len(clusterOutputData[N].keys())
                 for Axis in [reordered_axis[N], original_axis[N]]:
-                    clusterOutputData = parseMeshcluster(clusterFilePath)
-                    NB_Groups = len(clusterOutputData.keys())
-                    GroupColors = [colorMap(x / NB_Groups)
-                                   for x in range(NB_Groups)]
 
                     # COLORIZE LABELS;
                     axisLabels = list(zip(Axis.get_xticklabels(), Axis.get_yticklabels()))
                     for idx, (labelx, labely) in enumerate(axisLabels):
                         text = labelx.get_text()
-                        for key in clusterOutputData.keys():
-                            if text in clusterOutputData[key]:
-                                labelx.set_text(symbolMap[key] + "sad " + text)
-                                labely.set_text(symbolMap[key] + " " + text)
+                        for key in clusterOutputData[N].keys():
+                            if text in clusterOutputData[N][key]:
 
                                 # fetch current state of labels;
                                 xcurrentState = Axis.get_xticklabels()
                                 ycurrentState = Axis.get_yticklabels()
 
                                 # BLACK COLOR AND NULL SYMBOL FOR ONE INDIVIDUAL GROUPS;
-                                if len(clusterOutputData[key]) == 1:
+                                if len(clusterOutputData[N][key]) == 1:
                                     Symbol = " "
                                 # COLOR AND GREEK SYMBOL FOR MULTI INDIVIDUAL GROUPS;
                                 else:
                                     Symbol = symbolMap[key]
                                     labelx.set_color(GroupColors[key])
                                     labely.set_color(GroupColors[key])
-                                    
+
                                 # modify current label;
                                 xcurrentState[idx] = Symbol + "   " + text
                                 ycurrentState[idx] = text + "   " + Symbol
-
-
 
                                 # apply new state to labels;
                                 Axis.set_xticklabels(xcurrentState)
