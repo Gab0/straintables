@@ -11,6 +11,7 @@ More statistical analysis on the Dissimilarity Matrixes are carried, mostly usin
 <br>
 By looking at a pair of D. Matrixes at a time, both corresponding to locus that are neighbors, the user may have an idea of the recombination frequence of the studied organism.
 
+![walkChr.jpg]()
 
 # Setup
 
@@ -63,7 +64,7 @@ The recombination analysis step of `linkageMapper` has [MeShClust](https://githu
 3. Check the results at the result folder that is equal to the `Primer` file selected for the run. Result folders are down the `Alignments` folder.
 
 
-### Example 1
+### Example 1: Automatic Locus Selection, Automatic Primer Search.
 
 ```
 $ python linkageMapper/initializePrimerFile.py -i annotations/<chromosome annotation file name> -o Primers/TEST.csv
@@ -71,7 +72,7 @@ $ bash linkagePipeline.sh TEST
 $ python linkageMapper/walkChromosomeResult.py -i Alignments/TEST
 ```
 
-### Example 2
+### Example 2: Custom Locus Selection
 
 * First make your own primer file, with custom primers or blank primer fields. The primer file will be named `Primers/chr_X.csv` for this example.
 
@@ -81,7 +82,8 @@ $ bash linkagePipeline.sh chr_X
 
 * Then view similarity matrixes and phylogenetic trees on `pdf` files at `Alignments/chr_X` folder.
 
-### Example 3
+<!--- DEPRECATED?
+### Example 3:
 
 * Make your own primer file, as explained in `Example 2`.
 * The first locus should be one that is used commonly as *T. gondii* PCR-RFLP analysis
@@ -92,6 +94,7 @@ $ bash linkagePipelinea.sh chr_XII clustal SAG3
 ```
 
 * Then view similarity matrixes and phylogenetic trees on `pdf` files at `Alignments/chr_X` folder.
+-->
 
 # Results
 

@@ -39,8 +39,10 @@ def Execute(options):
 
 if __name__ == "__main__":
     parser = OptionParser()
+
     parser.add_option("-d",
                       dest="inputAnnotationFolder", default='annotations')
+
     parser.add_option("-a",
                       dest="inputAnnotationName")
 

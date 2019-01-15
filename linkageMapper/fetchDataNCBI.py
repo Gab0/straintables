@@ -214,17 +214,25 @@ if __name__ == "__main__":
                       default=True,
                       help="Skip annotation downloads.")
 
+    parser.add_option("--organism",
+                      dest="queryOrganism",
+                      default="Toxoplasma gondii")
+
+    parser.add_opton("--strain",
+                     dest="annotationStrain",
+                     default="ME49")
+
     options, args = parser.parse_args()
 
     dataTypes = []
     # Fetch Genome IDs;
     if options.downloadGenomes:
-        D = findAssemblyList("Toxoplasma gondii")
+        D = findAssemblyList(options.queryOrganism)
         dataTypes.append((D, "genomes", ["_genomic.fna"]))
 
     # Fetch Annotation IDs;
     if options.downloadAnnotations:
-        A = findAssemblyList("Toxoplasma gondii ME49")
+        A = findAssemblyList("%s %s" % (options.queryOrganism, options.annotationStrain))
         dataTypes.append((A, "annotations", ["_genomic.gbff"]))
 
     for (IDS, typeName, fileExtensions) in dataTypes:
