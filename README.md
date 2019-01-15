@@ -11,7 +11,7 @@ More statistical analysis on the Dissimilarity Matrixes are carried, mostly usin
 <br>
 By looking at a pair of D. Matrixes at a time, both corresponding to locus that are neighbors, the user may have an idea of the recombination frequence of the studied organism.
 
-![walkChr.jpg]()
+![](walkChr.jpg?raw=true)
 
 # Setup
 
