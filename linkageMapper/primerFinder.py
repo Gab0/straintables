@@ -107,17 +107,33 @@ if __name__ == "__main__":
     ]
 
     genomeFeatures = [
-        SeqIO.read(File, "genbank")
-        for File in genomeFeatureFiles
+        list(SeqIO.parse(File, "genbank"))
+        for File in genomeFeatureFiles if File.endswith(".gbff")
     ]
+
+    # CHECK GENOME FEATURES FILE EXISTENCE;
+    if genomeFeatures:
+        genomeFeatures = genomeFeatures[0]
+    else:
+        print("Fata: No features found.")
+        exit(1)
 
     # APPLY GENOME FEATURES TO MODULE;
     PrimerEngine.bruteForcePrimerSearch.genomeFeatures = genomeFeatures
 
     # FETCH GENOME NAMES;
     genomeFeaturesChromosomes =\
-        [chromosome.features[0].qualifiers['chromosome'][0].upper()
-         for chromosome in genomeFeatures]
+        [
+            chromosome.features[0].qualifiers['chromosome'][0].upper()
+            for chromosome in genomeFeatures
+            if 'chromosome' in chromosome.features[0].qualifiers.keys()
+        ]
+
+    genomeFeaturesChromosomes = [
+        chrName
+        for chrName in genomeFeaturesChromosomes
+        if chrName is not "UKNOWN"
+    ]
 
     # print(genomeFeaturesChromosomes)
 

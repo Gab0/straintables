@@ -64,7 +64,7 @@ The recombination analysis step of `linkageMapper` has [MeShClust](https://githu
 3. Check the results at the result folder that is equal to the `Primer` file selected for the run. Result folders are down the `Alignments` folder.
 
 
-### Example 1: Automatic Locus Selection, Automatic Primer Search.
+#### Example 1: Automatic Locus Selection with Automatic Primer Search.
 
 ```
 $ python linkageMapper/initializePrimerFile.py -i annotations/<chromosome annotation file name> -o Primers/TEST.csv
@@ -72,18 +72,46 @@ $ bash linkagePipeline.sh TEST
 $ python linkageMapper/walkChromosomeResult.py -i Alignments/TEST
 ```
 
-### Example 2: Custom Locus Selection
 
-* First make your own primer file, with custom primers or blank primer fields. The primer file will be named `Primers/chr_X.csv` for this example.
 
+#### Example 2: Custom Locus Selection with Automatic Primer Search
+
+* Make your own primer `.csv` file, named `Primers/chr_X.csv` for this example. It should have blank primer fields. 
+
+```
+<Primers/chr_X.csv>
+LocusName,ForwardPrimer,ReversePrime
+CDPK
+IMC2A,,
+AP2X1,,
+TGME49_227830,,
+```
+
+
+Then, execute:
 ```
 $ bash linkagePipeline.sh chr_X
 ```
 
 * Then view similarity matrixes and phylogenetic trees on `pdf` files at `Alignments/chr_X` folder.
 
+
+#### Example 3: Custom Loci Selection, Custom Primer Search
+
+* Follow Example 2, except now the primer file can have a pair of primers designed for each loci:
+* Some primers, if missing or problematic, will trigger the automatic primer search.
+
+```
+<Primers/chr_X.csv>
+LocusName,ForwardPrimer,ReversePrimer
+CDPK1,ACAAAGGCTACTTCTACCTC,TTCTATGTGGGGATGCAGAG
+IMC2A,,GACGGACGCATGGCTTGCTG
+AP2X1,GCTCAAGCTGCTCCCCGGGC,TCGACGGAGGTGCTCCAACC
+
+```
+
 <!--- DEPRECATED?
-### Example 3:
+### Example 4:
 
 * Make your own primer file, as explained in `Example 2`.
 * The first locus should be one that is used commonly as *T. gondii* PCR-RFLP analysis

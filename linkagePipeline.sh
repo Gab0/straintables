@@ -59,7 +59,7 @@ else
     DO_MESHCLUST=0
 fi
 
-echo '\n'
+echo ""
 echo "Running pipeline..."
 echo ""
 

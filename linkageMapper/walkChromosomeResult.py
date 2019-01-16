@@ -372,9 +372,16 @@ def parseMeshcluster(clusterFilePath):
 
 
 # well... this function can be..... simplified.
-def matchPairOfClusterOutputData(clusterOutputData):
+def matchPairOfClusterOutputData(clusterOutputData, Verbose=True):
     masterData = clusterOutputData[0]
     slaveData = clusterOutputData[1]
+
+    if Verbose:
+        print("Reordering Cluster Groups...")
+        print()
+        print("Original:")
+        print(json.dumps(clusterOutputData, indent=2))
+        print()
 
     # STEP ZERO: REORDER BY GROUP SIZE;
     def byGroupSize(Data):
@@ -432,6 +439,7 @@ def matchPairOfClusterOutputData(clusterOutputData):
                     continue
             for skey in range(len(keyScores[mkey])):
                 if keyScores[mkey][skey] == MAX:
+                    try:
                         poorIndex = mkey
                         goodIndex = skey
 
@@ -442,11 +450,12 @@ def matchPairOfClusterOutputData(clusterOutputData):
                         slaveData[goodIndex] = poor
 
                         keyScores = computeScores(masterData, slaveData)
-
-                        ReplacementCount += 1
-                        Replaced.append(mkey)
                         print("Replaced! %i %i" % (mkey, skey))
+                    except KeyError as e:
+                        print(e)
 
+                    ReplacementCount += 1
+                    Replaced.append(mkey)
         ReplacementCount += 1
         if ReplacementCount >= TargetReplacementCount[0]:
             break
@@ -562,6 +571,7 @@ def plotPwmIndex(fig, PWMData, I, showLabelColors=True):
         GroupColors = [colorMap(x / 20)
                        for x in range(20)]
 
+
         # lower case greek letters for niceness;
         symbolMap = [chr(945 + x) for x in range(20)]
 
@@ -614,6 +624,8 @@ def plotPwmIndex(fig, PWMData, I, showLabelColors=True):
 
     # BUILD SHOWN INFO;
     distance = abs(data[0].PositionStart - data[1].PositionStart)
+
+    INF_SYMBOL = chr(8734)
     Title = [
         "Distance = {:,} bp".format(distance),
         "%s vs %s" % (a_name, b_name),
