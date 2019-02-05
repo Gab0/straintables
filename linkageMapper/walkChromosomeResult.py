@@ -45,19 +45,13 @@ class matrixViewer():
         self.labelColorsOn = 1
         self.index = 0
         self.zoomedPlot = None
-
+        self.swap = False
         # PREPARE BUTTON ICON IMAGE;
-        source_image = graphic.dna_icon
 
-        source_image = source_image.tobytes()
-        dnd = array.array('B', source_image)
-        width, height = graphic.dna_icon.size
-        dna_icon_data = GdkPixbuf.Pixbuf.new_from_data(dnd, GdkPixbuf.Colorspace.RGB, True, 8, width, height, width * 4)
 
-        dna_icon_left = Gtk.Image()
-        dna_icon_left.set_from_pixbuf(dna_icon_data)
-        dna_icon_right = Gtk.Image()
-        dna_icon_right.set_from_pixbuf(dna_icon_data)
+        dna_icon_left = loadImage(graphic.dna_icon)
+        dna_icon_right = loadImage(graphic.dna_icon)
+        swap_icon = loadImage(graphic.swap)
 
         # INITIALIZE TOP MENU BAR;
         self.menuFile = Gtk.Menu()
@@ -77,8 +71,10 @@ class matrixViewer():
         self.btn_next = Gtk.Button(image=Gtk.Image(stock=Gtk.STOCK_GO_FORWARD))
         self.btn_next.connect("clicked", self.nav_forward)
 
-        self.btn_invert = Gtk.Button(image=Gtk.Image(stock=Gtk.STOCK_REFRESH))
-
+        self.btn_invert = Gtk.Button()
+        self.btn_invert.connect("clicked", self.swapPlot)
+        self.btn_invert.add(swap_icon)
+        
         toggleColor = Gtk.ToggleButton(label=None, image=Gtk.Image(stock=Gtk.STOCK_COLOR_PICKER))
         toggleColor.set_tooltip_text("Show Matrix Label Colors")
         toggleColor.set_active(True)
@@ -97,26 +93,19 @@ class matrixViewer():
         vbox = Gtk.VBox()
         vbox.pack_start(self.figurecanvas, expand=True, fill=True, padding=0)
 
-
         # SHOW LOCUS NAVIGATION TOOLBAR;
-
-
-        _buttonBox = Gtk.Grid()
+        buttonBox = Gtk.Grid()
 
         self.btn_back.set_hexpand(True)
         self.btn_next.set_hexpand(True)
 
-        _buttonBox.add(self.openSequenceLeft)
-        _buttonBox.attach(self.btn_back, 1, 0, 3, 1)
-        _buttonBox.attach(self.btn_invert, 4, 0, 2, 1)
-        _buttonBox.attach(self.btn_next, 6, 0, 3, 1)
-        _buttonBox.attach(self.openSequenceRight, 9, 0, 2, 1)
+        buttonBox.add(self.openSequenceLeft)
+        buttonBox.attach(self.btn_back, 1, 0, 3, 1)
+        buttonBox.attach(self.btn_invert, 4, 0, 2, 1)
+        buttonBox.attach(self.btn_next, 6, 0, 3, 1)
+        buttonBox.attach(self.openSequenceRight, 9, 0, 2, 1)
 
-
-
-
-
-        vbox.pack_start(_buttonBox, expand=False, fill=True, padding=0)
+        vbox.pack_start(buttonBox, expand=False, fill=True, padding=0)
 
         # MODIFY MATPLOTLIB TOOLBAR;
         self.toolbar = NavigationToolbar(self.figurecanvas, win)
@@ -155,10 +144,12 @@ class matrixViewer():
                 self.index = min(self.allowedIndexes)
 
     def nav_forward(self, d):
+        self.swap = False
         self.cycleIndexes(1)
         self.changeView(self.index)
 
     def nav_back(self, d):
+        self.swap = False
         self.cycleIndexes(-1)
         self.changeView(self.index)
 
@@ -166,9 +157,13 @@ class matrixViewer():
         self.labelColorsOn = 1 - self.labelColorsOn
         self.changeView(self.index)
 
+    def swapPlot(self, d):
+        self.swap = 1 - self.swap
+        self.changeView(self.index)
+
     def changeView(self, I):
         self.figure.clf()
-        self.drawPlot(self.figure, self.PWMData, I, showLabelColors=self.labelColorsOn)
+        self.drawPlot(self.figure, self.PWMData, I, swap=self.swap, showLabelColors=self.labelColorsOn)
         try:
             self.figurecanvas.draw()
             self.figurecanvas.flush_events()
@@ -240,6 +235,17 @@ class matrixViewer():
         print(command)
 
         subprocess.run(command)
+
+
+def loadImage(source_image):
+    bsource_image = source_image.tobytes()
+    dnd = array.array('B', bsource_image)
+    width, height = source_image.size
+    image_pixelbuffer = GdkPixbuf.Pixbuf.new_from_data(dnd, GdkPixbuf.Colorspace.RGB, True, 8, width, height, width * 4)
+
+    output_image = Gtk.Image()
+    output_image.set_from_pixbuf(image_pixelbuffer)
+    return output_image
 
 
 def buildArrayPath(f):
@@ -526,10 +532,15 @@ def matchPairOfClusterOutputData(clusterOutputData, Verbose=True):
     return clusterOutputData
 
 
-def plotPwmIndex(fig, PWMData, I, showLabelColors=True):
+def plotPwmIndex(fig, PWMData, I, swap=False, showLabelColors=True):
     d = PWMData.iloc[I]
     a = d["Unnamed: 0"]
     b = d["Unnamed: 1"]
+
+    if swap:
+        c = b
+        b = a
+        a = c
 
     # walk loci by loci mode.
 
