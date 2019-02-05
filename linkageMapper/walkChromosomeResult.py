@@ -59,6 +59,9 @@ class matrixViewer():
         dna_icon_right = Gtk.Image()
         dna_icon_right.set_from_pixbuf(dna_icon_data)
 
+        # INITIALIZE TOP MENU BAR;
+        self.menuFile = Gtk.Menu()
+
         # INITIALIZE BUTTONS;
         self.openSequenceLeft = Gtk.Button()
         self.openSequenceLeft.connect("clicked", lambda d: self.launchAlignViewer(0))
@@ -68,11 +71,13 @@ class matrixViewer():
         self.openSequenceRight.connect("clicked", lambda d: self.launchAlignViewer(1))
         self.openSequenceRight.add(dna_icon_right)
 
-        self.btn_back = Gtk.Button(label="<")
+        self.btn_back = Gtk.Button(image=Gtk.Image(stock=Gtk.STOCK_GO_BACK))
         self.btn_back.connect("clicked", self.nav_back)
 
-        self.btn_next = Gtk.Button(label=">")
+        self.btn_next = Gtk.Button(image=Gtk.Image(stock=Gtk.STOCK_GO_FORWARD))
         self.btn_next.connect("clicked", self.nav_forward)
+
+        self.btn_invert = Gtk.Button(image=Gtk.Image(stock=Gtk.STOCK_REFRESH))
 
         toggleColor = Gtk.ToggleButton(label=None, image=Gtk.Image(stock=Gtk.STOCK_COLOR_PICKER))
         toggleColor.set_tooltip_text("Show Matrix Label Colors")
@@ -94,26 +99,24 @@ class matrixViewer():
 
 
         # SHOW LOCUS NAVIGATION TOOLBAR;
-        buttonBox = Gtk.HBox(homogeneous=False, spacing=2)
 
-        OSLC = Gtk.Alignment(xalign=0, xscale=0)
-        OSLC.add(self.openSequenceLeft)
 
-        OSRC = Gtk.Alignment(xalign=1, xscale=0)
-        OSRC.add(self.openSequenceRight)
+        _buttonBox = Gtk.Grid()
 
-        buttonBox.pack_start(OSLC, expand=False, fill=False, padding=0)
+        self.btn_back.set_hexpand(True)
+        self.btn_next.set_hexpand(True)
 
-        main = Gtk.HBox(homogeneous=True, spacing=2)
+        _buttonBox.add(self.openSequenceLeft)
+        _buttonBox.attach(self.btn_back, 1, 0, 3, 1)
+        _buttonBox.attach(self.btn_invert, 4, 0, 2, 1)
+        _buttonBox.attach(self.btn_next, 6, 0, 3, 1)
+        _buttonBox.attach(self.openSequenceRight, 9, 0, 2, 1)
 
-        main.pack_start(self.btn_back, expand=True, fill=True, padding=0)
-        main.pack_start(self.btn_next, expand=True, fill=True, padding=0)
 
-        buttonBox.pack_start(main, expand=True, fill=True, padding=0)
 
-        buttonBox.pack_start(OSRC, expand=False, fill=False, padding=0)
 
-        vbox.pack_start(buttonBox, expand=False, fill=False, padding=0)
+
+        vbox.pack_start(_buttonBox, expand=False, fill=True, padding=0)
 
         # MODIFY MATPLOTLIB TOOLBAR;
         self.toolbar = NavigationToolbar(self.figurecanvas, win)

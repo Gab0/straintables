@@ -1,14 +1,15 @@
 ## About
 
 linkageMapper is a tool that helps evaluate the difference among gene loci across *Toxoplasma gondii* genomes.
-<br>
-It takes fully sequenced genomes for diverse strains of *T. gondii*, then find Amplicons inside a pair of Primers on those genomes.
-The primers may be user-defined or found by the software when a locus name but no primers are defined.
-<br>
-Then it counts the SNPs that diverge from the amplicons found, and builds one Dissimilarity Matrix for each Amplicon/Gene/Primer_Pair that shows how the genomes are different at those regions.
-<br>
+
+It takes fully sequenced genomes for diverse strains of *T. gondii*, then find Amplicons inside a pair of primers on those genomes.
+
+The primers may be user-defined or found by the software when a locus name is defined without attached primers.
+
+Analysis proceeds while it counts the SNPs that diverge from the amplicons found at each locus, and builds one [https://en.wikipedia.org/wiki/Distance_matrix](dissimilarity matrix) for each `Locus or primer pair`. The matrix can show how the genomes are different at those regions.
+
 More statistical analysis on the Dissimilarity Matrixes are carried, mostly using python's `skbio` module. The interpretation of analysis is under construction.
-<br>
+
 By looking at a pair of D. Matrixes at a time, both corresponding to locus that are neighbors, the user may have an idea of the recombination frequence of the studied organism.
 
 ![](walkChr.jpg?raw=true)
