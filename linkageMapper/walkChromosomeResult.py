@@ -28,35 +28,121 @@ from matplotlib.backends.backend_gtk3 import (
     NavigationToolbar2GTK3 as NavigationToolbar)
 
 
+class alignmentData():
+    def __init__(self, inputDirectory):
+
+        self.dataKeys = ["Unnamed: 0", "Unnamed: 1"]
+        self.loadDataFiles(inputDirectory)
+        self.inputDirectory = inputDirectory
+
+
+    def loadDataFiles(self, inputDirectory):
+        PrimerFilePath = os.path.join(inputDirectory, "PrimerData.csv")
+        MatchedPrimerFilePath = os.path.join(inputDirectory, "MatchedPrimers.csv")
+        PWMFilePath = os.path.join(inputDirectory, "PWMAnalysis.csv")
+
+        # LOAD RELEVANT DATABASES;
+        self.PrimerData = pd.read_csv(PrimerFilePath)
+        self.PWMData = pd.read_csv(PWMFilePath)
+        self.MatchData = pd.read_csv(MatchedPrimerFilePath)
+
+        # FETCH ORIGINAL HEATMAP GENOME LABELS;
+        heatmapLabelsFilePath = os.path.join(
+            inputDirectory,
+            "heatmap_labels.npy"
+        )
+
+        self.heatmapLabels = np.load(heatmapLabelsFilePath)
+        # FETCH VIEWABLE DATA INDEXES;
+        last = None
+        self.allowedIndexes = []
+        for I in range(self.PWMData.shape[0]):
+            d = self.PWMData.iloc[I]
+            a = d[self.dataKeys[0]]
+            if a == last:
+                continue
+            self.allowedIndexes.append(I)
+            last = a
+
+    def findPWMDataRow(self, a, b):
+        for k in range(self.PWMData.shape[0]):
+            d = self.PWMData.iloc[k]
+            names = [d[x] for x in self.dataKeys]
+            if a in names and b in names:
+                return d
+
+        return None
+
+    def buildArrayPath(self, f):
+        return os.path.join(self.inputDirectory, f)
+
+    def fetchLociList(self):
+        for t in self.dataKeys:
+            print(self.PWMData[t])
+        allLoci = [list(self.PWMData[d]) for d in self.dataKeys]
+        print(allLoci)
+        allLoci = [j for s in allLoci for j in s]
+
+        return list(set(allLoci))
+
+
 # COMPLEX DISSIMILARITY MATRIX VIEWER GTK APPLICATION;
 class matrixViewer():
-    def __init__(self, PWMData, drawPlotIndex, allowedIndexes):
-        self.PWMData = PWMData
-        self.drawPlot = drawPlotIndex
-        self.allowedIndexes = allowedIndexes
-
-        win = Gtk.Window()
-        win.connect("destroy", lambda x: Gtk.main_quit())
-        win.set_default_size(400, 300)
-        win.set_title("Embedding in GTK")
-
+    def __init__(self, inputDirectory=None):
 
         # INITIALIZE STATE VARIABLES;
         self.labelColorsOn = 1
         self.index = 0
         self.zoomedPlot = None
         self.swap = False
+
+        self.infoText = Gtk.Label.new("")
+
+
+        self.drawPlot = plotPwmIndex
+
+        # INITIALIZE GTK WINDOW;
+        win = Gtk.Window()
+        win.connect("destroy", lambda x: Gtk.main_quit())
+        win.set_default_size(400, 300)
+        win.set_title("linkageMapper - Walk Chromosome Result")
+
+
         # PREPARE BUTTON ICON IMAGE;
-
-
         dna_icon_left = loadImage(graphic.dna_icon)
         dna_icon_right = loadImage(graphic.dna_icon)
         swap_icon = loadImage(graphic.swap)
 
         # INITIALIZE TOP MENU BAR;
+        self.topMenubar = Gtk.MenuBar()
+
+        # FILE dropdown;
         self.menuFile = Gtk.Menu()
 
-        # INITIALIZE BUTTONS;
+        btn_menuFile = Gtk.MenuItem(label="File")
+        btn_menuFile.set_submenu(self.menuFile)
+
+        self.topMenubar.append(btn_menuFile)
+
+        loadAlignment = Gtk.MenuItem(label="Load Alignment")
+        loadAlignment.connect("activate", self.selectFolderPath)
+        self.menuFile.append(loadAlignment)
+
+
+        # NAVIGATION dropdown;
+        self.menuNav = Gtk.Menu()
+        btn_menuNav = Gtk.MenuItem(label="Navigation")
+        btn_menuNav.set_submenu(self.menuNav)
+
+        self.topMenubar.append(btn_menuNav)
+
+        btn_jumpTo = Gtk.MenuItem(label="Jump to Loci")
+        btn_jumpTo.connect("activate", self.selectLocusNames)
+        self.menuNav.append(btn_jumpTo)
+
+
+
+        # INITIALIZE LOCUS NAVIGATION BUTTONS;
         self.openSequenceLeft = Gtk.Button()
         self.openSequenceLeft.connect("clicked", lambda d: self.launchAlignViewer(0))
         self.openSequenceLeft.add(dna_icon_left)
@@ -74,7 +160,7 @@ class matrixViewer():
         self.btn_invert = Gtk.Button()
         self.btn_invert.connect("clicked", self.swapPlot)
         self.btn_invert.add(swap_icon)
-        
+
         toggleColor = Gtk.ToggleButton(label=None, image=Gtk.Image(stock=Gtk.STOCK_COLOR_PICKER))
         toggleColor.set_tooltip_text("Show Matrix Label Colors")
         toggleColor.set_active(True)
@@ -84,13 +170,14 @@ class matrixViewer():
         self.figure = plt.figure()
 
         #self.drawPlot(self.figure, self.PWMData, 0)
-        self.changeView(0)
         self.figurecanvas = FigureCanvas(self.figure)
 
         self.figurecanvas.mpl_connect('button_press_event', self.onclickCanvas)
 
         # BUILD INTERFACE;
         vbox = Gtk.VBox()
+        vbox.pack_start(self.topMenubar, expand=False, fill=False, padding=0)
+
         vbox.pack_start(self.figurecanvas, expand=True, fill=True, padding=0)
 
         # SHOW LOCUS NAVIGATION TOOLBAR;
@@ -114,12 +201,11 @@ class matrixViewer():
         # SET BOTTOM TOOLBAR, WHICH INCLUDE MATPLOTLIB BAR;
         panelBox = Gtk.HBox(homogeneous=False, spacing=2)
 
-        infoText = Gtk.Label.new(options.inputDirectory)
 
         panelBox.pack_start(self.toolbar, expand=False, fill=False, padding=0)
         panelBox.pack_start(toggleColor, expand=False, fill=False, padding=0)
 
-        panelBox.add(infoText)
+        panelBox.add(self.infoText)
 
         vbox.pack_start(panelBox, False, False, 0)
 
@@ -130,18 +216,30 @@ class matrixViewer():
         # HIDE THIS ANNOYING THING.
         self.toolbar.message.hide()
 
+        self.loadNewFolder(inputDirectory)
         # LAUNCH!
         Gtk.main()
 
+    def loadNewFolder(self, inputDirectory):
+        if inputDirectory:
+            self.alnData = alignmentData(inputDirectory)
+            self.infoText.set_text(self.alnData.inputDirectory)
+            self.changeView(self.index)
+        else:
+            self.alnData = None
+
     def cycleIndexes(self, amt):
+        if not self.alnData:
+            return
+
         self.index += amt
 
-        while self.index not in self.allowedIndexes:
+        while self.index not in self.alnData.allowedIndexes:
             self.index += amt
             if self.index < 0:
-                self.index = self.PWMData.shape[0] - 1
-            if self.index > max(self.allowedIndexes):
-                self.index = min(self.allowedIndexes)
+                self.index = self.alnData.PWMData.shape[0] - 1
+            if self.index > max(self.alnData.allowedIndexes):
+                self.index = min(self.alnData.allowedIndexes)
 
     def nav_forward(self, d):
         self.swap = False
@@ -163,16 +261,19 @@ class matrixViewer():
 
     def changeView(self, I):
         self.figure.clf()
-        self.drawPlot(self.figure, self.PWMData, I, swap=self.swap, showLabelColors=self.labelColorsOn)
-        try:
-            self.figurecanvas.draw()
-            self.figurecanvas.flush_events()
-        except AttributeError:
-            pass
+        if self.alnData:
+            a, b = self.getLocusNames(fullName=True)
+            self.drawPlot(self.figure, self.alnData, a, b, swap=self.swap, showLabelColors=self.labelColorsOn)
+            try:
+                self.figurecanvas.draw()
+                self.figurecanvas.flush_events()
+            except AttributeError:
+                pass
 
-        LocusNames = self.getLocusNames()
-        self.openSequenceLeft.set_tooltip_text("View Alignment For %s" % LocusNames[0])
-        self.openSequenceRight.set_tooltip_text("View Alignment For %s" % LocusNames[1])
+            LocusNames = self.getLocusNames()
+
+            self.openSequenceLeft.set_tooltip_text("View Alignment For %s" % LocusNames[0])
+            self.openSequenceRight.set_tooltip_text("View Alignment For %s" % LocusNames[1])
 
     def onclickCanvas(self, event):
         # print(event)
@@ -221,10 +322,14 @@ class matrixViewer():
             #self.launchAlignViewer(side)
         """
 
-    def getLocusNames(self):
-        Data = self.PWMData.iloc[self.index]
+    def getLocusNames(self, fullName=False):
+        Data = self.alnData.PWMData.iloc[self.index]
         KeyNames = ["Unnamed: 0", "Unnamed: 1"]
-        return [Data[kn].replace(".npy", "") for kn in KeyNames]
+        locusNames = [Data[kn] for kn in KeyNames]
+        if not fullName:
+            locusNames = [n.replace(".npy", "") for n in locusNames]
+        return locusNames
+
 
     def launchAlignViewer(self, side):
         LocusNames = self.getLocusNames()
@@ -236,6 +341,72 @@ class matrixViewer():
 
         subprocess.run(command)
 
+    def selectFolderPath(self, n):
+        def onResponse(widget, response):
+
+            if response:
+                inputDirectory = widget.get_filename()
+                self.loadNewFolder(inputDirectory)
+            widget.destroy()
+
+        a = Gtk.FileChooserDialog(
+            title="Select Results Folder",
+            parent=None,
+            action=Gtk.FileChooserAction.SELECT_FOLDER)
+
+        a.add_button(Gtk.STOCK_OPEN, response_id=1)
+        a.add_button(Gtk.STOCK_CANCEL, response_id=0)
+
+        a.connect("response", onResponse)
+        print(a)
+        a.show()
+
+    def selectLocusNames(self, n):
+        if not self.alnData:
+            return
+
+        def onResponse(widget, response):
+
+            print(dir(widget.left_choice))
+            if response:
+                a = widget.allLoci[widget.left_choice.get_active()]
+                b = widget.allLoci[widget.right_choice.get_active()]
+                self.figure.clf()
+                self.drawPlot(self.figure, self.alnData, a, b)
+
+            widget.destroy()
+
+        a = Gtk.Dialog(
+            title="Select Locus Names",
+            parent=None)
+
+        layout = Gtk.Grid()
+        a.allLoci = self.alnData.fetchLociList()
+        print(a.allLoci)
+
+        optsAllLoci = Gtk.ListStore(str)
+
+        for l in a.allLoci:
+            optsAllLoci.append([l])
+
+
+        a.left_choice = Gtk.ComboBox.new_with_model_and_entry(optsAllLoci)
+
+        a.right_choice = Gtk.ComboBox.new_with_model_and_entry(optsAllLoci)
+
+        a.left_choice.set_entry_text_column(0)
+        a.right_choice.set_entry_text_column(0)
+        layout.attach(a.left_choice, 0, 0, 1, 1)
+        layout.attach(a.right_choice,0, 1, 1, 1)
+        a.add(layout)
+        box = a.get_content_area()
+        box.add(layout)
+        a.add_button(Gtk.STOCK_APPLY, response_id=1)
+        a.add_button(Gtk.STOCK_CANCEL, response_id=0)
+        a.set_default_size(150, 100)
+
+        a.connect("response", onResponse)
+        a.show_all()
 
 def loadImage(source_image):
     bsource_image = source_image.tobytes()
@@ -248,8 +419,6 @@ def loadImage(source_image):
     return output_image
 
 
-def buildArrayPath(f):
-    return os.path.join(options.inputDirectory, f)
 
 
 def fixArrayFilename(f):
@@ -324,11 +493,11 @@ def createSubplot(fig, position, name, matrix, labels):
     return new_ax
 
 
-def singleLocusStatus(axis, locus_name):
+def singleLocusStatus(alnData, axis, locus_name):
 
     # FETCH HEALTH SCORE FOR LOCUS;
     locus_identifier = locus_name.replace("LOCI_", "")
-    Health = MatchData[MatchData.LocusName == locus_identifier]
+    Health = alnData.MatchData[alnData.MatchData.LocusName == locus_identifier]
     if not Health.empty:
         Health = Health.iloc[0]["AlignmentHealth"]
 
@@ -532,15 +701,14 @@ def matchPairOfClusterOutputData(clusterOutputData, Verbose=True):
     return clusterOutputData
 
 
-def plotPwmIndex(fig, PWMData, I, swap=False, showLabelColors=True):
-    d = PWMData.iloc[I]
-    a = d["Unnamed: 0"]
-    b = d["Unnamed: 1"]
+def plotPwmIndex(fig, alnData, a, b, swap=False, showLabelColors=True):
 
     if swap:
         c = b
         b = a
         a = c
+
+    currentPWMData = alnData.findPWMDataRow(a, b)
 
     # walk loci by loci mode.
 
@@ -549,20 +717,20 @@ def plotPwmIndex(fig, PWMData, I, swap=False, showLabelColors=True):
 
     try:
         data = [
-            PrimerData[PrimerData.Locus == name.replace("LOCI_", "")].iloc[0]
+            alnData.PrimerData[alnData.PrimerData.Locus == name.replace("LOCI_", "")].iloc[0]
             for name in [a_name, b_name]
         ]
     except IndexError:
         print("Failure on %s" % a_name)
 
     # LOAD MATRIX DATA;
-    ma = np.load(buildArrayPath(a))
-    mb = np.load(buildArrayPath(b))
+    ma = np.load(alnData.buildArrayPath(a))
+    mb = np.load(alnData.buildArrayPath(b))
 
     # REORDERED MATRIXES;
     ordered_ma, matrix_order, B = compute_serial_matrix(ma, method="complete")
     ordered_mb = reorderMatrix(mb, matrix_order)
-    orderedLabels = heatmapLabels[matrix_order]
+    orderedLabels = alnData.heatmapLabels[matrix_order]
 
     # plot;
     r_axis1 = createSubplot(fig, 331, a_name, ordered_ma, orderedLabels)
@@ -572,8 +740,8 @@ def plotPwmIndex(fig, PWMData, I, swap=False, showLabelColors=True):
 
     # ORIGINAL MATRIXES;
     # plot;
-    o_axis1 = createSubplot(fig, 337, a_name, ma, heatmapLabels)
-    o_axis2 = createSubplot(fig, 339, b_name, mb, heatmapLabels)
+    o_axis1 = createSubplot(fig, 337, a_name, ma, alnData.heatmapLabels)
+    o_axis2 = createSubplot(fig, 339, b_name, mb, alnData.heatmapLabels)
 
     original_axis = [o_axis1, o_axis2]
 
@@ -592,7 +760,7 @@ def plotPwmIndex(fig, PWMData, I, swap=False, showLabelColors=True):
         clusterOutputData = [None for n in range(2)]
         # ITERATE LOCUS NAMES ON VIEW (TWO) iteration to load clusterOutputData;
         for N, LocusName in enumerate([a_name, b_name]):
-            clusterFilePath = buildArrayPath(LocusName) + ".clst"
+            clusterFilePath = alnData.buildArrayPath(LocusName) + ".clst"
             if os.path.isfile(clusterFilePath):
                 locusClusterOutputData = parseMeshcluster(clusterFilePath)
                 clusterOutputData[N] = locusClusterOutputData
@@ -643,8 +811,8 @@ def plotPwmIndex(fig, PWMData, I, swap=False, showLabelColors=True):
     Title = [
         "Distance = {:,} bp".format(distance),
         "%s vs %s" % (a_name, b_name),
-        "Mantel=%.4f     p=%.4f" % (d["mantel"], d["mantel_p"]),
-        "DIFF=%i" % d["matrix_ranking_diff"],
+        "Mantel=%.4f     p=%.4f" % (currentPWMData["mantel"], currentPWMData["mantel_p"]),
+        "DIFF=%i" % currentPWMData["matrix_ranking_diff"],
         " "
     ]
 
@@ -662,21 +830,21 @@ def plotPwmIndex(fig, PWMData, I, swap=False, showLabelColors=True):
     ax_t.axis("off")
 
     # ALIGNMENT HEALTH INFORMATION FIGURE;
-    if "AlignmentHealth" in MatchData.keys():
+    if "AlignmentHealth" in alnData.MatchData.keys():
         ax_ha = fig.add_subplot(334)
         ax_hb = fig.add_subplot(336)
 
-        singleLocusStatus(ax_ha, a_name)
-        singleLocusStatus(ax_hb, b_name)
+        singleLocusStatus(alnData, ax_ha, a_name)
+        singleLocusStatus(alnData, ax_hb, b_name)
 
         # Additional info on secondary axis DEPRECATED;
         if False:
-            RecombinationMessage = "True" if d["recombination"] else "False"
+            RecombinationMessage = "True" if currentPWMData["recombination"] else "False"
             Message = "Recombination? %s" % RecombinationMessage
             ax_hb.text(0.8, 1, s=Message)
 
     # RECOMBINATION FIGURE;
-    if d["recombination"]:
+    if currentPWMData["recombination"]:
         a = []
         b = []
         for x in range(-50, 50, 1):
@@ -697,41 +865,9 @@ def plotPwmIndex(fig, PWMData, I, swap=False, showLabelColors=True):
 
 
 def Execute(options):
-    PrimerFilePath = os.path.join(options.inputDirectory, "PrimerData.csv")
-    MatchedPrimerFilePath = os.path.join(options.inputDirectory, "MatchedPrimers.csv")
-    PWMFilePath = os.path.join(options.inputDirectory, "PWMAnalysis.csv")
-
-    # LOAD RELEVANT DATABASES;
-    global PrimerData
-    PrimerData = pd.read_csv(PrimerFilePath)
-    PWMData = pd.read_csv(PWMFilePath)
-
-    global MatchData
-    MatchData = pd.read_csv(MatchedPrimerFilePath)
-
-    # FETCH ORIGINAL HEATMAP GENOME LABELS;
-    heatmapLabelsFilePath = os.path.join(
-        options.inputDirectory,
-        "heatmap_labels.npy"
-    )
-
-    global heatmapLabels
-    heatmapLabels = np.load(heatmapLabelsFilePath)
-
-    last = None
-
-    # FETCH VIEWABLE DATA INDEXES;
-    allowedIndexes = []
-    for I in range(PWMData.shape[0]):
-        d = PWMData.iloc[I]
-        a = d["Unnamed: 0"]
-        if a == last:
-            continue
-        allowedIndexes.append(I)
-        last = a
 
     # SHOW DATA;
-    viewer = matrixViewer(PWMData, plotPwmIndex, allowedIndexes)
+    viewer = matrixViewer(options.inputDirectory)
 
 
 if __name__ == "__main__":
