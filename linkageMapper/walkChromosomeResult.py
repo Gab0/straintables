@@ -86,6 +86,55 @@ class alignmentData():
         return list(set(allLoci))
 
 
+class locusNamesSelectionDialog(Gtk.Dialog):
+    def __init__(self, matrixViewer):
+        Gtk.Dialog.__init__(self, title="Loci Selector", parent=None)
+
+        if not matrixViewer.alnData:
+            return False
+
+        self.matrixViewer = matrixViewer
+        layout = Gtk.Grid()
+        self.allLoci = matrixViewer.alnData.fetchLociList()
+
+        optsAllLoci = Gtk.ListStore(str)
+
+        for l in self.allLoci:
+            optsAllLoci.append([l])
+
+        self.left_choice = Gtk.ComboBox.new_with_model_and_entry(optsAllLoci)
+
+        self.right_choice = Gtk.ComboBox.new_with_model_and_entry(optsAllLoci)
+
+        self.left_choice.set_entry_text_column(0)
+        self.right_choice.set_entry_text_column(0)
+
+        layout.attach(Gtk.Label.new("Left Side"), 0, 0, 1, 1)
+        layout.attach(self.left_choice, 1, 0, 1, 1)
+        layout.attach(self.right_choice, 2, 0, 1, 1)
+        layout.attach(Gtk.Label.new("Right Side"), 3, 0, 1, 1)
+
+        box = self.get_content_area()
+        box.pack_start(layout, False, False, 0)
+        self.add_button(Gtk.STOCK_APPLY, response_id=1)
+        self.add_button(Gtk.STOCK_CANCEL, response_id=0)
+        self.set_default_size(150, 100)
+
+        self.connect("response", self.onResponse)
+        self.show_all()
+
+    @staticmethod
+    def onResponse(widget, response):
+
+        print(dir(widget.left_choice))
+        if response:
+            a = widget.allLoci[widget.left_choice.get_active()]
+            b = widget.allLoci[widget.right_choice.get_active()]
+            widget.matrixViewer.figure.clf()
+            widget.matrixViewer.drawPlot(widget.matrixViewer.figure, widget.matrixViewer.alnData, a, b)
+
+        widget.destroy()
+
 # COMPLEX DISSIMILARITY MATRIX VIEWER GTK APPLICATION;
 class matrixViewer():
     def __init__(self, inputDirectory=None):
@@ -97,7 +146,6 @@ class matrixViewer():
         self.swap = False
 
         self.infoText = Gtk.Label.new("")
-
 
         self.drawPlot = plotPwmIndex
 
@@ -137,7 +185,7 @@ class matrixViewer():
         self.topMenubar.append(btn_menuNav)
 
         btn_jumpTo = Gtk.MenuItem(label="Jump to Loci")
-        btn_jumpTo.connect("activate", self.selectLocusNames)
+        btn_jumpTo.connect("activate", lambda e: locusNamesSelectionDialog(self))
         self.menuNav.append(btn_jumpTo)
 
 
@@ -361,52 +409,6 @@ class matrixViewer():
         print(a)
         a.show()
 
-    def selectLocusNames(self, n):
-        if not self.alnData:
-            return
-
-        def onResponse(widget, response):
-
-            print(dir(widget.left_choice))
-            if response:
-                a = widget.allLoci[widget.left_choice.get_active()]
-                b = widget.allLoci[widget.right_choice.get_active()]
-                self.figure.clf()
-                self.drawPlot(self.figure, self.alnData, a, b)
-
-            widget.destroy()
-
-        a = Gtk.Dialog(
-            title="Select Locus Names",
-            parent=None)
-
-        layout = Gtk.Grid()
-        a.allLoci = self.alnData.fetchLociList()
-        print(a.allLoci)
-
-        optsAllLoci = Gtk.ListStore(str)
-
-        for l in a.allLoci:
-            optsAllLoci.append([l])
-
-
-        a.left_choice = Gtk.ComboBox.new_with_model_and_entry(optsAllLoci)
-
-        a.right_choice = Gtk.ComboBox.new_with_model_and_entry(optsAllLoci)
-
-        a.left_choice.set_entry_text_column(0)
-        a.right_choice.set_entry_text_column(0)
-        layout.attach(a.left_choice, 0, 0, 1, 1)
-        layout.attach(a.right_choice,0, 1, 1, 1)
-        a.add(layout)
-        box = a.get_content_area()
-        box.add(layout)
-        a.add_button(Gtk.STOCK_APPLY, response_id=1)
-        a.add_button(Gtk.STOCK_CANCEL, response_id=0)
-        a.set_default_size(150, 100)
-
-        a.connect("response", onResponse)
-        a.show_all()
 
 def loadImage(source_image):
     bsource_image = source_image.tobytes()
@@ -860,6 +862,8 @@ def plotPwmIndex(fig, alnData, a, b, swap=False, showLabelColors=True):
         ax_symbol.axis("off")
 
     plt.title("")
+
+    plt.subplots_adjust(top=0.79, bottom=0.03, left=0.06, right=1.00)
 
     return fig
 
