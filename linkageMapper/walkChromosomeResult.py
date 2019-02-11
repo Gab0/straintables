@@ -20,7 +20,8 @@ import graphic
 
 import gi
 gi.require_version('Gtk', '3.0')
-from gi.repository import Gtk, GdkPixbuf
+from gi.repository import Gtk, Gdk, GdkPixbuf
+import cairo
 
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_gtk3agg import FigureCanvas
@@ -28,6 +29,16 @@ from matplotlib.backends.backend_gtk3 import (
     NavigationToolbar2GTK3 as NavigationToolbar)
 
 import walkChromosome
+
+
+class ColoredButton(Gtk.Button):
+    def __init__(self):
+        Gtk.Button.__init__(self)
+
+    def changeColor(self, color):
+        color = Gdk.color_parse(color)
+        cmap = Gdk.RGBA.from_color(color)
+        self.override_background_color(0, cmap)
 
 
 class alignmentData():
@@ -118,7 +129,11 @@ class locusNamesSelectionMenu(Gtk.Grid):
         Refresh = Gtk.Button(label=".")
         Refresh.connect("clicked", self.Refresh)
 
-        self.attach(Gtk.Label.new("<-"), 0, 0, 1, 1)
+        #w = Gtk.Button.new(Gdk.RGBA(100,100,100,100))
+        #btn = ColoredButton()
+        #btn.changeColor("red")
+        btn = Gtk.Label.new("<-")
+        self.attach(btn, 0, 0, 1, 1)
         self.attach(self.left_choice, 1, 0, 1, 1)
         self.attach(Refresh, 2, 0, 1, 1)
         self.attach(self.right_choice, 3, 0, 1, 1)
@@ -164,19 +179,73 @@ class locusNamesSelectionMenu(Gtk.Grid):
             self.switchAutomaticDropdownLocusJump(Target=True)
 
 
-class LocusMapBar(Gtk.Grid):
-    def __init__(self, alnData=None):
-        Gtk.Grid.__init__(self)
+SIZE = 12
+
+
+class LocusMapBar(Gtk.DrawingArea):
+    def __init__(self):
+        Gtk.DrawingArea.__init__(self)
+
+        self.connect("draw", self.draw)
+        self.set_size_request(200, 40)
+        self.updateView()
+        self.LocusNames = []
+        self.Active = []
+        self.show_all()
+
+    def drawCircle(self, ctx, color=None):
+        ctx.move_to(SIZE, SIZE)
+
+        ctx.translate(SIZE, SIZE)
+        ctx.new_path()
+        ctx.arc(0, 0, SIZE, 0, 2 * 3.14)
+        ctx.close_path()
+
+        if color:
+            ctx.set_source_rgba(*color, 1.0)
+            ctx.fill()
+
+        ctx.move_to(0, 0)
+        ctx.translate(-SIZE, -SIZE)
+
+    def draw(self, da, ctx):
+        print("DRAWING")
+        ctx.set_source_rgb(0, 0, 0)
+
+        ctx.set_line_width(SIZE / 4)
+        ctx.set_tolerance(0.1)
+
+        # FIRST ROW;
+        ctx.set_line_join(cairo.LINE_JOIN_ROUND)
+
+        ctx.save()
+        ctx.new_path()
+
+        ctx.translate(SIZE, SIZE)
+
+        for k, locus in enumerate(self.LocusNames):
+            ctx.new_path()
+            color = (0, 0, 0)
+
+            if len(self.Active):
+                if locus in self.Active[0]:
+                    color = (0.1, 0.8, 0.1)
+                elif locus in self.Active[1]:
+                    color = (0.8, 0.1, 0.1)
+
+            self.drawCircle(ctx, color)
+            ctx.translate(3 * SIZE, 0)
+
+        ctx.restore()
 
     def loadData(self, alnData):
-        self.LocusNames = ['a', 'b']
-        self.LocusButtons = []
-        for n in self.LocusNames:
-            button = Gtk.ss
-        pass
+        self.LocusNames = list(alnData.MatchData["LocusName"])
+
+        print(self.LocusNames)
 
     def updateView(self):
         pass
+
 
 # COMPLEX DISSIMILARITY MATRIX VIEWER GTK APPLICATION;
 class matrixViewer():
@@ -257,6 +326,8 @@ class matrixViewer():
         toggleColor.set_active(True)
         toggleColor.connect("clicked", self.toggleColor)
 
+        self.locusMap = LocusMapBar()
+
         # INITIALIZE PLOT FIGURE;
         self.figure = plt.figure()
 
@@ -267,6 +338,8 @@ class matrixViewer():
         # BUILD INTERFACE;
         vbox = Gtk.VBox()
         vbox.pack_start(self.topMenubar, expand=False, fill=False, padding=0)
+
+        vbox.pack_start(self.locusMap, expand=False, fill=False, padding=0)
 
         vbox.pack_start(self.figurecanvas, expand=True, fill=True, padding=0)
 
@@ -309,7 +382,7 @@ class matrixViewer():
         self.toolbar.message.hide()
 
         self.loadNewFolder(inputDirectory)
-        self.cycleIndexes(0)
+
         # LAUNCH!
         Gtk.main()
 
@@ -319,6 +392,7 @@ class matrixViewer():
             self.infoText.set_text(self.alnData.inputDirectory)
             self.nav_forward(None)
             self.locusNavigator.Update()
+            self.locusMap.loadData(self.alnData)
         else:
             self.alnData = None
 
@@ -359,16 +433,24 @@ class matrixViewer():
             self.changeView(a, b)
 
     def swapPlot(self, d):
-        self.swap = 1 - self.swap
         if self.alnData:
-            a, b = self.getLocusNames(fullName=True)
-            self.changeView(a, b)
+            self.swap = 1 - self.swap
+            loci = self.getLocusNames(fullName=True)
+            if self.swap:
+                loci.reverse()
+            self.changeView(*loci)
 
     def changeView(self, a, b):
         self.figure.clf()
         if self.alnData:
+            # UPDATE LOCUS NAVIGATOR;
             self.locusNavigator.updateInfo(a, b)
-            self.drawPlot(self.figure, self.alnData, a, b, swap=self.swap, showLabelColors=self.labelColorsOn)
+
+            # UPDATE LOCUS MAP;
+            self.locusMap.Active = [a, b]
+            self.locusMap.queue_draw()
+
+            self.drawPlot(self.figure, self.alnData, a, b, showLabelColors=self.labelColorsOn)
 
             self.figurecanvas.draw()
             self.figurecanvas.flush_events()
