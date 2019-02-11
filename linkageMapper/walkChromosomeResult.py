@@ -337,7 +337,7 @@ class matrixViewer():
 
         # BUILD INTERFACE;
         vbox = Gtk.VBox()
-        vbox.pack_start(self.topMenubar, expand=False, fill=False, padding=0)
+        # vbox.pack_start(self.topMenubar, expand=False, fill=False, padding=0)
 
         vbox.pack_start(self.locusMap, expand=False, fill=False, padding=0)
 
@@ -364,7 +364,10 @@ class matrixViewer():
         # SET BOTTOM TOOLBAR, WHICH INCLUDE MATPLOTLIB BAR;
         panelBox = Gtk.HBox(homogeneous=False, spacing=2)
 
-        
+        self.loadAlignment = Gtk.Button(image=Gtk.Image(stock=Gtk.STOCK_DND_MULTIPLE))
+        self.loadAlignment.connect("clicked", self.selectFolderPath)
+        panelBox.pack_start(self.loadAlignment, expand=False, fill=False, padding=3)
+
         panelBox.pack_start(self.toolbar, expand=False, fill=False, padding=0)
         panelBox.pack_start(toggleColor, expand=False, fill=False, padding=0)
 
@@ -515,7 +518,6 @@ class matrixViewer():
             locusNames = [n.replace(".npy", "") for n in locusNames]
         return locusNames
 
-
     def launchAlignViewer(self, side):
         LocusNames = self.getLocusNames()
         LocusName = LocusNames[side]
@@ -531,20 +533,36 @@ class matrixViewer():
 
             if response:
                 inputDirectory = widget.get_filename()
-                self.loadNewFolder(inputDirectory)
-            widget.destroy()
-
+                try:
+                    self.loadNewFolder(inputDirectory)
+                    widget.destroy()
+                except Exception as e:
+                    ERR = e
+                    widget.errorMessage.set_text(str(e))
+            else:
+                widget.destroy()
         a = Gtk.FileChooserDialog(
             title="Select Results Folder",
             parent=None,
             action=Gtk.FileChooserAction.SELECT_FOLDER)
 
+        a.errorMessage = Gtk.Label.new("Select file.")
+        a.errorMessage.set_hexpand(True)
+        ok = Gtk.Button(Gtk.STOCK_OPEN)
+        cancel = Gtk.Button(Gtk.STOCK_CANCEL)
+
+        buttonGrid = Gtk.Grid()
+        buttonGrid.attach(a.errorMessage, 0, 0, 1, 1)
+        #buttonGrid.attach(ok, 0, 1, 1, 1)
+        #buttonGrid.attach(cancel, 0, 2, 1, 1)
+
+        a.vbox.pack_start(buttonGrid, False, False, 0)
+
         a.add_button(Gtk.STOCK_OPEN, response_id=1)
         a.add_button(Gtk.STOCK_CANCEL, response_id=0)
-
         a.connect("response", onResponse)
         print(a)
-        a.show()
+        a.show_all()
 
 
 def loadImage(source_image):
@@ -556,7 +574,6 @@ def loadImage(source_image):
     output_image = Gtk.Image()
     output_image.set_from_pixbuf(image_pixelbuffer)
     return output_image
-
 
 
 def Execute(options):
