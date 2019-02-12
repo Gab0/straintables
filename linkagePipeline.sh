@@ -3,10 +3,7 @@
 # SHOW BEAUTIFUL ASCII ART;
 cat logo.txt
 
-PRIMER_CODE=$1
 
-# DEFINE OUTPUT DIRECTORY;
-OUTPUT_DIR="analysisResults/${PRIMER_CODE}"
 
 # MAKE SURE OUTPUT DIRECTORY EXISTS;
 mkdir -p "${OUTPUT_DIR}"
@@ -18,24 +15,26 @@ ALNMODE="clustal"
 DO_MESHCLUST=1
 
 # FETCH COMMAND LINE ARGUMENTS;
-ALL_ARGS=($1 $2 $3 $4 $5 $6 $7)
+ALL_ARGS=( "$@" )
+
+PRIMER_CODE=$1
 
 # PARSE COMMAND LINE ARGUMENTS;
 for OPT in "${ALL_ARGS[@]}"
 do
 
-    if [ $OPT = "noamplicon" ];
+    if [ "$OPT" = "noamplicon" ];
     then
         DO_AMPLICON=0
     fi
 
-    if [ $OPT = "noalign" ];
+    if [ "$OPT" = "noalign" ];
     then
         DO_ALIGNMENT=0
     else
         for _ALNMODE in "${ALL_ALNMODES[@]}"
         do
-            if [ $_ALNMODE = $OPT ];
+            if [ "$_ALNMODE" = "$OPT" ];
             then
                 ALNMODE=$OPT
             fi
@@ -43,6 +42,8 @@ do
     fi
 done
 
+# DEFINE OUTPUT DIRECTORY;
+OUTPUT_DIR="analysisResults/${PRIMER_CODE}"
 
 
 # OUTPUT INFO;
@@ -82,13 +83,13 @@ fi
 
 # THIS GETS ALL LOCI NAMES FROM .csv PRIMER DESCRIPTOR!
 # WORKS LIKE THIS -> LOCI=(SAG2 ROP32 BIN3)
-readarray -t LOCI < <(cat "${OUTPUT_DIR}"/MatchedPrimers.csv|awk -F"," '{print $1}'|tail -n +2)
+readarray -t LOCI < <(awk -F"," '{print $1}' < "${OUTPUT_DIR}"/MatchedPrimers.csv|tail -n +2)
 
 CLONAL=$3
 
-if [ -z $CLONAL ];
+if [ -z "$CLONAL" ];
 then
-    EXPLICT_CLONAL=""
+    EXPLICIT_CLONAL=""
 else
     EXPLICIT_CLONAL="-s 'vs clonal ${CLONAL}'"
 fi
@@ -102,14 +103,14 @@ do
     # RUN ALIGNMENT IF NOT DISABLED BY OPTIONS;
     echo "Running alignment for ${OUTPUT_FILE_PREFIX}"
     echo ""
-    if [ $DO_ALIGNMENT = 1 ];
+    if [ "$DO_ALIGNMENT" = 1 ];
     then
-        if [ $ALNMODE = "tcoffee" ];
+        if [ "$ALNMODE" = "tcoffee" ];
         then
             tcoffee -in "${OUTPUT_FILE_PREFIX}".fasta -out "${OUTPUT_DIR}"
         fi
 
-        if [ $ALNMODE = "clustal" ] || [ -z $ALNMODE ];
+        if [ "$ALNMODE" = "clustal" ] || [ -z "$ALNMODE" ];
         then
             if timeout 60 clustalw2 \
                 -INFILE="./${OUTPUT_FILE_PREFIX}".fasta \
@@ -124,7 +125,7 @@ do
             #2>>"${OUTPUT_DIR}/clustal_warnings.txt"
         fi
 
-        if [ $ALNMODE = "muscle" ];
+        if [ "$ALNMODE" = "muscle" ];
         then
             muscle -in "${OUTPUT_FILE_PREFIX}".fasta -out "${OUTPUT_FILE_PREFIX}".aln
         fi

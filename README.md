@@ -68,7 +68,7 @@ The recombination analysis step of `linkageMapper` has [MeShClust](https://githu
 #### Example 1: Automatic Locus Selection with Automatic Primer Search.
 
 ```
-$ python linkageMapper/initializePrimerFile.py -i annotations/<chromosome annotation file name> -o Primers/TEST.csv
+$ python linkageMapper/initializePrimerFile.py -i annotations -c X -o Primers/TEST.csv -p 0.01
 $ bash linkagePipeline.sh TEST
 $ python linkageMapper/walkChromosomeResult.py -i Alignments/TEST
 ```

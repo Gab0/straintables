@@ -31,16 +31,6 @@ from matplotlib.backends.backend_gtk3 import (
 import walkChromosome
 
 
-class ColoredButton(Gtk.Button):
-    def __init__(self):
-        Gtk.Button.__init__(self)
-
-    def changeColor(self, color):
-        color = Gdk.color_parse(color)
-        cmap = Gdk.RGBA.from_color(color)
-        self.override_background_color(0, cmap)
-
-
 class alignmentData():
     def __init__(self, inputDirectory):
 
@@ -179,26 +169,25 @@ class locusNamesSelectionMenu(Gtk.Grid):
             self.switchAutomaticDropdownLocusJump(Target=True)
 
 
-SIZE = 12
-
-
 class LocusMapBar(Gtk.DrawingArea):
     def __init__(self):
         Gtk.DrawingArea.__init__(self)
 
         self.connect("draw", self.draw)
         self.set_size_request(200, 40)
-        self.updateView()
+
         self.LocusNames = []
         self.Active = []
         self.show_all()
 
-    def drawCircle(self, ctx, color=None):
-        ctx.move_to(SIZE, SIZE)
+        self.circleSize = 12
 
-        ctx.translate(SIZE, SIZE)
+    def drawCircle(self, ctx, color=None):
+        ctx.move_to(self.circleSize, self.circleSize)
+
+        ctx.translate(self.circleSize, self.circleSize)
         ctx.new_path()
-        ctx.arc(0, 0, SIZE, 0, 2 * 3.14)
+        ctx.arc(0, 0, self.circleSize, 0, 2 * 3.14)
         ctx.close_path()
 
         if color:
@@ -206,13 +195,13 @@ class LocusMapBar(Gtk.DrawingArea):
             ctx.fill()
 
         ctx.move_to(0, 0)
-        ctx.translate(-SIZE, -SIZE)
+        ctx.translate(-self.circleSize, -self.circleSize)
 
     def draw(self, da, ctx):
-        print("DRAWING")
+        print("DRAWING %s" % self.Active)
         ctx.set_source_rgb(0, 0, 0)
 
-        ctx.set_line_width(SIZE / 4)
+        ctx.set_line_width(self.circleSize / 4)
         ctx.set_tolerance(0.1)
 
         # FIRST ROW;
@@ -221,7 +210,7 @@ class LocusMapBar(Gtk.DrawingArea):
         ctx.save()
         ctx.new_path()
 
-        ctx.translate(SIZE, SIZE)
+        ctx.translate(self.circleSize, self.circleSize)
 
         for k, locus in enumerate(self.LocusNames):
             ctx.new_path()
@@ -234,7 +223,7 @@ class LocusMapBar(Gtk.DrawingArea):
                     color = (0.8, 0.1, 0.1)
 
             self.drawCircle(ctx, color)
-            ctx.translate(3 * SIZE, 0)
+            ctx.translate(3 * self.circleSize, 0)
 
         ctx.restore()
 
@@ -243,8 +232,6 @@ class LocusMapBar(Gtk.DrawingArea):
 
         print(self.LocusNames)
 
-    def updateView(self):
-        pass
 
 
 # COMPLEX DISSIMILARITY MATRIX VIEWER GTK APPLICATION;

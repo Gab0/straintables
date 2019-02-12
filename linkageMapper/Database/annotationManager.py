@@ -16,7 +16,9 @@ def loadFeatures(annotationFilePath):
 
 def loadAnnotation(annotationFolder, identifier=None):
     annotationFiles = os.listdir(annotationFolder)
-    annotationFiles = sorted([file for file in annotationFiles if file.endswith(".gbff")])
+    annotationFiles = sorted([File
+                              for File in annotationFiles
+                              if File.endswith(".gbff")])
 
     if not annotationFiles:
         print("Annotation file not found! Check your annotation folder.")
@@ -24,12 +26,20 @@ def loadAnnotation(annotationFolder, identifier=None):
 
     annotationFile = annotationFiles[0]
     annotationFilePath = os.path.join(annotationFolder, annotationFile)
-    annotationContent = SeqIO.parse(annotationFilePath, "genbank")
+    annotationContent = list(SeqIO.parse(annotationFilePath, "genbank"))
 
+    allIdentifiers = []
     for Scaffold in annotationContent:
-        ChromosomeName = Scaffold.features[0].qualifiers['chromosome'][0]
-        if identifier.lower() == ChromosomeName.lower():
-            return Scaffold
+        Qualifiers = Scaffold.features[0].qualifiers
+        if 'chromosome' in Qualifiers.keys():
+            ChromosomeName = Qualifiers['chromosome'][0]
+            allIdentifiers.append(ChromosomeName)
+            if identifier:
+                if identifier.lower() == ChromosomeName.lower():
+                    return Scaffold
 
-    return None
+    if not identifier:
+        return allIdentifiers
+
+
 
