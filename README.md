@@ -1,4 +1,4 @@
-## About
+# About
 
 linkageMapper is a tool that helps evaluate the difference among gene loci across *Toxoplasma gondii* genomes.
 
@@ -8,11 +8,27 @@ The primers may be user-defined or found by the software when a locus name is de
 
 Analysis proceeds while it counts the SNPs that diverge from the amplicons found at each locus, and builds one [https://en.wikipedia.org/wiki/Distance_matrix](dissimilarity matrix) for each `Locus or primer pair`. The matrix can show how the genomes are different at those regions.
 
+## Details
+
+After getting the loci sequence from all the genomes, the visualization of the differences among genomes is done in two fronts:
+
+### a) Dissimilarity Matrix
+
+1. The multifasta file containing sequence for one loci among all genomes is passed through ClustalW2
+2. The the SNPs are detected and scored.
+3. One Dissimilarity Matrix is created, showing which genome groups have similar locus.
+4. Dissimilarity Matrixes can be viewed individually as `.pdf` files, `.npy` python files, or at the main visualization tool `walkChromosomeResult.py`.
+
+### b) MeshClust Clustering
+
+1. The primary locus multifasta file is sent to MeshClust, which will detect clusters among genome's locus. Default MeshClust identity parameters is `0.999`.
+2. The output of MeshClust is parsed at the visualization tool, which decorates genomes names at the Dissimilarity Matrix labels according to it's cluster group.
+
 More statistical analysis on the Dissimilarity Matrixes are carried, mostly using python's `skbio` module. The interpretation of analysis is under construction.
 
-By looking at a pair of D. Matrixes at a time, both corresponding to locus that are neighbors, the user may have an idea of the recombination frequence of the studied organism.
+By looking at a pair of D. Matrixes at a time, both corresponding to locus that are neighbors, the user may have an idea of the recombination frequency of the studied organism.
 
-![](walkChr.jpg?raw=true)
+![](https://raw.githubusercontent.com/Gab0/linkageMapper/master/walkChr.jpg?raw=true)
 
 # Setup
 
