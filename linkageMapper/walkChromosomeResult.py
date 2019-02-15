@@ -57,13 +57,13 @@ class alignmentData():
         self.heatmapLabels = np.load(heatmapLabelsFilePath)
 
         # FETCH VIEWABLE DATA INDEXES;
-        OnlySequence = False
+        OnlySequence = True
         if OnlySequence:
             last = None
             self.allowedIndexes = []
             for I in range(self.PWMData.shape[0]):
                 d = self.PWMData.iloc[I]
-                a = d[self.dataKeys[1]]
+                a = d[self.dataKeys[0]]
                 if a == last:
                     continue
                 self.allowedIndexes.append(I)
@@ -199,6 +199,12 @@ class LocusMapBar(Gtk.DrawingArea):
 
     def draw(self, da, ctx):
         print("DRAWING %s" % self.Active)
+
+        availableWidth = self.get_allocation().width
+        print(availableWidth)
+        Size = len(self.LocusNames)
+        self.circleSize = min(round(availableWidth / (Size * 3) ), 12)
+
         ctx.set_source_rgb(0, 0, 0)
 
         ctx.set_line_width(self.circleSize / 4)
@@ -230,8 +236,8 @@ class LocusMapBar(Gtk.DrawingArea):
     def loadData(self, alnData):
         self.LocusNames = list(alnData.MatchData["LocusName"])
 
-        print(self.LocusNames)
 
+        print(self.LocusNames)
 
 
 # COMPLEX DISSIMILARITY MATRIX VIEWER GTK APPLICATION;
@@ -467,7 +473,6 @@ class matrixViewer():
                     print(self.figure.axes)
                     self.figurecanvas.draw()
                     #self.figurecanvas.flush_events()
-
 
                 for otherAxis in event.canvas.figure.axes:
                     if otherAxis is not Axis:
