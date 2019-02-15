@@ -6,7 +6,10 @@ It takes fully sequenced genomes for diverse strains of *T. gondii*, then find A
 
 The primers may be user-defined or found by the software when a locus name is defined without attached primers.
 
-Analysis proceeds while it counts the SNPs that diverge from the amplicons found at each locus, and builds one [https://en.wikipedia.org/wiki/Distance_matrix](dissimilarity matrix) for each `Locus or primer pair`. The matrix can show how the genomes are different at those regions.
+Analysis proceeds while it counts the SNPs that diverge from the amplicons found at each locus, and builds one
+ [dissimilarity matrix](https://en.wikipedia.org/wiki/Distance_matrix) for each Locus (which boundary is defined by a primer pair). 
+
+The matrix can show how the genomes are different at those regions.
 
 ## Details
 
@@ -26,7 +29,7 @@ After getting the loci sequence from all the genomes, the visualization of the d
 
 More statistical analysis on the Dissimilarity Matrixes are carried, mostly using python's `skbio` module. The interpretation of analysis is under construction.
 
-By looking at a pair of D. Matrixes at a time, both corresponding to locus that are neighbors, the user may have an idea of the recombination frequency of the studied organism.
+By looking at a pair of D. Matrixes at a time, both corresponding to locus that are neighbors, the user may have an insight on data of the studied organism, like the recombination frequency.
 
 ![](https://raw.githubusercontent.com/Gab0/linkageMapper/master/walkChr.jpg?raw=true)
 
