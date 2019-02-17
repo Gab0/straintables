@@ -418,9 +418,7 @@ class matrixViewer():
 
     def toggleColor(self, d):
         self.labelColorsOn = 1 - self.labelColorsOn
-        if self.alnData:
-            a, b = self.getLocusNames(fullName=True)
-            self.changeView(a, b)
+        self.navigate(0)
 
     def swapPlot(self, d):
         if self.alnData:
