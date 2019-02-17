@@ -237,7 +237,6 @@ class LocusMapBar(Gtk.DrawingArea):
     def loadData(self, alnData):
         self.LocusNames = list(alnData.MatchData["LocusName"])
 
-
         print(self.LocusNames)
 
 
@@ -253,6 +252,7 @@ class matrixViewer():
         self.alnData = None
         self.infoText = Gtk.Label.new("")
 
+        # SELECT DRAWING FUNCTION;
         self.drawPlot = walkChromosome.plotViewport.plotPwmIndex
 
         # INITIALIZE GTK WINDOW;
@@ -260,7 +260,6 @@ class matrixViewer():
         win.connect("destroy", lambda x: Gtk.main_quit())
         win.set_default_size(400, 300)
         win.set_title("linkageMapper - Walk Chromosome Result")
-
 
         # PREPARE BUTTON ICON IMAGE;
         dna_icon_left = loadImage(graphic.dna_icon)
@@ -306,10 +305,10 @@ class matrixViewer():
         self.openSequenceRight.add(dna_icon_right)
 
         self.btn_back = Gtk.Button(image=Gtk.Image(stock=Gtk.STOCK_GO_BACK))
-        self.btn_back.connect("clicked", self.nav_back)
+        self.btn_back.connect("clicked", lambda d: self.navigate(-1))
 
         self.btn_next = Gtk.Button(image=Gtk.Image(stock=Gtk.STOCK_GO_FORWARD))
-        self.btn_next.connect("clicked", self.nav_forward)
+        self.btn_next.connect("clicked", lambda d: self.navigate(1))
 
         self.btn_invert = Gtk.Button()
         self.btn_invert.connect("clicked", self.swapPlot)
@@ -378,6 +377,7 @@ class matrixViewer():
         # HIDE THIS ANNOYING THING.
         self.toolbar.message.hide()
 
+        # LOAD DATA;
         self.loadNewFolder(inputDirectory)
 
         # LAUNCH!
@@ -387,9 +387,10 @@ class matrixViewer():
         if inputDirectory:
             self.alnData = alignmentData(inputDirectory)
             self.infoText.set_text(self.alnData.inputDirectory)
-            self.nav_forward(None)
             self.locusNavigator.Update()
             self.locusMap.loadData(self.alnData)
+
+            self.navigate(0)
         else:
             self.alnData = None
 
@@ -408,17 +409,9 @@ class matrixViewer():
 
         print(self.index)
 
-    def nav_forward(self, d):
+    def navigate(self, value):
         self.swap = False
-        self.cycleIndexes(1)
-
-        if self.alnData:
-            a, b = self.getLocusNames(fullName=True)
-            self.changeView(a, b)
-
-    def nav_back(self, d):
-        self.swap = False
-        self.cycleIndexes(-1)
+        self.cycleIndexes(value)
         if self.alnData:
             a, b = self.getLocusNames(fullName=True)
             self.changeView(a, b)
@@ -473,7 +466,6 @@ class matrixViewer():
                     self.figure.axes.append(Axis)
                     print(self.figure.axes)
                     self.figurecanvas.draw()
-                    #self.figurecanvas.flush_events()
 
                 for otherAxis in event.canvas.figure.axes:
                     if otherAxis is not Axis:
