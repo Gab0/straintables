@@ -121,12 +121,20 @@ def plotPwmIndex(fig, alnData, a, b, swap=False, showLabelColors=True):
         symbolMap = [chr(945 + x) for x in range(20)]
 
         clusterOutputData = [None for n in range(2)]
+        abmatrix = [ma, mb]
         # ITERATE LOCUS NAMES ON VIEW (TWO) iteration to load clusterOutputData;
         for N, LocusName in enumerate([a_name, b_name]):
             clusterFilePath = alnData.buildArrayPath(LocusName) + ".clst"
+
+            # MeShCluSt file exists.
             if os.path.isfile(clusterFilePath):
                 locusClusterOutputData = dissimilarityCluster.parseMeshcluster(clusterFilePath)
-                clusterOutputData[N] = locusClusterOutputData
+            # Otherwise...
+            else:
+                locusClusterOutputData = dissimilarityCluster.fromDissimilarityMatrix(abmatrix[N], alnData.heatmapLabels)
+
+            # Assign obtained clusters;
+            clusterOutputData[N] = locusClusterOutputData
 
         # REORGANIZE CLUSTER OUTPUT DATA;
         if all(clusterOutputData):

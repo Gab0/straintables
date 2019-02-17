@@ -2,7 +2,8 @@
 
 import json
 import re
-
+from sklearn.cluster import dbscan
+# First way of obtaining cluster data: From MeShCluSt .clst file.
 def parseMeshcluster(clusterFilePath):
     clusterData = open(clusterFilePath).read().split("\n")
     clusterOutputData = {}
@@ -18,6 +19,29 @@ def parseMeshcluster(clusterFilePath):
     return clusterOutputData
 
 
+# Second way of obtaining cluster data: From Dissimilarity Matrix.
+def fromDissimilarityMatrix(Matrix, matrixLabels):
+    r = dbscan(Matrix, metric='precomputed', min_samples=1, eps=0.0001)
+    clusters = {}
+    sortedClusters = sorted(list(set(r[1])))
+
+    # first loop to pick clustered members;
+    for cluster in sortedClusters:
+        if cluster < 0:
+            continue
+        Members = []
+        for i, v in enumerate(r[1]):
+            if v == cluster:
+                Members.append(matrixLabels[i])
+
+        clusters[cluster] = Members
+
+    # now we pick the unindentified members;
+    for c, cluster in enumerate(r[1]):
+        if cluster == -1:
+            clusters[len(list(clusters.keys()))] = [matrixLabels[c]]
+
+    return clusters
 
 
 # well... this function can be..... simplified.

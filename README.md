@@ -99,9 +99,9 @@ $ python linkageMapper/walkChromosomeResult.py -i Alignments/TEST
 * Make your own primer `.csv` file, named `Primers/chr_X.csv` for this example. It should have blank primer fields. 
 
 ```
-<Primers/chr_X.csv>
-LocusName,ForwardPrimer,ReversePrime
-CDPK
+<@file: Primers/chr_X.csv>
+LocusName,ForwardPrimer,ReversePrimer
+CDPK,,
 IMC2A,,
 AP2X1,,
 TGME49_227830,,
@@ -122,7 +122,7 @@ $ bash linkagePipeline.sh chr_X
 * Some primers, if missing or problematic, will trigger the automatic primer search.
 
 ```
-<Primers/chr_X.csv>
+<@file: Primers/chr_X.csv>
 LocusName,ForwardPrimer,ReversePrimer
 CDPK1,ACAAAGGCTACTTCTACCTC,TTCTATGTGGGGATGCAGAG
 IMC2A,,GACGGACGCATGGCTTGCTG
