@@ -175,18 +175,16 @@ class LocusMapBar(Gtk.DrawingArea):
         Gtk.DrawingArea.__init__(self)
 
         self.connect("draw", self.draw)
-        self.set_size_request(200, 40)
+        self.set_size_request(200, 10)
 
         self.LocusNames = []
         self.Active = []
         self.show_all()
 
-        self.circleSize = 12
-
     def drawCircle(self, ctx, color=None):
-        ctx.move_to(self.circleSize, self.circleSize)
 
         ctx.translate(self.circleSize, self.circleSize)
+
         ctx.new_path()
         ctx.arc(0, 0, self.circleSize, 0, 2 * 3.14)
         ctx.close_path()
@@ -195,7 +193,6 @@ class LocusMapBar(Gtk.DrawingArea):
             ctx.set_source_rgba(*color, 1.0)
             ctx.fill()
 
-        ctx.move_to(0, 0)
         ctx.translate(-self.circleSize, -self.circleSize)
 
     def draw(self, da, ctx):
@@ -204,7 +201,7 @@ class LocusMapBar(Gtk.DrawingArea):
         availableWidth = self.get_allocation().width
 
         Size = len(self.LocusNames)
-        self.circleSize = min(availableWidth / (Size * 3), 12)
+        self.circleSize = max(min(availableWidth / (Size * 3), 12), 6)
 
         ctx.set_source_rgb(0, 0, 0)
 
@@ -219,8 +216,8 @@ class LocusMapBar(Gtk.DrawingArea):
 
         ctx.translate(self.circleSize, self.circleSize)
 
+        nb_rows = 1
         for k, locus in enumerate(self.LocusNames):
-            ctx.new_path()
             color = (0, 0, 0)
 
             if len(self.Active):
@@ -231,7 +228,20 @@ class LocusMapBar(Gtk.DrawingArea):
 
             self.drawCircle(ctx, color)
             ctx.translate(3 * self.circleSize, 0)
+
+            position_x = ctx.get_matrix()[4]
             print(dir(ctx))
+            print(ctx.get_matrix())
+            print(position_x)
+
+            if position_x > availableWidth:
+                ctx.restore()
+                ctx.save()
+                ctx.translate(self.circleSize, self.circleSize + 3 * self.circleSize * nb_rows)
+                nb_rows += 1
+
+        print(nb_rows)
+        self.set_size_request(200, 2 * self.circleSize * nb_rows)
         ctx.restore()
 
     def loadData(self, alnData):
