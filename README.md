@@ -11,27 +11,45 @@ Analysis proceeds while it counts the SNPs that diverge from the amplicons found
 
 The matrix can show how the genomes are different at those regions.
 
-## Details
+## Inside The Pipeline
+
+### 1) Primer Docking, fetching the Amplicons
+
+This step is carried on `linkageMapper/primerFinder.py`. For each designated loci, the app will try to find the complement and/or the original sequence
+of both primers on all genomes. If both primers are found in a genome, the sequence between those primers is extracted and it proceeds to the next genome.
+If every genome got its amplicon for the current locus, the locus was sucessfull and the script goes to the next one.
+
+If for some reason not every genome is sucessfull with given pair of primers, the script downloads the locus sequence (if the locus name defined by the user matches a gene/locus on the genome annotation) from NCBI and randomizes one primer near the beginning of the gene sequence and other near the end.
+
+Some available genomes are complement-reversed, and the app will make sure that loci sequences for all genomes are in the same orientation.
+
+
+### 2) Amplicon Sequences Alignment
 
 After getting the loci sequence from all the genomes, the visualization of the differences among genomes is done in two fronts:
 
-### a) Dissimilarity Matrix
+#### 2a) Dissimilarity Matrix
 
 1. The multifasta file containing sequence for one loci among all genomes is passed through ClustalW2
 2. The the SNPs are detected and scored.
 3. One Dissimilarity Matrix is created, showing which genome groups have similar locus.
 4. Dissimilarity Matrixes can be viewed individually as `.pdf` files, `.npy` python files, or at the main visualization tool `walkChromosomeResult.py`.
 
-### b) MeshClust Clustering
+#### 2b) MeshClust Clustering
 
 1. The primary locus multifasta file is sent to MeshClust, which will detect clusters among genome's locus. Default MeshClust identity parameters is `0.999`.
 2. The output of MeshClust is parsed at the visualization tool, which decorates genomes names at the Dissimilarity Matrix labels according to it's cluster group.
 
+### 3) Visualization
+
+Afther the pipeline executes the main scripts, the user can execute `linkageMapper/walkChromosomeResult.py` and load the folder in order to view the results.
+
+
+![](https://raw.githubusercontent.com/Gab0/linkageMapper/master/walkChr.jpg?raw=true)
+
 More statistical analysis on the Dissimilarity Matrixes are carried, mostly using python's `skbio` module. The interpretation of analysis is under construction.
 
 By looking at a pair of D. Matrixes at a time, both corresponding to locus that are neighbors, the user may have an insight on data of the studied organism, like the recombination frequency.
-
-![](https://raw.githubusercontent.com/Gab0/linkageMapper/master/walkChr.jpg?raw=true)
 
 # Setup
 
@@ -44,8 +62,7 @@ By looking at a pair of D. Matrixes at a time, both corresponding to locus that 
 ### Fetch genomes and annotation files
 
 The following code downloads all required genomes and annotations from NCBI,
-populating the folders `genomes` and `annotations`. Standard usage requires this
-execution only once.
+populating the folders `genomes` and `annotations`. Standard usage requires one time execution of the following command:
 
 ```
 $python linkageMapper/fetchDataNCBI.py
@@ -65,14 +82,24 @@ Instead, you can manually add desired genomes and annotations, as explained in t
 * One multifasta file per strain.
 * They should be placed at the `genomes` folder.
 
-### Setup ClustalW2
+
+## Required Software
+
+### ClustalW2
 
 The alignment step of `linkageMapper` requires [ClustalW2](http://www.clustal.org/clustal2/) installed on your
 system.
 
-### Setup MeShClust [optional/recommended]
+### MeShClust [optional/redundant]
 
-The recombination analysis step of `linkageMapper` has [MeShClust](https://github.com/TulsaBioinformaticsToolsmith/MeShClust) as an optional dependency, having it installed on your system will add depth on matrix visualization.
+The recombination analysis step of `linkageMapper` has [MeShCluSt](https://github.com/TulsaBioinformaticsToolsmith/MeShClust) as an optional dependency.
+
+Having it installed on the system will enable genome group clustering to be totally independend from the alignment software, as MeShCluSt does the clustering
+on top of unaligned `.fasta` files.
+
+By not having it, the clustering will be made off distance matrix information only. 
+
+At this point, it is not important to have MeShCluSt installed.
 
 
 # Usage

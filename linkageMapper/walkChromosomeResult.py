@@ -199,12 +199,12 @@ class LocusMapBar(Gtk.DrawingArea):
         ctx.translate(-self.circleSize, -self.circleSize)
 
     def draw(self, da, ctx):
-        print("DRAWING %s" % self.Active)
+        # print("DRAWING %s" % self.Active)
 
         availableWidth = self.get_allocation().width
-        print(availableWidth)
+
         Size = len(self.LocusNames)
-        self.circleSize = min(round(availableWidth / (Size * 3) ), 12)
+        self.circleSize = min(availableWidth / (Size * 3), 12)
 
         ctx.set_source_rgb(0, 0, 0)
 
@@ -512,40 +512,47 @@ class matrixViewer():
         subprocess.run(command)
 
     def selectFolderPath(self, n):
-        def onResponse(widget, response):
+        a = folderPathSelector(self)
 
-            if response:
-                inputDirectory = widget.get_filename()
-                try:
-                    self.loadNewFolder(inputDirectory)
-                    widget.destroy()
-                except Exception as e:
-                    ERR = e
-                    widget.errorMessage.set_text(str(e))
-            else:
+
+class folderPathSelector(Gtk.FileChooserDialog):
+    def onResponse(self, widget, response):
+
+        if response:
+            inputDirectory = widget.get_filename()
+            try:
+                self.mainApplication.loadNewFolder(inputDirectory)
                 widget.destroy()
-        a = Gtk.FileChooserDialog(
-            title="Select Results Folder",
-            parent=None,
-            action=Gtk.FileChooserAction.SELECT_FOLDER)
+            except Exception as e:
+                ERR = e
+                widget.errorMessage.set_text("Error: %s" % e)
+        else:
+            widget.destroy()
 
-        a.errorMessage = Gtk.Label.new("Select file.")
-        a.errorMessage.set_hexpand(True)
+    def __init__(self, mainApplication):
+        Gtk.FileChooserDialog.__init__(self,
+                                       title="Select Results Folder",
+                                       parent=None,
+                                       action=Gtk.FileChooserAction.SELECT_FOLDER)
+
+        self.mainApplication = mainApplication
+        self.errorMessage = Gtk.Label.new("Select file.")
+        self.errorMessage.set_hexpand(True)
         ok = Gtk.Button(Gtk.STOCK_OPEN)
         cancel = Gtk.Button(Gtk.STOCK_CANCEL)
 
         buttonGrid = Gtk.Grid()
-        buttonGrid.attach(a.errorMessage, 0, 0, 1, 1)
+        buttonGrid.attach(self.errorMessage, 0, 0, 1, 1)
         #buttonGrid.attach(ok, 0, 1, 1, 1)
         #buttonGrid.attach(cancel, 0, 2, 1, 1)
 
-        a.vbox.pack_start(buttonGrid, False, False, 0)
+        self.vbox.pack_start(buttonGrid, False, False, 0)
 
-        a.add_button(Gtk.STOCK_OPEN, response_id=1)
-        a.add_button(Gtk.STOCK_CANCEL, response_id=0)
-        a.connect("response", onResponse)
-        print(a)
-        a.show_all()
+        self.add_button(Gtk.STOCK_OPEN, response_id=1)
+        self.add_button(Gtk.STOCK_CANCEL, response_id=0)
+        self.connect("response", self.onResponse)
+
+        self.show_all()
 
 
 def loadImage(source_image):

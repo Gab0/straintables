@@ -54,7 +54,7 @@ def singleLocusStatus(alnData, axis, locus_name):
     axis.axis("off")
 
 
-def createSubplot(fig, position, name, matrix, labels):
+def createMatrixSubplot(fig, position, name, matrix, labels):
     new_ax = fig.add_subplot(position)
 
     detectMutations.heatmapToAxis(matrix, new_ax, labels=labels)
@@ -96,15 +96,15 @@ def plotPwmIndex(fig, alnData, a, b, swap=False, showLabelColors=True):
     orderedLabels = alnData.heatmapLabels[matrix_order]
 
     # plot;
-    r_axis1 = createSubplot(fig, 331, a_name, ordered_ma, orderedLabels)
-    r_axis2 = createSubplot(fig, 333, b_name, ordered_mb, orderedLabels)
+    r_axis1 = createMatrixSubplot(fig, 331, a_name, ordered_ma, orderedLabels)
+    r_axis2 = createMatrixSubplot(fig, 333, b_name, ordered_mb, orderedLabels)
 
     reordered_axis = [r_axis1, r_axis2]
 
     # ORIGINAL MATRIXES;
     # plot;
-    o_axis1 = createSubplot(fig, 337, a_name, ma, alnData.heatmapLabels)
-    o_axis2 = createSubplot(fig, 339, b_name, mb, alnData.heatmapLabels)
+    o_axis1 = createMatrixSubplot(fig, 337, a_name, ma, alnData.heatmapLabels)
+    o_axis2 = createMatrixSubplot(fig, 339, b_name, mb, alnData.heatmapLabels)
 
     original_axis = [o_axis1, o_axis2]
 
@@ -216,7 +216,11 @@ def plotPwmIndex(fig, alnData, a, b, swap=False, showLabelColors=True):
                 ax_hb.text(0.8, 1, s=Message)
 
         # RECOMBINATION FIGURE;
-        if currentPWMData["recombination"]:
+        # PWM[RECOMBINATION] IS DEPRECATED.
+        # if currentPWMData["recombination"]:
+        Recombination = dissimilarityCluster.checkRecombination(clusterOutputData,
+                                                                orderedLabels)
+        if not Recombination:
             a = []
             b = []
             for x in range(-50, 50, 1):
@@ -225,10 +229,15 @@ def plotPwmIndex(fig, alnData, a, b, swap=False, showLabelColors=True):
                 b.append(y)
 
             ax_symbol = fig.add_subplot(332)
+            dm = list(range(len(orderedLabels)))
+
+            ax_symbol.scatter([0 for x in dm], dm, color='green')
+            #ax_symbol.scatter([len(dm) for x in dm], dm, color='red')
+
             b = np.array(b)
             d = 500
-            ax_symbol.plot(b - d, a, color='gray')
-            ax_symbol.plot(-b + d, a, color='brown')
+            #ax_symbol.plot(b - d, a, color='gray')
+            #ax_symbol.plot(-b + d, a, color='brown')
             ax_symbol.axis("off")
 
     plt.title("")

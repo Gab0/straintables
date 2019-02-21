@@ -3,6 +3,8 @@
 import json
 import re
 from sklearn.cluster import dbscan
+
+
 # First way of obtaining cluster data: From MeShCluSt .clst file.
 def parseMeshcluster(clusterFilePath):
     clusterData = open(clusterFilePath).read().split("\n")
@@ -202,3 +204,40 @@ def matchPairOfClusterOutputData(clusterOutputData, Verbose=False):
 
     return clusterOutputData
 
+
+"""
+checkRecombination
+
+This checks for recombination, by checking the members of a pair of cluster groups.
+algorithm: Otsuka-Ochiai coefficient on those clusters;
+clusterPair <list>: Two sets of clusters.
+"""
+
+
+def checkRecombination(clusterPair, locusNames):
+    recombination = False
+    for locusName in locusNames:
+        clusterKeys = [None, None]
+        clusterSizes = [None, None]
+        for cidx, clusterSet in enumerate(clusterPair):
+            for cluster in clusterSet.keys():
+                if locusName in clusterSet[cluster]:
+                    clusterSizes[cidx] = len(clusterSet[cluster])
+                    clusterKeys[cidx] = cluster
+                    break
+
+        A = clusterPair[0][clusterKeys[0]]
+        B = clusterPair[1][clusterKeys[1]]
+
+        if any([len(X) == 1 for X in [A, B]]):
+            K = 1
+        else:
+            intersect = [x for x in A if x in B]
+            K = len(intersect) / (len(A) + len(B)) ** 0.5
+
+        print("%s -> %.2f" % (locusName, K))
+
+        if K < 0.1:
+            recombination = True
+
+    return recombination
