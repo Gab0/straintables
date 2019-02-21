@@ -231,12 +231,11 @@ class LocusMapBar(Gtk.DrawingArea):
 
             self.drawCircle(ctx, color)
             ctx.translate(3 * self.circleSize, 0)
-
+            print(dir(ctx))
         ctx.restore()
 
     def loadData(self, alnData):
         self.LocusNames = list(alnData.MatchData["LocusName"])
-
         print(self.LocusNames)
 
 
