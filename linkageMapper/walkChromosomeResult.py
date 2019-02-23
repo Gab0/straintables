@@ -230,9 +230,6 @@ class LocusMapBar(Gtk.DrawingArea):
             ctx.translate(3 * self.circleSize, 0)
 
             position_x = ctx.get_matrix()[4]
-            print(dir(ctx))
-            print(ctx.get_matrix())
-            print(position_x)
 
             if position_x > availableWidth:
                 ctx.restore()
@@ -241,7 +238,7 @@ class LocusMapBar(Gtk.DrawingArea):
                 nb_rows += 1
 
         print(nb_rows)
-        self.set_size_request(200, 2 * self.circleSize * nb_rows)
+        self.set_size_request(200, 4 * self.circleSize * nb_rows)
         ctx.restore()
 
     def loadData(self, alnData):

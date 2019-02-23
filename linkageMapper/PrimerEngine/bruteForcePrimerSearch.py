@@ -5,11 +5,17 @@ import os
 from . import PrimerDock
 from Bio import SeqIO
 
+"""
+
+This finds a feature compatible to the query gene name, in a chromosome feature table.
+
+returns: (Name of chromosome, position of sequence inside chromosome)
+"""
+
 
 def retrieveGeneSequence(genomeFeatures, geneName):
     for g, FeatureGroup in enumerate(genomeFeatures):
         for feature in FeatureGroup.features:
-            A = FeatureGroup
             if feature.type == "gene":
                 MATCH = False
                 if "gene" in feature.qualifiers.keys():
@@ -22,15 +28,17 @@ def retrieveGeneSequence(genomeFeatures, geneName):
                     return FeatureGroup.description, feature.location
 
 
-def fetchSequence(location, chr_descriptor, genomeFilePath):
+def locateAndFetchSequence(location, chr_descriptor, genomeFilePath):
     genome = list(SeqIO.parse(genomeFilePath, format="fasta"))
 
+    wantedDescriptors = [chr_descriptor, "complete genome"]
     for c, Chromosome in enumerate(genome):
-        if chr_descriptor in Chromosome.description:
-            Sequence = Chromosome.seq[location.start.position:location.end.position]
-            if location.strand == -1:
-                Sequence = Sequence.reverse_complement()
-            return Sequence
+        for Descriptor in wantedDescriptors:
+            if Descriptor in Chromosome.description:
+                Sequence = Chromosome.seq[location.start.position:location.end.position]
+                if location.strand == -1:
+                    Sequence = Sequence.reverse_complement()
+                return Sequence
         # print(dir(Chromosome))
         # print(Chromosome.name)
         # print(Chromosome.id)
@@ -38,17 +46,40 @@ def fetchSequence(location, chr_descriptor, genomeFilePath):
 
 
 def fetchGeneSequence(geneName, outputFilePath):
+
     # FETCH PRIMER METHODS. TO BE INTEGRATED;
-    DownloadedGene = retrieveGeneSequence(genomeFeatures, geneName)
-    if DownloadedGene is None:
-        print("ABORT: Gene name not found.")
+    geneSearchResult = retrieveGeneSequence(genomeFeatures, geneName)
+
+    if geneSearchResult is None:
+        print("Aborting brute force primer search: Gene name not found.")
+        return
+
+    chr_descriptor, location = geneSearchResult
+
+    AnnotationDescription = genomeFeatures[0].description.split(" ")
+
+    # print(AnnotationDescription)
+
+    matchingAnnotationGenome = None
+    for k in genomeFilePaths:
+        for m in AnnotationDescription:
+            if m.lower() in k:
+                matchingAnnotationGenome = k
+
+    if matchingAnnotationGenome is None:
+        print("No genome matching annotation!")
         exit(1)
 
-    chr_descriptor, location = DownloadedGene
-    genomeFilePath = "genomes/TG_ME49.fasta"
-    SEQ = fetchSequence(location,
-                        chr_descriptor,
-                        genomeFilePath)
+    SEQ = locateAndFetchSequence(location,
+                                 chr_descriptor,
+                                 matchingAnnotationGenome)
+
+    if not SEQ:
+        print("Error: Failure on feching brute force sequence.")
+        print("genomePath: %s" % matchingAnnotationGenome)
+        print("chromosome descripor: %s" % chr_descriptor)
+        print("location: %s" % location)
+        exit(1)
 
     # Save sequence;
     outputFile = open(outputFilePath, 'w')
@@ -66,7 +97,10 @@ def launchBruteForcePrimerSearch(locus_name, chromosomes, Reverse):
         # Fetch gene sequence;
         fetchGeneSequence(locus_name, geneSequenceFilePath)
 
-    geneSequenceRaw = open(geneSequenceFilePath).read()
+    if os.path.isfile(geneSequenceFilePath):
+        geneSequenceRaw = open(geneSequenceFilePath).read()
+    else:
+        return None
 
     geneSequence = geneSequenceRaw.split("\n")
     if ">" in geneSequence[0]:
@@ -78,6 +112,7 @@ def launchBruteForcePrimerSearch(locus_name, chromosomes, Reverse):
                              geneSequence,
                              Reverse=Reverse
         )
+
     if foundPrimers:
         print("Brute force forward primer search returns %i primers." % len(foundPrimers))
 

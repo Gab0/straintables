@@ -214,11 +214,12 @@ clusterPair <list>: Two sets of clusters.
 """
 
 
-def checkRecombination(clusterPair, locusNames):
-    recombination = False
+def checkRecombination(clusterPair, locusNames, Threshold=0.1):
+    recombination = []
     for locusName in locusNames:
         clusterKeys = [None, None]
         clusterSizes = [None, None]
+
         for cidx, clusterSet in enumerate(clusterPair):
             for cluster in clusterSet.keys():
                 if locusName in clusterSet[cluster]:
@@ -237,7 +238,9 @@ def checkRecombination(clusterPair, locusNames):
 
         print("%s -> %.2f" % (locusName, K))
 
-        if K < 0.1:
-            recombination = True
+        recomb = True if K < Threshold else False
+        recombination.append(recomb)
+
+    assert(len(recombination) == len(locusNames))
 
     return recombination

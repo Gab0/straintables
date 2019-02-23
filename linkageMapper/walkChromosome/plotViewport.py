@@ -78,6 +78,7 @@ def plotPwmIndex(fig, alnData, a, b, swap=False, showLabelColors=True):
     # EXTRACR LOCUS NAMES;
     a_name, b_name = fixArrayFilename(a), fixArrayFilename(b)
     print(a_name)
+
     try:
         data = [
             alnData.PrimerData[alnData.PrimerData.Locus == name.replace("LOCI_", "")].iloc[0]
@@ -177,6 +178,9 @@ def plotPwmIndex(fig, alnData, a, b, swap=False, showLabelColors=True):
 
     # BUILD SHOWN INFO;
     if currentPWMData is not None:
+        color_green = (0.1, 0.8, 0.1)
+        color_red = (0.8, 0.1, 0.1)
+
         distance = abs(data[0].PositionStart - data[1].PositionStart)
 
         INF_SYMBOL = chr(8734)
@@ -218,9 +222,29 @@ def plotPwmIndex(fig, alnData, a, b, swap=False, showLabelColors=True):
         # RECOMBINATION FIGURE;
         # PWM[RECOMBINATION] IS DEPRECATED.
         # if currentPWMData["recombination"]:
-        Recombination = dissimilarityCluster.checkRecombination(clusterOutputData,
-                                                                orderedLabels)
-        if not Recombination:
+        try:
+            Recombination = dissimilarityCluster.checkRecombination(
+                clusterOutputData,
+                orderedLabels,
+                Threshold=0.4)
+        except Exception as e:
+            Recombination = [False]
+            print("WARNING: Recombination failure!")
+            print(e)
+
+        def plotRecombinationPanel(ax, baseIndex):
+            x_values = np.linspace(0, 10, 100)
+
+            pre = 0.7
+            div = 2
+            mul = 2.1
+            plot_53 = [baseIndex + np.sin(pre + mul * x) / div for x in x_values]
+            plot_35 = [baseIndex - np.sin(pre + mul * x) / div for x in x_values]
+
+            ax.plot(x_values, plot_53, color=color_red)
+            ax.plot(x_values, plot_35, color=color_green)
+
+        if any(Recombination):
             a = []
             b = []
             for x in range(-50, 50, 1):
@@ -228,17 +252,22 @@ def plotPwmIndex(fig, alnData, a, b, swap=False, showLabelColors=True):
                 a.append(x)
                 b.append(y)
 
-            ax_symbol = fig.add_subplot(332)
+            ax_recombination = fig.add_subplot(332)
             dm = list(range(len(orderedLabels)))
 
-            ax_symbol.scatter([0 for x in dm], dm, color='green')
-            #ax_symbol.scatter([len(dm) for x in dm], dm, color='red')
+            # Reverse recombination array because matrix plot indexes and normal plot indexes are reversed.
+            for r, rec in enumerate(reversed(Recombination)):
+                if rec:
+                    plotRecombinationPanel(ax_recombination, r)
+
+            ax_recombination.scatter([0 for x in dm], dm, color=color_green)
+            ax_recombination.scatter([10 for x in dm], dm, color=color_red)
 
             b = np.array(b)
             d = 500
             #ax_symbol.plot(b - d, a, color='gray')
             #ax_symbol.plot(-b + d, a, color='brown')
-            ax_symbol.axis("off")
+            ax_recombination.axis("off")
 
     plt.title("")
 

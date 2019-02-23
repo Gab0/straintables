@@ -229,8 +229,12 @@ def matchLocusOnGenomes(locus_name, locus_info,
 
                     # MANAGE PRIMERS ON HOLSTER;
                     if not testablePrimers[PrimerType]:
-                        testablePrimers[PrimerType] =\
+                        newPrimers =\
                             bruteForcePrimerSearch.launchBruteForcePrimerSearch(locus_name, Genome, PT)
+                        if not newPrimers:
+                            print("Warning: No bruteforce primers found...")
+
+                        testablePrimers[PrimerType] = newPrimers
 
                     while testablePrimers[PrimerType]:
                         print("Fetching new primer from reserve...")

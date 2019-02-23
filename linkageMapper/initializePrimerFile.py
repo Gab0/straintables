@@ -13,21 +13,25 @@ def Execute(options):
         identifier=options.inputAnnotationName
     )
 
+    """
     if not options.inputAnnotationName:
         print("No chromosome selected. Available Chromosomes:")
         availableChromosomes = [c for c in selectedScaffold if "Unknown" not in c]
         print("\n".join(availableChromosomes))
         return
+    """
 
-    if selectedScaffold is None:
+    if selectedScaffold is None or type(selectedScaffold) == list:
+
         print("Chromosome %s not found." % options.inputAnnotationName)
+        print(selectedScaffold)
         return
 
     print("Found feature source scaffold, please review: \n\n%s" % selectedScaffold)
     chosenFeatures = []
     for feature in selectedScaffold.features:
         COND1 = "gene" in feature.qualifiers.keys()
-        COND2 = random.random() < options.locusProbability
+        COND2 = "locus_tag" in feature.qualifiers.keys() and random.random() < options.locusProbability
 
         NAME = None
         if COND1:
@@ -52,7 +56,7 @@ def Execute(options):
 
     data.to_csv(options.outputFile, index=False)
 
-    print("\n%s written." % options.outputFile)
+    print("\n%s written with %i primers." % (options.outputFile, data.shape[0]))
 
 
 if __name__ == "__main__":
@@ -62,7 +66,7 @@ if __name__ == "__main__":
                       dest="inputAnnotationFolder",
                       default='annotations')
 
-    parser.add_option("-c",
+    parser.add_option("-c", "--chromosome",
                       dest="inputAnnotationName",
                       help="Chromosome identifier. E.g 'X' or 'II' or 'Ia'")
 
@@ -78,6 +82,7 @@ if __name__ == "__main__":
                       dest="ListChromosomeNames",
                       action="store_true",
                       help="Print all chromosome names and exit.")
+
     options, args = parser.parse_args()
 
     print("\n\n")

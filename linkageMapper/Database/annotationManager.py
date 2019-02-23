@@ -28,18 +28,37 @@ def loadAnnotation(annotationFolder, identifier=None):
     annotationFilePath = os.path.join(annotationFolder, annotationFile)
     annotationContent = list(SeqIO.parse(annotationFilePath, "genbank"))
 
+    print(identifier)
+
+    if identifier:
+        wantedIdentifiers = [identifier, "chromosome_%s" % identifier]
+    else:
+        wantedIdentifiers = ["chromosome"]
+
     allIdentifiers = []
+
+    noChromosomeIdentifierOnAnnotation = True
     for Scaffold in annotationContent:
+        print(Scaffold.features[0].qualifiers)
         Qualifiers = Scaffold.features[0].qualifiers
         if 'chromosome' in Qualifiers.keys():
+            noChromosomeIdentifierOnAnnotation = False
             ChromosomeName = Qualifiers['chromosome'][0]
+
+            # Identifier identified;
             allIdentifiers.append(ChromosomeName)
-            if identifier:
-                if identifier.lower() == ChromosomeName.lower():
+
+            for wantedIdentifier in wantedIdentifiers:
+                print(identifier)
+                print(ChromosomeName)
+                if wantedIdentifier.lower() == ChromosomeName.lower():
                     return Scaffold
 
-    if not identifier:
-        return allIdentifiers
+    if noChromosomeIdentifierOnAnnotation and not identifier:
+        print(">")
+        return annotationContent[0]
+
+    return allIdentifiers
 
 
 

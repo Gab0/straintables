@@ -40,6 +40,7 @@ parser.add_option("-r",
 parser.add_option("-w",
                   "--rewrite",
                   dest="RewriteFasta")
+
 options, args = parser.parse_args()
 
 
@@ -115,11 +116,8 @@ if __name__ == "__main__":
     if genomeFeatures:
         genomeFeatures = genomeFeatures[0]
     else:
-        print("Fata: No features found.")
+        print("Fatal: No features found.")
         exit(1)
-
-    # APPLY GENOME FEATURES TO MODULE;
-    PrimerEngine.bruteForcePrimerSearch.genomeFeatures = genomeFeatures
 
     # FETCH GENOME NAMES;
     genomeFeaturesChromosomes =\
@@ -145,11 +143,17 @@ if __name__ == "__main__":
     genomes = os.listdir(genomeDirectory)
     genomeFilePaths = [os.path.join(genomeDirectory, genomeFile)
                        for genomeFile in genomes
-                       if genomeFile.endswith('.fasta')]
+                       if genomeFile.endswith(('.fna', '.fasta'))]
+
     genomes = [PrimerEngine.GeneticEntities.Genome(genomeFilePath)
                for genomeFilePath in genomeFilePaths]
 
     print("Loaded %i genomes." % len(genomes))
+
+    # APPLY GENOME FEATURES TO BRUTE FORCE MODULE;
+    PrimerEngine.bruteForcePrimerSearch.genomeFeatures = genomeFeatures
+    PrimerEngine.bruteForcePrimerSearch.matchingFeaturesGenome = None
+    PrimerEngine.bruteForcePrimerSearch.genomeFilePaths = genomeFilePaths
 
     AllLociAmpliconSet = {}
     AllLociPrimerSet = OrderedDict()
@@ -198,6 +202,8 @@ if __name__ == "__main__":
             AllLociPrimerSet[locus_name] = matchSuccess
             # print("Bad Amplicon set for %s! Ignoring...." % locus_name)
 
+        else:
+            print("WARNING: PrimerDock failure.")
     # SHOW AMPLICON DATABASE;
     print(json.dumps(AllLociAmpliconSet, indent=2))
 
@@ -225,6 +231,6 @@ if __name__ == "__main__":
     data.to_csv(outputFilePath, index=False)
 
     # NOPE
-    MasterGenome = [g for g in genomes if "ME49" in g.name][0]
+    # MasterGenome = [g for g in genomes if "ME49" in g.name][0]
     # geneGraphs.plotGeneArea(allPrimers, MasterGenome)
 

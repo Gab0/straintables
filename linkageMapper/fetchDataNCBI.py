@@ -12,6 +12,8 @@ import re
 
 import random
 
+import shutil
+
 from ftplib import FTP
 import optparse
 Entrez.email = 'researcher_%i@one-time-use.cn' % random.randrange(0, 1000)
@@ -33,10 +35,12 @@ def findAssemblyList(Organism, Strain=None):
     return P['IdList']
 
 
-def downloadAssembly(ID, downloadDirectory='',
+def downloadAssembly(ID,
+                     downloadDirectory='',
                      showSummaries=False,
                      onlyCompleteGenome=False,
                      wantedFileTypes=[],
+                     renameGenome=False,
                      Verbose=False):
     print(ID)
     Summary = Entrez.esummary(db="assembly", id=ID, report='full')
@@ -125,15 +129,7 @@ def downloadAssembly(ID, downloadDirectory='',
         print('\n'.join(remoteFiles))
 
     for remoteFileName in remoteFileNames:
-        # REVIEW THIS! MAY YIELD BUGS LATER.
-        localFileName = re.findall("TG[A-Z0-9]+", remoteFileName)
-        if localFileName:
-
-            localFileName = localFileName[0] + remoteFileExtension
-            if remoteFileName.endswith(".gz"):
-                localFileName += ".gz"
-        else:
-            localFileName = remoteFileName
+        localFileName = remoteFileName
 
         localfilepath = os.path.join(downloadDirectory, localFileName)
         debug("Writing assembly to %s" % localfilepath)
@@ -157,6 +153,28 @@ def downloadAssembly(ID, downloadDirectory='',
                 os.remove(localfilepath)
                 localfilepath = decompressedPath
                 print('\n')
+
+        # GENOME FILE - RENAME IT TO STRAIN NAME;
+        if renameGenome and localfilepath.endswith(".fna"):
+            genome = list(SeqIO.parse(localfilepath, format='fasta'))
+            genomeDescription = genome[0].description
+
+            strainName = None
+            # RENAMING CRITERIA 1:
+            d = re.findall("strain (\w+)", genomeDescription)
+            if d:
+                strainName = d[0]
+            else:
+                # RENAMING CRITERIA 2:
+                words = genomeDescription.split(" ")
+                uppercaseWords = [w.isupper() for w in words]
+                if sum(uppercaseWords) == 1:
+                    strainName = words[uppercaseWords.index(True)]
+
+            if strainName is not None:
+                newFilePath = os.path.join(os.path.dirname(localfilepath), strainName + '.fna')
+                shutil.move(localfilepath, newFilePath)
+                print("Moving genome file to %s" % newFilePath)
 
         # ANNOTATION FILE - split by scaffold (unused);
         if False and localfilepath.endswith(".gbff"):
@@ -218,31 +236,33 @@ if __name__ == "__main__":
                       dest="queryOrganism",
                       default="Toxoplasma gondii")
 
-    parser.add_opton("--strain",
-                     dest="annotationStrain",
-                     default="ME49")
+    parser.add_option("--strain",
+                      dest="annotationStrain",
+                      default="ME49")
 
     options, args = parser.parse_args()
 
     dataTypes = []
+
     # Fetch Genome IDs;
     if options.downloadGenomes:
         D = findAssemblyList(options.queryOrganism)
-        dataTypes.append((D, "genomes", ["_genomic.fna"]))
+        dataTypes.append((D, "genomes", ["_genomic.fna"], True))
 
     # Fetch Annotation IDs;
     if options.downloadAnnotations:
         A = findAssemblyList("%s %s" % (options.queryOrganism, options.annotationStrain))
-        dataTypes.append((A, "annotations", ["_genomic.gbff"]))
+        dataTypes.append((A, "annotations", ["_genomic.gbff"], False))
 
-    for (IDS, typeName, fileExtensions) in dataTypes:
+    for (IDS, typeName, fileExtensions, rename) in dataTypes:
         for d, ID in enumerate(IDS):
             print("Downloading %i of %i.\n" % (d + 1, len(IDS)))
 
             downloadAssembly(ID,
                              downloadDirectory=typeName,
                              onlyCompleteGenome=True,
-                             wantedFileTypes=fileExtensions)
+                             wantedFileTypes=fileExtensions,
+                             renameGenome=rename)
 
     print()
     print("Sucess:")

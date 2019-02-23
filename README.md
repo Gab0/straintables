@@ -65,7 +65,14 @@ The following code downloads all required genomes and annotations from NCBI,
 populating the folders `genomes` and `annotations`. Standard usage requires one time execution of the following command:
 
 ```
-$python linkageMapper/fetchDataNCBI.py
+To download defaults: Toxoplasma gondii genomes & TGME49 annotations;
+$python linkageMapper/fetchDataNCBI.py 
+
+Same result as above:
+$python linkageMapper/fetchDataNCBI.py --organism "Toxoplasma gondii" --strain ME49
+
+With lactobacillus plantarum & WCFS1 annotations:
+$python linkageMapper/fetchDataNCBI.py --organism "Lactobacillus plantarum" --strain WCFS1
 ```
 
 Instead, you can manually add desired genomes and annotations, as explained in the next subsections:
