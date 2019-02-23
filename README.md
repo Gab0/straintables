@@ -75,7 +75,10 @@ With lactobacillus plantarum & WCFS1 annotations:
 $python linkageMapper/fetchDataNCBI.py --organism "Lactobacillus plantarum" --strain WCFS1
 ```
 
-Instead, you can manually add desired genomes and annotations, as explained in the next subsections:
+Please note that altough `fetchDataNCBI.py` contatins various methods to ensure the correct file names for downloaded genomes,
+the user needs to manually check the folder after the process.
+
+Instead or complementary, you can manually add desired genomes and annotations, as explained in the next subsections:
 
 #### Annotations
 

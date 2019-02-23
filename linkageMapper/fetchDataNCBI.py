@@ -16,6 +16,8 @@ import shutil
 
 from ftplib import FTP
 import optparse
+
+# is this legal in the terms of the LAW?
 Entrez.email = 'researcher_%i@one-time-use.cn' % random.randrange(0, 1000)
 
 
@@ -27,7 +29,7 @@ def findAssemblyList(Organism, Strain=None):
     query = '(%s[Organism]' % Organism
     if Strain:
         query += " AND %s[Strain]" % Strain
-    result = Entrez.esearch(db='assembly', term=query)
+    result = Entrez.esearch(db='assembly', term=query, retmax=100)
 
     P = Entrez.read(result)
 
@@ -40,7 +42,6 @@ def downloadAssembly(ID,
                      showSummaries=False,
                      onlyCompleteGenome=False,
                      wantedFileTypes=[],
-                     renameGenome=False,
                      Verbose=False):
     print(ID)
     Summary = Entrez.esummary(db="assembly", id=ID, report='full')
@@ -154,28 +155,6 @@ def downloadAssembly(ID,
                 localfilepath = decompressedPath
                 print('\n')
 
-        # GENOME FILE - RENAME IT TO STRAIN NAME;
-        if renameGenome and localfilepath.endswith(".fna"):
-            genome = list(SeqIO.parse(localfilepath, format='fasta'))
-            genomeDescription = genome[0].description
-
-            strainName = None
-            # RENAMING CRITERIA 1:
-            d = re.findall("strain (\w+)", genomeDescription)
-            if d:
-                strainName = d[0]
-            else:
-                # RENAMING CRITERIA 2:
-                words = genomeDescription.split(" ")
-                uppercaseWords = [w.isupper() for w in words]
-                if sum(uppercaseWords) == 1:
-                    strainName = words[uppercaseWords.index(True)]
-
-            if strainName is not None:
-                newFilePath = os.path.join(os.path.dirname(localfilepath), strainName + '.fna')
-                shutil.move(localfilepath, newFilePath)
-                print("Moving genome file to %s" % newFilePath)
-
         # ANNOTATION FILE - split by scaffold (unused);
         if False and localfilepath.endswith(".gbff"):
             with open(localfilepath) as af:
@@ -218,6 +197,60 @@ def strainToDatabase(species):
         species))
 
 
+def renameGenomeFiles(dirpath, organism):
+    allGenomes = os.listdir(dirpath)
+
+    def orderByVersion(g):
+        for version in range(10, 1, -1):
+            if "v%i_" in g.lower():
+                return version
+        return 1
+
+
+    allGenomes = sorted(allGenomes, key=orderByVersion)
+    for genome in allGenomes:
+        localfilepath = os.path.join(dirpath, genome)
+        genome = list(SeqIO.parse(localfilepath, format='fasta'))
+
+        genomeDescription = genome[0].description
+
+        strainName = None
+
+        # RENAMING CRITERIA 1:
+        def renamingCriteria1():
+            d = re.findall("strain (\w+)", genomeDescription)
+            if d:
+                print("C1")
+                return d[0]
+
+        # RENAMING CRITERIA 2:
+        def renamingCriteria2():
+            e = re.findall("%s (\w+)" % (organism), genomeDescription, flags=re.IGNORECASE)
+            if e:
+                return e[0]
+
+        # RENAMING CRITERIA 3:
+        def renamingCriteria3():
+            words = genomeDescription.split(" ")[1:]
+            uppercaseWords = [w.isupper() for w in words]
+            if sum(uppercaseWords) == 1:
+                return words[uppercaseWords.index(True)]
+
+        allCriteria = [
+            renamingCriteria1,
+            renamingCriteria2,
+            renamingCriteria3
+        ]
+
+        for renamingCriteria in allCriteria:
+            strainName = renamingCriteria()
+            if strainName is not None:
+                newFilePath = os.path.join(os.path.dirname(localfilepath), strainName + '.fna')
+                shutil.move(localfilepath, newFilePath)
+                print("Moving genome %s file to %s" % (localfilepath, newFilePath))
+                break
+
+
 if __name__ == "__main__":
 
     parser = optparse.OptionParser()
@@ -247,22 +280,25 @@ if __name__ == "__main__":
     # Fetch Genome IDs;
     if options.downloadGenomes:
         D = findAssemblyList(options.queryOrganism)
-        dataTypes.append((D, "genomes", ["_genomic.fna"], True))
+        dataTypes.append((D, "genomes", ["_genomic.fna"]))
+
 
     # Fetch Annotation IDs;
     if options.downloadAnnotations:
         A = findAssemblyList("%s %s" % (options.queryOrganism, options.annotationStrain))
-        dataTypes.append((A, "annotations", ["_genomic.gbff"], False))
+        dataTypes.append((A, "annotations", ["_genomic.gbff"]))
 
-    for (IDS, typeName, fileExtensions, rename) in dataTypes:
+    for (IDS, typeName, fileExtensions) in dataTypes:
         for d, ID in enumerate(IDS):
             print("Downloading %i of %i.\n" % (d + 1, len(IDS)))
 
             downloadAssembly(ID,
                              downloadDirectory=typeName,
                              onlyCompleteGenome=True,
-                             wantedFileTypes=fileExtensions,
-                             renameGenome=rename)
+                             wantedFileTypes=fileExtensions)
+
+    # properly name genome files;
+    renameGenomeFiles("genomes", options.queryOrganism)
 
     print()
     print("Sucess:")
