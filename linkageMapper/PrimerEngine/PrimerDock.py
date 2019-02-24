@@ -166,8 +166,12 @@ def validatePrimer(V):
         return True
 
 
-def matchLocusOnGenomes(locus_name, locus_info,
-                        genomes, overallProgress=(0, 0), rebootTolerance=20):
+def matchLocusOnGenomes(locus_name,
+                        locus_info,
+                        genomes,
+                        overallProgress=(0, 0),
+                        rebootTolerance=20,
+                        bruteForceSearcher=None):
     LocusAmpliconSet = {}
 
     def initPrimerHolder():
@@ -228,9 +232,9 @@ def matchLocusOnGenomes(locus_name, locus_info,
                     print("Searching new primer on gene sequence...")
 
                     # MANAGE PRIMERS ON HOLSTER;
-                    if not testablePrimers[PrimerType]:
+                    if not testablePrimers[PrimerType] and bruteForceSearcher:
                         newPrimers =\
-                            bruteForcePrimerSearch.launchBruteForcePrimerSearch(locus_name, Genome, PT)
+                            bruteForceSearcher.launchBruteForcePrimerSearch(locus_name, Genome, PT)
                         if not newPrimers:
                             print("Warning: No bruteforce primers found...")
 

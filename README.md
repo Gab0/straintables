@@ -13,7 +13,7 @@ The matrix can show how the genomes are different at those regions.
 
 ## Inside The Pipeline
 
-### 1) Primer Docking, fetching the Amplicons
+### 1) Primer Docking: building Amplicons
 
 This step is carried on `linkageMapper/primerFinder.py`. For each designated loci, the app will try to find the complement and/or the original sequence
 of both primers on all genomes. If both primers are found in a genome, the sequence between those primers is extracted and it proceeds to the next genome.
@@ -53,7 +53,7 @@ By looking at a pair of D. Matrixes at a time, both corresponding to locus that 
 
 # Setup
 
-### Install Python Requirements
+### Download scripts and install Python Requirements
 
 1. Clone this repository.
 
@@ -75,16 +75,16 @@ With lactobacillus plantarum & WCFS1 annotations:
 $python linkageMapper/fetchDataNCBI.py --organism "Lactobacillus plantarum" --strain WCFS1
 ```
 
-Please note that altough `fetchDataNCBI.py` contatins various methods to ensure the correct file names for downloaded genomes,
+Please note that although `fetchDataNCBI.py` contatins various methods to ensure the correct file names for downloaded genomes,
 the user needs to manually check the folder after the process.
 
-Instead or complementary, you can manually add desired genomes and annotations, as explained in the next subsections:
+The user can manually add desired genomes and annotations, as explained in the next subsections:
 
-#### Annotations
+#### Annotation
 
-* The annotation file serves as a guide for the analysis, as they contain most loci names for *T. gondii*.
-* Recommended annotation is the one for TGME49, which at the moment seems to be the most complete one.
-* All `.gff` annotation files, one for each chromosome, should be placed at `annotations` folder.
+* The annotation file serve as a guide for automatic primer docking, since they contain the boundaries for each locus.
+* One `.gbff` annotation file at `annotation` folder is required.
+
 
 #### Genomes
 
@@ -100,7 +100,7 @@ Instead or complementary, you can manually add desired genomes and annotations, 
 The alignment step of `linkageMapper` requires [ClustalW2](http://www.clustal.org/clustal2/) installed on your
 system.
 
-### MeShClust [optional/redundant]
+### MeShClust [optional]
 
 The recombination analysis step of `linkageMapper` has [MeShCluSt](https://github.com/TulsaBioinformaticsToolsmith/MeShClust) as an optional dependency.
 

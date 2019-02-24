@@ -225,7 +225,7 @@ def renameGenomeFiles(dirpath, organism):
 
         # RENAMING CRITERIA 2:
         def renamingCriteria2():
-            e = re.findall("%s (\w+)" % (organism), genomeDescription, flags=re.IGNORECASE)
+            e = re.findall("%s ([\w-]+)" % (organism), genomeDescription, flags=re.IGNORECASE)
             if e:
                 return e[0]
 

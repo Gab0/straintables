@@ -112,12 +112,14 @@ if __name__ == "__main__":
         for File in genomeFeatureFiles if File.endswith(".gbff")
     ]
 
+
     # CHECK GENOME FEATURES FILE EXISTENCE;
     if genomeFeatures:
         genomeFeatures = genomeFeatures[0]
     else:
         print("Fatal: No features found.")
         exit(1)
+
 
     # FETCH GENOME NAMES;
     genomeFeaturesChromosomes =\
@@ -151,9 +153,11 @@ if __name__ == "__main__":
     print("Loaded %i genomes." % len(genomes))
 
     # APPLY GENOME FEATURES TO BRUTE FORCE MODULE;
-    PrimerEngine.bruteForcePrimerSearch.genomeFeatures = genomeFeatures
-    PrimerEngine.bruteForcePrimerSearch.matchingFeaturesGenome = None
-    PrimerEngine.bruteForcePrimerSearch.genomeFilePaths = genomeFilePaths
+
+    bruteForceSearcher = PrimerEngine.bruteForcePrimerSearch.bruteForceSearcher(genomeFeatures, genomeFilePaths)
+    # PrimerEngine.bruteForcePrimerSearch.genomeFeatures = genomeFeatures
+    # PrimerEngine.bruteForcePrimerSearch.matchingFeaturesGenome = None
+    # PrimerEngine.bruteForcePrimerSearch.genomeFilePaths = genomeFilePaths
 
     AllLociAmpliconSet = {}
     AllLociPrimerSet = OrderedDict()
@@ -187,7 +191,8 @@ if __name__ == "__main__":
                 locus_name,
                 locus_info,
                 genomes,
-                overallProgress
+                overallProgress,
+                bruteForceSearcher=bruteForceSearcher
             )
 
         if LocusAmpliconSet is not None:
