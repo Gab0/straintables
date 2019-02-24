@@ -17,33 +17,6 @@ import PrimerEngine
 from optparse import OptionParser
 
 
-parser = OptionParser()
-
-parser.add_option("-p", "--plot",
-                  dest="PlotArea",
-                  action="store_true", default=False)
-
-parser.add_option("-l",
-                  dest="WantedLoci",
-                  default="")
-
-parser.add_option("-i",
-                  dest="primerFile")
-
-parser.add_option("-o",
-                  dest="outputPath")
-
-parser.add_option("-r",
-                  "--locusref",
-                  dest="LocusReference")
-
-parser.add_option("-w",
-                  "--rewrite",
-                  dest="RewriteFasta")
-
-options, args = parser.parse_args()
-
-
 class clonalTypeReference():
     def __init__(self):
         self.genotypeData = pd.read_csv("genomes_haplogroups.csv")
@@ -63,19 +36,23 @@ class clonalTypeReference():
         return RFLPLocus
 
 
-def writeFastaFile(outputPath, locusName, locusSequences):
+def writeFastaFile(outputPath,
+                   locusName,
+                   locusSequences,
+                   clonalReference=None):
     fastaSequences = []
 
     for genome in locusSequences.keys():
         Name = genome + ".fasta"
         try:
-            REF = options.LocusReference
-            referenceLocus = REF if REF else options.LocusName
+            if clonalReference:
+                REF = options.LocusReference
+                referenceLocus = REF if REF else options.LocusName
 
-            GN = clonalReference.getGenotypeNumber(Name)
-            RFLPLocus = clonalReference.getRFLPLocus(GN, REF)
-            Name += "___%s" % RFLPLocus
-            print("Loci data found for %s" % Name)
+                GN = clonalReference.getGenotypeNumber(Name)
+                RFLPLocus = clonalReference.getRFLPLocus(GN, REF)
+                Name += "___%s" % RFLPLocus
+                print("Loci data found for %s" % Name)
         except Exception as e:
             pass
 
@@ -87,8 +64,7 @@ def writeFastaFile(outputPath, locusName, locusSequences):
         SeqIO.write(fastaSequences, output_handle, "fasta")
 
 
-if __name__ == "__main__":
-
+def Execute(options):
     # LOAD CLONAL TYPE LOCUS INFORMATION (Su et al.);
     clonalReference = clonalTypeReference()
 
@@ -200,7 +176,7 @@ if __name__ == "__main__":
             print("\tAlignment Health = %.2f%%" % score)
             print()
             # record amplicon and primer data;
-            writeFastaFile(outputFastaPath, locus_name, LocusAmpliconSet)
+            writeFastaFile(outputFastaPath, locus_name, LocusAmpliconSet, clonalReference=clonalReference)
 
             primerPair["AlignmentHealth"] = score
             matchedPrimerSequences.append(primerPair)
@@ -239,3 +215,33 @@ if __name__ == "__main__":
     # MasterGenome = [g for g in genomes if "ME49" in g.name][0]
     # geneGraphs.plotGeneArea(allPrimers, MasterGenome)
 
+
+if __name__ == "__main__":
+
+    parser = OptionParser()
+
+    parser.add_option("-p", "--plot",
+                      dest="PlotArea",
+                      action="store_true", default=False)
+
+    parser.add_option("-l",
+                      dest="WantedLoci",
+                      default="")
+
+    parser.add_option("-i",
+                      dest="primerFile")
+
+    parser.add_option("-o",
+                      dest="outputPath")
+
+    parser.add_option("-r",
+                      "--locusref",
+                      dest="LocusReference")
+
+    parser.add_option("-w",
+                      "--rewrite",
+                      dest="RewriteFasta")
+
+    options, args = parser.parse_args()
+
+    Execute(options)

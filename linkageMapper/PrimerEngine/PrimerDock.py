@@ -193,6 +193,7 @@ def matchLocusOnGenomes(locus_name,
         HEADER_INFO = (*overallProgress,
                        RebootCount + 1, locus_name, Genome.name)
         print(">>> Locus %i of %i | run number %i ->  Searching %s on %s" % HEADER_INFO)
+
         # primer sequence may baae uknown;
         matchSuccess = [True, True]
         for PT, PrimerType in enumerate(PrimerTypes):
