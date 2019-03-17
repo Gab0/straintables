@@ -1,15 +1,17 @@
 # About
 
-linkageMapper is a tool that helps evaluate the difference among gene loci across *Toxoplasma gondii* genomes.
+linkageMapper is a tool that helps evaluate the difference among gene loci across an organism genomes, based on primer matching across the sequenced genome files.
 
-It takes fully sequenced genomes for diverse strains of *T. gondii*, then find Amplicons inside a pair of primers on those genomes.
+Those primers may be user-defined or found by the software, which run brute force searches on top of the gene sequence, after retrieving its boundaries from an annotation file.
 
-The primers may be user-defined or found by the software when a locus name is defined without attached primers.
+Analysis proceeds while it counts the SNPs that diverge from the primer-bound sequences found at each genome, then builds a
+ [dissimilarity matrix](https://en.wikipedia.org/wiki/Distance_matrix) for each Locus.
 
-Analysis proceeds while it counts the SNPs that diverge from the amplicons found at each locus, and builds one
- [dissimilarity matrix](https://en.wikipedia.org/wiki/Distance_matrix) for each Locus (which boundary is defined by a primer pair). 
+Further clustering is done, based on the DMs.
 
-The matrix can show how the genomes are different at those regions.
+The viewer interface then shows how the genomes are different at those regions in a simple, almost educative way.
+
+This package is composed by a few independent python scripts. The analysis follows a linear path that can be executed with the help of a pipeline script.
 
 ## Inside The Pipeline
 

@@ -227,14 +227,17 @@ def checkRecombination(clusterPair, locusNames, Threshold=0.1):
                     clusterKeys[cidx] = cluster
                     break
 
-        A = clusterPair[0][clusterKeys[0]]
-        B = clusterPair[1][clusterKeys[1]]
-
-        if any([len(X) == 1 for X in [A, B]]):
+        if None in clusterKeys:
             K = 1
         else:
-            intersect = [x for x in A if x in B]
-            K = len(intersect) / (len(A) + len(B)) ** 0.5
+            A = clusterPair[0][clusterKeys[0]]
+            B = clusterPair[1][clusterKeys[1]]
+
+            if any([len(X) == 1 for X in [A, B]]):
+                K = 1
+            else:
+                intersect = [x for x in A if x in B]
+                K = len(intersect) / (len(A) + len(B)) ** 0.5
 
         print("%s -> %.2f" % (locusName, K))
 

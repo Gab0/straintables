@@ -228,9 +228,11 @@ def plotPwmIndex(fig, alnData, a, b, swap=False, showLabelColors=True):
                 orderedLabels,
                 Threshold=0.4)
         except Exception as e:
+            print(clusterOutputData)
             Recombination = [False]
             print("WARNING: Recombination failure!")
             print(e)
+            raise
 
         def plotRecombinationPanel(ax, baseIndex):
             x_values = np.linspace(0, 10, 100)
