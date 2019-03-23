@@ -15,15 +15,20 @@ This package is composed by a few independent python scripts. The analysis follo
 
 ## Inside The Pipeline
 
-### 1) Primer Docking: building Amplicons
+### 1) Primer Docking: fetching Amplicons
 
-This step is carried on `linkageMapper/primerFinder.py`. For each designated loci, the app will try to find the complement and/or the original sequence
+This step is carried on `linkageMapper/primerFinder.py`.
+
+For each designated loci, the app will try to find the complement and/or the original sequence
 of both primers on all genomes. If both primers are found in a genome, the sequence between those primers is extracted and it proceeds to the next genome.
-If every genome got its amplicon for the current locus, the locus was sucessfull and the script goes to the next one.
 
-If for some reason not every genome is sucessfull with given pair of primers, the script downloads the locus sequence (if the locus name defined by the user matches a gene/locus on the genome annotation) from NCBI and randomizes one primer near the beginning of the gene sequence and other near the end.
+If every genome got its amplicon for the current locus the script saves the sequences, then goes goes to the next.
 
-Some available genomes are complement-reversed, and the app will make sure that loci sequences for all genomes are in the same orientation.
+If for some reason not every genome is sucessfull with given pair of primers, the script retrieves the gene sequence from the master genome and fetch random sequences
+near the beginning and near the gene end, to be used as primers. This step only happens if the locus name defined by the user matches a gene name, or locus on the genome annotation. 
+Otherwise, the locus is discarded.
+
+Some available genomes are complement-reversed. The script will make sure that loci sequences for every genome are in the same orientation.
 
 
 ### 2) Amplicon Sequences Alignment
@@ -67,18 +72,18 @@ The following code downloads all required genomes and annotations from NCBI,
 populating the folders `genomes` and `annotations`. Standard usage requires one time execution of the following command:
 
 ```
-To download defaults: Toxoplasma gondii genomes & TGME49 annotations;
+To download defaults: Toxoplasma gondii genomes, strain ME49 annotations;
 $python linkageMapper/fetchDataNCBI.py 
 
-Same result as above:
+Same result as above, manually:
 $python linkageMapper/fetchDataNCBI.py --organism "Toxoplasma gondii" --strain ME49
 
-With lactobacillus plantarum & WCFS1 annotations:
+With lactobacillus plantarum, strain WCFS1 annotations:
 $python linkageMapper/fetchDataNCBI.py --organism "Lactobacillus plantarum" --strain WCFS1
 ```
 
 Please note that although `fetchDataNCBI.py` contatins various methods to ensure the correct file names for downloaded genomes,
-the user needs to manually check the folder after the process.
+it's recommended to check the folder after the process.
 
 The user can manually add desired genomes and annotations, as explained in the next subsections:
 

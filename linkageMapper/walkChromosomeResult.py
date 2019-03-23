@@ -9,7 +9,7 @@ import array
 import json
 import subprocess
 
-from optparse import OptionParser
+from argparse import ArgumentParser
 
 import matplotlib.pyplot as plt
 
@@ -201,7 +201,9 @@ class LocusMapBar(Gtk.DrawingArea):
         availableWidth = self.get_allocation().width
 
         Size = len(self.LocusNames)
+
         self.circleSize = max(min(availableWidth / (Size * 3), 12), 6)
+
 
         ctx.set_source_rgb(0, 0, 0)
 
@@ -579,11 +581,16 @@ def Execute(options):
 
 
 if __name__ == "__main__":
-    parser = OptionParser()
+    parser = ArgumentParser()
 
-    parser.add_option("-d",
-                      dest="inputDirectory")
+    parser.add_argument('inputDir', type=str, nargs=1, metavar="inputDirectory",
+                        help='inputDirectory')
 
-    options, args = parser.parse_args()
+    parser.add_argument("-d", metavar="inputDirectory",
+                        dest="inputDirectory")
 
+    options = parser.parse_args()
+
+    if not options.inputDirectory:
+        options.inputDirectory = options.inputDir[0]
     Execute(options)
