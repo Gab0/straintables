@@ -64,6 +64,6 @@ traitlets==4.3.2          # via ipython
 urllib3==1.24.1           # via requests
 wcwidth==0.1.7            # via prompt-toolkit
 xmltodict==0.11.0
-
+pygobject
 # The following packages are considered to be unsafe in a requirements file:
 # setuptools
