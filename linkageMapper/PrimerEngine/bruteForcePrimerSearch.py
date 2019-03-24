@@ -89,8 +89,8 @@ class bruteForceSearcher():
 
 
         SEQ = self.locateAndFetchSequence(location,
-                                          chr_descriptor,
-                                          matchingAnnotationGenome)
+                                          chr_descriptor
+                                          )
 
         if not SEQ:
             print("Error: Failure on feching brute force sequence.")
@@ -109,7 +109,12 @@ class bruteForceSearcher():
 
         # BRUTE FORCE PRIMER FINDER OPERATIONS;
         geneSequenceFile = "%s.fasta" % locus_name
-        geneSequenceFilePath = os.path.join("PrimerSources", geneSequenceFile)
+
+        PrimerSourcesDirectory = "PrimerSources"
+        if not os.path.isdir(PrimerSourcesDirectory):
+            os.mkdir(PrimerSourcesDirectory)
+            
+        geneSequenceFilePath = os.path.join(PrimerSourcesDirectory, geneSequenceFile)
 
         if not os.path.isfile(geneSequenceFilePath):
             # Fetch gene sequence;
