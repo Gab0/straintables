@@ -127,7 +127,10 @@ def downloadAssembly(ID,
         else:
             print("Remote file key %s not found on FTP server." % ' '.join(wantedFileTypes))
             return 0
+
+        print("\nRemote files:")
         print('\n'.join(remoteFiles))
+        print()
 
     for remoteFileName in remoteFileNames:
         localFileName = remoteFileName
