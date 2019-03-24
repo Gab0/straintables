@@ -64,7 +64,12 @@ By looking at a pair of D. Matrixes at a time, both corresponding to locus that 
 
 1. Clone this repository.
 
-2. Install python dependencies: `$sudo pip install -r requirements.txt`
+2. Install python dependencies:
+
+```
+$pip install numpy
+$pip install -r requirements.txt
+```
 
 ### Fetch genomes and annotation files
 

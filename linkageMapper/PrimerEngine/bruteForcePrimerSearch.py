@@ -46,12 +46,9 @@ class bruteForceSearcher():
         return genome
 
     def retrieveGeneSequence(self, geneName):
-        print("BEFORE LOOP")
         for g, FeatureGroup in enumerate(self.genomeFeatures):
-            print("HERE")
-            print(FeatureGroup)
+            #print(FeatureGroup)
             for feature in FeatureGroup.features:
-
                 if feature.type == "gene":
                     MATCH = False
                     if "gene" in feature.qualifiers.keys():
@@ -62,12 +59,14 @@ class bruteForceSearcher():
                             MATCH = True
                     if MATCH:
                         return FeatureGroup.description, feature.location
-
+        print("Warning: Gene %s not found." % geneName)
+        #exit(1)
     def locateAndFetchSequence(self, location, chr_descriptor):
 
         wantedDescriptors = [chr_descriptor, "complete genome"]
         for c, Chromosome in enumerate(self.matchedGenome):
             for Descriptor in wantedDescriptors:
+                print("Fetching primers from %s..." % Descriptor)
                 if Descriptor in Chromosome.description:
                     Sequence = Chromosome.seq[location.start.position:location.end.position]
                     if location.strand == -1:
@@ -77,7 +76,7 @@ class bruteForceSearcher():
     def fetchGeneSequence(self, geneName, outputFilePath):
 
         # FETCH PRIMER METHODS. TO BE INTEGRATED;
-        geneSearchResult = self.retrieveGeneSequence(self.genomeFeatures, geneName)
+        geneSearchResult = self.retrieveGeneSequence(geneName)
 
         if geneSearchResult is None:
             print("Aborting brute force primer search: Gene name not found.")
