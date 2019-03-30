@@ -64,6 +64,28 @@ def createMatrixSubplot(fig, position, name, matrix, labels):
     return new_ax
 
 
+def cropLabels(Labels, maxSize=13, Replacer="..."):
+    croppedLabels = []
+    maxSize = maxSize - len(Replacer)
+    for label in Labels:
+        if len(label) > maxSize:
+            crop_size = len(label) - maxSize
+            crop_size += crop_size % 2
+            crop_size //= 2
+
+            mid_point = len(label) // 2
+
+            allowed_side_size = mid_point - crop_size
+            cropped = label[:allowed_side_size] + Replacer + label[-allowed_side_size:]
+            
+        else:
+            cropped = label
+        
+        croppedLabels.append(cropped)
+        
+    return croppedLabels
+    
+        
 def plotPwmIndex(fig, alnData, a, b, swap=False, showLabelColors=True):
 
     if swap:
@@ -95,7 +117,10 @@ def plotPwmIndex(fig, alnData, a, b, swap=False, showLabelColors=True):
     ordered_ma, matrix_order, B = matrixOperations.compute_serial_matrix(ma, method="complete")
     ordered_mb = matrixOperations.reorderMatrix(mb, matrix_order)
     orderedLabels = alnData.heatmapLabels[matrix_order]
-
+    
+    # Crop label lengths;
+    orderedLabels = cropLabels(orderedLabels)
+    
     # plot;
     r_axis1 = createMatrixSubplot(fig, 331, a_name, ordered_ma, orderedLabels)
     r_axis2 = createMatrixSubplot(fig, 333, b_name, ordered_mb, orderedLabels)
