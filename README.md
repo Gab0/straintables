@@ -60,9 +60,13 @@ By looking at a pair of D. Matrixes at a time, both corresponding to locus that 
 
 # Setup
 
-### Download scripts and install Python Requirements
+### Download and install the python module
 
 1. Clone this repository.
+
+2. Enter the directory on the cmd, and run:
+
+`$python setup.py install`
 
 2. Install python dependencies:
 
@@ -73,18 +77,19 @@ $pip install -r requirements.txt
 
 ### Fetch genomes and annotation files
 
-The following code downloads all required genomes and annotations from NCBI,
-populating the folders `genomes` and `annotations`. Standard usage requires one time execution of the following command:
+The following code downloads each genome matching the query organism from NCBI, along with one annotation file for a specific strain.
+populating the folders `genomes` and `annotations`. 
+Standard usage requires one time execution of the following command:
 
 ```
 To download defaults: Toxoplasma gondii genomes, strain ME49 annotations;
-$python linkageMapper/fetchDataNCBI.py 
+$lmdownload
 
 Same result as above, manually:
-$python linkageMapper/fetchDataNCBI.py --organism "Toxoplasma gondii" --strain ME49
+$lmdownload --organism "Toxoplasma gondii" --strain ME49
 
 With lactobacillus plantarum, strain WCFS1 annotations:
-$python linkageMapper/fetchDataNCBI.py --organism "Lactobacillus plantarum" --strain WCFS1
+$lmdownload --organism "Lactobacillus plantarum" --strain WCFS1
 ```
 
 Please note that although `fetchDataNCBI.py` contatins various methods to ensure the correct file names for downloaded genomes,
@@ -136,9 +141,9 @@ At this point, it is not important to have MeShCluSt installed.
 #### Example 1: Automatic Locus Selection with Automatic Primer Search.
 
 ```
-$ python linkageMapper/initializePrimerFile.py -i annotations -c X -o Primers/TEST.csv -p 0.01
-$ bash linkagePipeline.sh TEST
-$ python linkageMapper/walkChromosomeResult.py -i Alignments/TEST
+$ lmprimer -i annotations -c X -o Primers/TEST.csv -p 0.01
+$ lmpline TEST
+$ lmview -i Alignments/TEST
 ```
 
 
@@ -207,7 +212,7 @@ $ bash linkagePipelinea.sh chr_XII clustal SAG3
 
 Some python scripts on the main module are not called within linkagePipeline.sh. They are optional analysis tools and should be launched by the user.
 
-1. `linkagePipeline/walkChromosomeResult.py` The basic one. This will build a slide presentation of plots, each plot showing a pair of similarity matrixes.
+1. `lmview` The basic one. This will build a slide presentation of plots, each plot showing a pair of similarity matrixes.
 The matrix show will start with the first locus against the second locus chosen, in the order of the Primer file, along with some extra information. Then, the second locus will be compared to the third and so it goes on.
 
 

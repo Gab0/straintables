@@ -90,26 +90,21 @@ def checkRecombination(ma, mb, Verbose=False):
     return RecombinationDetected
 
 
-if __name__ == "__main__":
-    parser = OptionParser()
-    parser.add_option("-d", dest="inputDirectory")
-    parser.add_option("--update", dest='updateOnly', action='store_true')
 
-    options, args = parser.parse_args()
-
+def Execute(options):
     # CHECK INPUT ARGUMENTS;
-    if not options.inputDirectory:
+    if not options.InputDirectory:
         print("FATAL: No input directory.")
         exit(1)
 
     # LOAD RESULT FILES;
-    matchedLociData = pd.read_csv(os.path.join(options.inputDirectory,
+    matchedLociData = pd.read_csv(os.path.join(options.InputDirectory,
                                                "MatchedPrimers.csv"))
     matchedLoci = matchedLociData["LocusName"]
 
     arrayFiles = ["LOCI_%s.aln.npy" % Locus for Locus in matchedLoci]
 
-    arrayFilePaths = [os.path.join(options.inputDirectory, File)
+    arrayFilePaths = [os.path.join(options.InputDirectory, File)
                       for File in arrayFiles]
 
     # LOAD HEATMAPS FOR LOCI THAT SUCCEEDED THE ALIGNMENT (SO .aln.npy FILE EXISTS);
@@ -119,7 +114,7 @@ if __name__ == "__main__":
         if os.path.isfile(filePath)
     ]
 
-    heatmapLabels = np.load(os.path.join(options.inputDirectory,
+    heatmapLabels = np.load(os.path.join(options.InputDirectory,
                                          "heatmap_labels.npy"))
 
     Distances = [skdist.DistanceMatrix(h, heatmapLabels) for h in heatmaps]
@@ -139,7 +134,7 @@ if __name__ == "__main__":
         print("\n")
 
     # LOAD OR BUILD NEW PWM ANALYSIS DATA FRAME;
-    pwmPath = os.path.join(options.inputDirectory, "PWMAnalysis.csv")
+    pwmPath = os.path.join(options.InputDirectory, "PWMAnalysis.csv")
 
     PWM = None
     if options.updateOnly:
@@ -221,7 +216,16 @@ if __name__ == "__main__":
     outputData = pd.DataFrame(allResults,
                               columns=["Locus"] + list(allResults[0].keys())[:-1])
 
-    outputPath = os.path.join(options.inputDirectory, "HeatmapAnalysis.csv")
+    outputPath = os.path.join(options.InputDirectory, "HeatmapAnalysis.csv")
     outputData.to_csv(outputPath, index=False)
 
     print("Wrote %s analysis file." % outputPath)
+
+
+if __name__ == "__main__":
+    parser = OptionParser()
+    parser.add_option("-d", dest="InputDirectory")
+    parser.add_option("--update", dest='updateOnly', action='store_true')
+
+    options, args = parser.parse_args()
+    Execute(options)

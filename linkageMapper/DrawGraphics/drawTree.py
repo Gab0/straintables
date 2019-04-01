@@ -4,6 +4,15 @@ import ete3
 
 import optparse
 
+
+def Execute(options):
+    print("Drawing Tree for %s" % options.InputFile)
+    t = ete3.Tree(options.InputFile)
+    ts = ete3.TreeStyle()
+    ts.show_branch_length = True
+    t.render(options.OutputFile, h=500, tree_style=ts)
+
+
 if __name__ == "__main__":
     parser = optparse.OptionParser()
 
@@ -16,8 +25,4 @@ if __name__ == "__main__":
         print("No file specified.")
         exit(1)
 
-    print("Drawing Tree for %s" % options.InputFile)
-    t = ete3.Tree(options.InputFile)
-    ts = ete3.TreeStyle()
-    ts.show_branch_length = True
-    t.render(options.OutputFile, h=500, tree_style=ts)
+    Execute(options)

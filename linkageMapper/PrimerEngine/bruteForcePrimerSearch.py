@@ -18,7 +18,9 @@ class bruteForceSearcher():
         self.genomeFeatures = genomeFeatures
         self.matchedGenome = self.locateMatchingGenome(genomeFilePaths)
         if self.matchedGenome is None:
+            print()
             print("Warning: automatic primer search disabled. No matching genome found!")
+            print()
             return None
 
     def locateMatchingGenome(self, genomeFilePaths, Verbose=True):

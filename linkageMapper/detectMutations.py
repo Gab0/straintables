@@ -12,7 +12,7 @@ import re
 import os
 import math
 
-import DrawGraphics
+from . import DrawGraphics
 
 import optparse
 
@@ -97,6 +97,12 @@ def storeMatrixData(MATRIX, baseFileName, sequenceNames, subtitle=None):
 
 
 def Execute(options):
+
+    alignPath = options.InputFile
+    if not alignPath:
+        print("No input file specified!")
+        exit(1)
+
     # LOAD ALIGNMENT;
     Alignment = AlignIO.read(open(alignPath), "clustal")
 
@@ -218,9 +224,5 @@ if __name__ == "__main__":
 
     options, args = parser.parse_args()
 
-    alignPath = options.InputFile
-    if not alignPath:
-        print("No input file specified!")
-        exit(1)
 
     Execute(options)

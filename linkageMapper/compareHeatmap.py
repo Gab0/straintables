@@ -4,25 +4,34 @@ import numpy as np
 import sys
 import os
 
-import detectMutations
-
 from optparse import OptionParser
 
-parser = OptionParser()
-parser.add_option("-d", dest="inputDirectory")
+sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 
-options, args = parser.parse_args()
+from . import detectMutations
 
 
-allFiles = os.listdir(options.inputDirectory)
-arrayFilePaths = [os.path.join(options.inputDirectory, File)
-                  for File in allFiles if File.endswith(".aln.npy")]
+def Execute(options):
+    allFiles = os.listdir(options.InputDirectory)
+    arrayFilePaths = [os.path.join(options.InputDirectory, File)
+                      for File in allFiles if File.endswith(".aln.npy")]
 
-heatmaps = [np.load(filePath) for filePath in arrayFilePaths]
+    heatmaps = [np.load(filePath) for filePath in arrayFilePaths]
 
-heatmapLabels = np.load(os.path.join(options.inputDirectory, "heatmap_labels.npy"))
-heatmap = 1 - np.abs(heatmaps[0] - heatmaps[1])
+    heatmapLabels = np.load(os.path.join(options.InputDirectory,
+                                         "heatmap_labels.npy"))
 
-outputDir = os.path.dirname(sys.argv[1])
-outputPath = os.path.join(outputDir, "discrepancy_matrix.pdf")
-detectMutations.plotHeatmap(heatmap, heatmapLabels, outputPath)
+    heatmap = 1 - np.abs(heatmaps[0] - heatmaps[1])
+
+    outputDir = os.path.dirname(options.InputDirectory)
+    outputPath = os.path.join(outputDir, "discrepancy_matrix.pdf")
+    detectMutations.plotHeatmap(heatmap, heatmapLabels, outputPath)
+
+
+if __name__ == "__main__":
+    parser = OptionParser()
+    parser.add_option("-d", dest="InputDirectory")
+
+    options, args = parser.parse_args()
+
+    Execute(options)

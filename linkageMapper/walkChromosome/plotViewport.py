@@ -6,7 +6,7 @@ import os
 
 from . import matrixOperations, dissimilarityCluster
 
-import detectMutations
+from linkageMapper import detectMutations
 
 
 def fixArrayFilename(f):

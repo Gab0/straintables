@@ -4,7 +4,7 @@ import pandas as pd
 
 from optparse import OptionParser
 
-from Database import annotationManager
+from .Database import annotationManager
 
 
 def Execute(options):
@@ -59,7 +59,7 @@ def Execute(options):
     print("\n%s written with %i primers." % (options.outputFile, data.shape[0]))
 
 
-if __name__ == "__main__":
+def parse_args():
     parser = OptionParser()
 
     parser.add_option("-d",
@@ -85,5 +85,14 @@ if __name__ == "__main__":
 
     options, args = parser.parse_args()
 
+    return options
+
+
+def main():
     print("\n\n")
+    options = parse_args()
     Execute(options)
+
+
+if __name__ == "__main__":
+    main()

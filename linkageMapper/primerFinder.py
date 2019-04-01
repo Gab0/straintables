@@ -7,14 +7,18 @@ import random
 import numpy as np
 import pandas as pd
 
+import sys
 from collections import OrderedDict
 
 from Bio.SeqFeature import SeqFeature, FeatureLocation
 from Bio import Seq, SeqIO
 
-import PrimerEngine
-
 from optparse import OptionParser
+
+sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
+
+
+from . import PrimerEngine
 
 
 class clonalTypeReference():
@@ -64,9 +68,33 @@ def writeFastaFile(outputPath,
         SeqIO.write(fastaSequences, output_handle, "fasta")
 
 
+# LOAD USER DEFINED PRIMER DATA, with or without header;
+def loadPrimerList(filePath):
+    lociPrimerList = pd.read_csv(filePath)
+    expectedColumns = ["LocusName", "ForwardPrimer", "ReversePrimer"]
+
+    fileColumns = list(lociPrimerList.columns)
+    for i in range(len(fileColumns)):
+        if "Unnamed" in fileColumns[i]:
+            fileColumns[i] = np.nan
+    if fileColumns != expectedColumns:
+
+        newFirstRowData = dict([(expected, fileColumns[e])
+                                for e, expected in enumerate(expectedColumns)])
+
+        newFirstRow = pd.DataFrame([newFirstRowData], columns=expectedColumns)
+        lociPrimerList.columns = expectedColumns
+
+        lociPrimerList = pd.concat([newFirstRow, lociPrimerList],
+                                   axis=0, ignore_index=True).reset_index(drop=True)
+
+    return lociPrimerList
+
+
 def Execute(options):
     # LOAD CLONAL TYPE LOCUS INFORMATION (Su et al.);
-    clonalReference = clonalTypeReference()
+    #clonalReference = clonalTypeReference()
+    clonalReference = None
 
     # CHECK DECLARATION OF PRIMER FILE;
     if not options.primerFile:
@@ -108,29 +136,13 @@ def Execute(options):
     genomeFeaturesChromosomes = [
         chrName
         for chrName in genomeFeaturesChromosomes
-        if chrName is not "UKNOWN"
+        if chrName is not "UNKNOWN"
     ]
 
     # print(genomeFeaturesChromosomes)
 
-    # LOAD SOURCE DATA, with or without header;
-    lociPrimerList = pd.read_csv(options.primerFile)
-    expectedColumns = ["LocusName", "ForwardPrimer", "ReversePrimer"]
-
-    fileColumns = list(lociPrimerList.columns)
-    for i in range(len(fileColumns)):
-        if "Unnamed" in fileColumns[i]:
-            fileColumns[i] = np.nan
-    if fileColumns != expectedColumns:
-
-        newFirstRowData = dict([(expected, fileColumns[e])
-                                for e, expected in enumerate(expectedColumns)])
-
-        newFirstRow = pd.DataFrame([newFirstRowData], columns=expectedColumns)
-        lociPrimerList.columns = expectedColumns
-
-        lociPrimerList = pd.concat([newFirstRow, lociPrimerList],
-                                   axis=0, ignore_index=True).reset_index(drop=True)
+    # -- LOAD USER DEFINED PRIMERS;
+    lociPrimerList = loadPrimerList(options.primerFile)
 
     # LOAD GENOMES;
     genomeDirectory = "genomes"
@@ -143,6 +155,11 @@ def Execute(options):
                for genomeFilePath in genomeFilePaths]
 
     print("Loaded %i genomes." % len(genomes))
+
+    if len(genomes) > 20:
+        print("Discarding genomes, max is 20!")
+
+    genomes = genomes[:20]
 
     # APPLY GENOME FEATURES TO BRUTE FORCE MODULE;
 
@@ -192,7 +209,8 @@ def Execute(options):
             print("\tAlignment Health = %.2f%%" % score)
             print()
             # record amplicon and primer data;
-            writeFastaFile(outputFastaPath, locus_name, LocusAmpliconSet, clonalReference=clonalReference)
+            writeFastaFile(outputFastaPath, locus_name,
+                           LocusAmpliconSet, clonalReference=clonalReference)
 
             primerPair["AlignmentHealth"] = score
             matchedPrimerSequences.append(primerPair)

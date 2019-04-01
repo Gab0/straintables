@@ -16,8 +16,9 @@ import matplotlib.pyplot as plt
 import fastcluster
 import scipy
 
-import detectMutations
-import graphic
+from linkageMapper import detectMutations
+from . import graphic
+from . import walkChromosome
 
 import gi
 gi.require_version('Gtk', '3.0')
@@ -28,8 +29,6 @@ from matplotlib.figure import Figure
 from matplotlib.backends.backend_gtk3agg import FigureCanvas
 from matplotlib.backends.backend_gtk3 import (
     NavigationToolbar2GTK3 as NavigationToolbar)
-
-import walkChromosome
 
 
 class alignmentData():
@@ -580,7 +579,7 @@ def Execute(options):
     viewer = matrixViewer(options.inputDirectory)
 
 
-if __name__ == "__main__":
+def parse_args():
     parser = ArgumentParser()
 
     parser.add_argument('inputDir', type=str, nargs=1, metavar="inputDirectory",
@@ -590,7 +589,12 @@ if __name__ == "__main__":
                         dest="inputDirectory")
 
     options = parser.parse_args()
-
+    
     if not options.inputDirectory:
         options.inputDirectory = options.inputDir[0]
+        
+    return options
+
+if __name__ == "__main__":
+    options = parse_args()
     Execute(options)

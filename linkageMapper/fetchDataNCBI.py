@@ -1,7 +1,8 @@
 #!/bin/python
 """
 
-Downloads assemblies found on 'assembly' entrez database, fetched from 'nucleotide' database.
+Downloads assemblies found on 'assembly' entrez database,
+ they are fetched from 'nucleotide' database.
 
 """
 from Bio import Entrez, SeqIO, Seq, Alphabet
@@ -25,7 +26,7 @@ def debug(message):
     print('Debug ---> %s' % message)
 
 
-def findAssemblyList(Organism, Strain=None):
+def findAssemblyList(Organism, Strain=None, retmax=100):
     query = '(%s[Organism]' % Organism
     if Strain:
         query += " AND %s[Strain]" % Strain
@@ -209,7 +210,6 @@ def renameGenomeFiles(dirpath, organism):
                 return version
         return 1
 
-
     allGenomes = sorted(allGenomes, key=orderByVersion)
     for genome in allGenomes:
         localfilepath = os.path.join(dirpath, genome)
@@ -228,7 +228,7 @@ def renameGenomeFiles(dirpath, organism):
 
         # RENAMING CRITERIA 2:
         def renamingCriteria2():
-            e = re.findall("%s ([\w-]+)" % (organism), genomeDescription, flags=re.IGNORECASE)
+            e = re.findall("%s ([\w-\d]+)" % (organism), genomeDescription, flags=re.IGNORECASE)
             if e:
                 return e[0]
 
@@ -240,8 +240,8 @@ def renameGenomeFiles(dirpath, organism):
                 return words[uppercaseWords.index(True)]
 
         allCriteria = [
-            renamingCriteria1,
             renamingCriteria2,
+            renamingCriteria1,
             renamingCriteria3
         ]
 
@@ -254,8 +254,7 @@ def renameGenomeFiles(dirpath, organism):
                 break
 
 
-if __name__ == "__main__":
-
+def parse_options():
     parser = optparse.OptionParser()
     parser.add_option("--nogenome", dest='downloadGenomes',
                       action='store_false',
@@ -276,15 +275,30 @@ if __name__ == "__main__":
                       dest="annotationStrain",
                       default="ME49")
 
+    parser.add_option("--maxgenomecount",
+                      dest="genomeSearchMaxResults",
+                      type=int,
+                      default=20)
+
     options, args = parser.parse_args()
 
+    return options
+
+
+def main():
+    options = parse_options()
     dataTypes = []
 
     # Fetch Genome IDs;
     if options.downloadGenomes:
-        D = findAssemblyList(options.queryOrganism)
+        D = findAssemblyList(options.queryOrganism, retmax=options.genomeSearchMaxResults)
         dataTypes.append((D, "genomes", ["_genomic.fna"]))
 
+    # -- Make sure output directories exist;
+    requiredDirectories = ["genomes", "annotations"]
+    for Dir in requiredDirectories:
+        if not os.path.isdir(Dir):
+            os.mkdir(Dir)
 
     # Fetch Annotation IDs;
     if options.downloadAnnotations:
@@ -306,3 +320,7 @@ if __name__ == "__main__":
     print()
     print("Sucess:")
     print("Annotation and genome files downloaded.")
+
+
+if __name__ == "__main__":
+    main()
