@@ -139,11 +139,16 @@ def main():
     # SHOW BEAUTIFUL ASCII ART;
     print(logo)
 
+    # pipeline using ruffus is wip;
     ruffusMode = False
+
     # RUN NORMALLY;
     if not ruffusMode:
         if options.DoAmplicon:
-            find_primers(options.PrimerFile, WorkingDirectory)
+            result = find_primers(options.PrimerFile, WorkingDirectory)
+            if not result:
+                print("Failure to find primers.")
+                exit(1)
 
         AllowedAlignModes = ["clustal"]
         if options.AlignmentMode not in AllowedAlignModes:

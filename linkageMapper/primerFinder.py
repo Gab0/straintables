@@ -265,6 +265,8 @@ def Execute(options):
     # MasterGenome = [g for g in genomes if "ME49" in g.name][0]
     # geneGraphs.plotGeneArea(allPrimers, MasterGenome)
 
+    return matchedPrimerSequences
+
 
 if __name__ == "__main__":
 
