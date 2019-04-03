@@ -27,10 +27,10 @@ class bruteForceSearcher():
             return None
 
     def locateMatchingGenome(self, genomeFilePaths, Verbose=False):
-        AnnotationDescription = self.genomeFeatures[0].description
+        AnnotationDescriptor = self.genomeFeatures[0].description
         if Verbose:
             print("Searching a genome that matches the annotation:")
-            print(AnnotationDescription)
+            print(AnnotationDescriptor)
 
         matchingGenomeFilePath = None
 
@@ -48,19 +48,22 @@ class bruteForceSearcher():
         # -- SEARCH BY ANNOTATION INFORMATION;
         for genomePath in genomeFilePaths:
             features = list(SeqIO.parse(genomePath, format="fasta"))
-            Description = features[0].description
+            GenomeDescriptor = features[0].description
             if Verbose:
-                print(Description)
+                print(GenomeDescriptor)
 
-            strain = fetchStrainName(Description)
-            if strain and strain[0] in AnnotationDescription.replace(" ", "_"):
+            strain = fetchStrainName(GenomeDescriptor)
+            if strain and strain in AnnotationDescriptor.replace(" ", "_"):
                 matchingGenomeFilePath = genomePath
 
         if matchingGenomeFilePath is None:
             print("No genome matching annotation!")
             return None
         else:
-            print("Found matching for automatic primer search: %s" % matchingGenomeFilePath)
+            print("Found matching genome to annotation, for automatic primer search: %s" % matchingGenomeFilePath)
+            print(GenomeDescriptor)
+            print(strain)
+            print(AnnotationDescriptor)
 
         genome = list(SeqIO.parse(matchingGenomeFilePath, format="fasta"))
         return genome
@@ -134,7 +137,7 @@ class bruteForceSearcher():
         PrimerSourcesDirectory = "PrimerSources"
         if not os.path.isdir(PrimerSourcesDirectory):
             os.mkdir(PrimerSourcesDirectory)
-            
+
         geneSequenceFilePath = os.path.join(PrimerSourcesDirectory, geneSequenceFile)
 
         if not os.path.isfile(geneSequenceFilePath):
@@ -144,6 +147,7 @@ class bruteForceSearcher():
         if os.path.isfile(geneSequenceFilePath):
             geneSequenceRaw = open(geneSequenceFilePath).read()
         else:
+            print("Primer source not found.")
             return None
 
         geneSequence = geneSequenceRaw.split("\n")

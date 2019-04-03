@@ -103,28 +103,30 @@ def Execute(options):
 
     PrimerTypes = ["ForwardPrimer", "ReversePrimer"]
 
-    # LOAD GENOME FEATURES;
+    # -- LOAD GENOME FEATURES;
     featureFolderPath = "annotations"
-    genomeFeatureFiles = [
-        os.path.join(featureFolderPath, File)
-        for File in os.listdir(featureFolderPath)
-        if not File.startswith(".")
-    ]
+    if os.path.isdir(featureFolderPath):
+        genomeFeatureFiles = [
+            os.path.join(featureFolderPath, File)
+            for File in os.listdir(featureFolderPath)
+            if not File.startswith(".")
+        ]
 
-    genomeFeatures = [
-        list(SeqIO.parse(File, "genbank"))
-        for File in genomeFeatureFiles if File.endswith(".gbff")
-    ]
+        genomeFeatures = [
+            list(SeqIO.parse(File, "genbank"))
+            for File in genomeFeatureFiles if File.endswith(".gbff")
+        ]
 
+    else:
+        genomeFeatures = []
 
     # CHECK GENOME FEATURES FILE EXISTENCE;
     if genomeFeatures:
         genomeFeatures = genomeFeatures[0]
     else:
         print("Fatal: No features found.")
-        exit(1)
 
-
+    """
     # FETCH GENOME NAMES;
     genomeFeaturesChromosomes =\
         [
@@ -140,32 +142,42 @@ def Execute(options):
     ]
 
     # print(genomeFeaturesChromosomes)
+    """
 
     # -- LOAD USER DEFINED PRIMERS;
     lociPrimerList = loadPrimerList(options.primerFile)
 
     # LOAD GENOMES;
     genomeDirectory = "genomes"
-    genomes = os.listdir(genomeDirectory)
-    genomeFilePaths = [os.path.join(genomeDirectory, genomeFile)
-                       for genomeFile in genomes
-                       if genomeFile.endswith(('.fna', '.fasta'))]
+    if os.path.isdir(genomeDirectory):
+        genomes = os.listdir(genomeDirectory)
+        genomeFilePaths = [os.path.join(genomeDirectory, genomeFile)
+                           for genomeFile in genomes
+                           if genomeFile.endswith(('.fna', '.fasta'))]
 
-    genomes = [PrimerEngine.GeneticEntities.Genome(genomeFilePath)
-               for genomeFilePath in genomeFilePaths]
+        genomes = [PrimerEngine.GeneticEntities.Genome(genomeFilePath)
+                   for genomeFilePath in genomeFilePaths]
 
-    print("Loaded %i genomes." % len(genomes))
+        print("Loaded %i genomes." % len(genomes))
 
-    maxGenomes = 25
-    if len(genomes) > maxGenomes:
-        print("Discarding genomes, max is %i!" % maxGenomes)
+        maxGenomes = 25
+        if len(genomes) > maxGenomes:
+            print("Discarding genomes, max is %i!" % maxGenomes)
 
-    genomes = genomes[:maxGenomes]
+        genomes = genomes[:maxGenomes]
+    else:
+        genomes = []
+
+    if not genomes:
+        print("Fatal: No genomes found!")
+        exit(1)
 
     # APPLY GENOME FEATURES TO BRUTE FORCE MODULE;
-
     bruteForceSearcher = PrimerEngine.bruteForcePrimerSearch.bruteForceSearcher(genomeFeatures, genomeFilePaths)
+    if not bruteForceSearcher.matchedGenome:
+        bruteForceSearcher = None
 
+    # -- SETUP OUTPUT DATA STRUCTURES;
     AllLociAmpliconSet = {}
     AllLociPrimerSet = OrderedDict()
 
@@ -193,6 +205,7 @@ def Execute(options):
                 continue
 
         overallProgress = (i + 1, lociPrimerList.shape[0])
+
         (LocusAmpliconSet, matchSuccess, primerPair) =\
             PrimerEngine.PrimerDock.matchLocusOnGenomes(
                 locus_name,
@@ -217,31 +230,36 @@ def Execute(options):
 
         else:
             print("WARNING: PrimerDock failure.")
-    # SHOW AMPLICON DATABASE;
-    print(json.dumps(AllLociAmpliconSet, indent=2))
 
-    # BUILD MATCHED PRIMER DATABASE;
-    outputFilePath = os.path.join(options.outputPath, "MatchedPrimers.csv")
-    data = pd.DataFrame(matchedPrimerSequences,
-                        columns=["LocusName",
-                                 *PrimerTypes,
-                                 "RebootCount",
-                                 "AlignmentHealth"])
-    data.to_csv(outputFilePath, index=False)
+    if matchedPrimerSequences:
+        # SHOW AMPLICON DATABASE;
+        print(json.dumps(AllLociAmpliconSet, indent=2))
 
-    # Primer Maps on Guide Genome:
-    PrimerData = []
-    allPrimers = []
-    for Locus in AllLociPrimerSet.keys():
-        for Primer in AllLociPrimerSet[Locus]:
-            row = Primer[0].to_dict(Locus)
-            del row["Chromosome"]
-            PrimerData.append(row)
-            allPrimers.append(Primer)
+        # BUILD MATCHED PRIMER DATABASE;
+        outputFilePath = os.path.join(options.outputPath, "MatchedPrimers.csv")
+        data = pd.DataFrame(matchedPrimerSequences,
+                            columns=["LocusName",
+                                     *PrimerTypes,
+                                     "RebootCount",
+                                     "AlignmentHealth"])
+        data.to_csv(outputFilePath, index=False)
 
-    outputFilePath = os.path.join(options.outputPath, "PrimerData.csv")
-    data = pd.DataFrame(PrimerData)
-    data.to_csv(outputFilePath, index=False)
+        # Primer Maps on Guide Genome:
+        PrimerData = []
+        allPrimers = []
+        for Locus in AllLociPrimerSet.keys():
+            for Primer in AllLociPrimerSet[Locus]:
+                row = Primer[0].to_dict(Locus)
+                del row["Chromosome"]
+                PrimerData.append(row)
+                allPrimers.append(Primer)
+
+        outputFilePath = os.path.join(options.outputPath, "PrimerData.csv")
+        data = pd.DataFrame(PrimerData)
+        data.to_csv(outputFilePath, index=False)
+
+    else:
+        print("No regions found, nothing to do.")
 
     # NOPE
     # MasterGenome = [g for g in genomes if "ME49" in g.name][0]
