@@ -231,7 +231,7 @@ def matchLocusOnGenomes(locus_name,
                     RebootCount += 1
                     # brute force for the problematic genome!
                     print("Searching new primer on gene sequence...")
-
+                    #print(bruteForceSearcher.matchedGenome)
                     # MANAGE PRIMERS ON HOLSTER;
                     if not testablePrimers[PrimerType] and bruteForceSearcher:
                         newPrimers =\

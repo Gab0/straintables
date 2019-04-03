@@ -18,6 +18,8 @@ import shutil
 from ftplib import FTP
 import optparse
 
+from linkageMapper.Database import StrainNames
+
 # is this legal in the terms of the LAW?
 Entrez.email = 'researcher_%i@one-time-use.cn' % random.randrange(0, 1000)
 
@@ -30,7 +32,7 @@ def findAssemblyList(Organism, Strain=None, retmax=100):
     query = '(%s[Organism]' % Organism
     if Strain:
         query += " AND %s[Strain]" % Strain
-    result = Entrez.esearch(db='assembly', term=query, retmax=100)
+    result = Entrez.esearch(db='assembly', term=query, retmax=retmax)
 
     P = Entrez.read(result)
 
@@ -216,42 +218,12 @@ def renameGenomeFiles(dirpath, organism):
         genome = list(SeqIO.parse(localfilepath, format='fasta'))
 
         genomeDescription = genome[0].description
+        strainName = StrainNames.fetchStrainName(genomeDescription, organism)
 
-        strainName = None
-
-        # RENAMING CRITERIA 1:
-        def renamingCriteria1():
-            d = re.findall("strain (\w+)", genomeDescription)
-            if d:
-                print("C1")
-                return d[0]
-
-        # RENAMING CRITERIA 2:
-        def renamingCriteria2():
-            e = re.findall("%s ([\w-\d]+)" % (organism), genomeDescription, flags=re.IGNORECASE)
-            if e:
-                return e[0]
-
-        # RENAMING CRITERIA 3:
-        def renamingCriteria3():
-            words = genomeDescription.split(" ")[1:]
-            uppercaseWords = [w.isupper() for w in words]
-            if sum(uppercaseWords) == 1:
-                return words[uppercaseWords.index(True)]
-
-        allCriteria = [
-            renamingCriteria2,
-            renamingCriteria1,
-            renamingCriteria3
-        ]
-
-        for renamingCriteria in allCriteria:
-            strainName = renamingCriteria()
-            if strainName is not None:
-                newFilePath = os.path.join(os.path.dirname(localfilepath), strainName + '.fna')
-                shutil.move(localfilepath, newFilePath)
-                print("Moving genome %s file to %s" % (localfilepath, newFilePath))
-                break
+        if strainName is not None:
+            newFilePath = os.path.join(os.path.dirname(localfilepath), strainName + '.fna')
+            shutil.move(localfilepath, newFilePath)
+            print("Moving genome %s file to %s" % (localfilepath, newFilePath))
 
 
 def parse_options():

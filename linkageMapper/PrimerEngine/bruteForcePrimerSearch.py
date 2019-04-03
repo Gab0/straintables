@@ -1,9 +1,12 @@
 #!/bin/python
 
 import os
+import re
 
 from . import PrimerDock
 from Bio import SeqIO
+
+from linkageMapper.Database.StrainNames import fetchStrainName
 
 """
 
@@ -23,19 +26,35 @@ class bruteForceSearcher():
             print()
             return None
 
-    def locateMatchingGenome(self, genomeFilePaths, Verbose=True):
-
+    def locateMatchingGenome(self, genomeFilePaths, Verbose=False):
         AnnotationDescription = self.genomeFeatures[0].description
         if Verbose:
             print("Searching a genome that matches the annotation:")
             print(AnnotationDescription)
 
         matchingGenomeFilePath = None
-        for k in genomeFilePaths:
-            strippedGenomeName = os.path.splitext(os.path.split(k)[-1])[0]
-            if strippedGenomeName in AnnotationDescription:
-                matchingGenomeFilePath = k
+
+        """
+        # -- SEARCH BY FILENAME;
+        for genomePath in genomeFilePaths:
+            strippedGenomeName = os.path.splitext(os.path.split(genomePath)[-1])[0]
+            if Verbose:
                 print(strippedGenomeName)
+            if strippedGenomeName in AnnotationDescription:
+                matchingGenomeFilePath = genomePath
+                print(strippedGenomeName)
+        """
+
+        # -- SEARCH BY ANNOTATION INFORMATION;
+        for genomePath in genomeFilePaths:
+            features = list(SeqIO.parse(genomePath, format="fasta"))
+            Description = features[0].description
+            if Verbose:
+                print(Description)
+
+            strain = fetchStrainName(Description)
+            if strain and strain[0] in AnnotationDescription.replace(" ", "_"):
+                matchingGenomeFilePath = genomePath
 
         if matchingGenomeFilePath is None:
             print("No genome matching annotation!")
@@ -44,10 +63,9 @@ class bruteForceSearcher():
             print("Found matching for automatic primer search: %s" % matchingGenomeFilePath)
 
         genome = list(SeqIO.parse(matchingGenomeFilePath, format="fasta"))
-
         return genome
 
-    def retrieveGeneSequence(self, geneName):
+    def retrieveGeneLocation(self, geneName):
         for g, FeatureGroup in enumerate(self.genomeFeatures):
             #print(FeatureGroup)
             for feature in FeatureGroup.features:
@@ -63,9 +81,12 @@ class bruteForceSearcher():
                         return FeatureGroup.description, feature.location
         print("Warning: Gene %s not found." % geneName)
         #exit(1)
-    def locateAndFetchSequence(self, location, chr_descriptor):
 
+    def locateAndFetchSequence(self, location, chr_descriptor):
         wantedDescriptors = [chr_descriptor, "complete genome"]
+        if not self.matchedGenome:
+            print("No matching genome to find gene sequence.")
+            return ""
         for c, Chromosome in enumerate(self.matchedGenome):
             for Descriptor in wantedDescriptors:
                 print("Fetching primers from %s..." % Descriptor)
@@ -78,34 +99,32 @@ class bruteForceSearcher():
     def fetchGeneSequence(self, geneName, outputFilePath):
 
         # FETCH PRIMER METHODS. TO BE INTEGRATED;
-        geneSearchResult = self.retrieveGeneSequence(geneName)
+        geneLocation = self.retrieveGeneLocation(geneName)
 
-        if geneSearchResult is None:
+        if geneLocation is None:
             print("Aborting brute force primer search: Gene name not found.")
             return
 
-        chr_descriptor, location = geneSearchResult
+        chr_descriptor, location = geneLocation
 
 
         # print(AnnotationDescription)
-
 
         SEQ = self.locateAndFetchSequence(location,
                                           chr_descriptor
                                           )
 
         if not SEQ:
+            print("\n")
             print("Error: Failure on feching brute force sequence.")
-            print("genomePath: %s" % matchingAnnotationGenome)
+            print("genomePath: %s" % self.matchedGenome)
             print("chromosome descripor: %s" % chr_descriptor)
             print("location: %s" % location)
-            exit(1)
 
         # Save sequence;
         outputFile = open(outputFilePath, 'w')
         outputFile.write(str(SEQ))
         outputFile.close()
-
 
     def launchBruteForcePrimerSearch(self, locus_name, chromosomes, Reverse):
 

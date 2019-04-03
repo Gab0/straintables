@@ -589,12 +589,17 @@ def parse_args():
                         dest="inputDirectory")
 
     options = parser.parse_args()
-    
+
     if not options.inputDirectory:
         options.inputDirectory = options.inputDir[0]
-        
+
     return options
 
-if __name__ == "__main__":
+
+def main():
     options = parse_args()
     Execute(options)
+
+
+if __name__ == "__main__":
+    main()

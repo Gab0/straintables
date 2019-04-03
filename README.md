@@ -5,7 +5,7 @@ linkageMapper is a tool that helps evaluate the difference among gene loci acros
 Those primers may be user-defined or found by the software, which run brute force searches on top of the gene sequence, after retrieving its boundaries from an annotation file.
 
 Analysis proceeds while it counts the SNPs that diverge from the primer-bound sequences found at each genome, then builds a
- [dissimilarity matrix](https://en.wikipedia.org/wiki/Distance_matrix) for each Locus.
+ [dissimilarity matrix](https://en.wikipedia.org/wiki/Distance_matrix) for each region.
 
 Further clustering is done, based on the DMs.
 
@@ -17,7 +17,7 @@ This package is composed by a few independent python scripts. The analysis follo
 
 ### 1) Primer Docking: fetching Amplicons
 
-This step is carried on `linkageMapper/primerFinder.py`.
+This step is carried by the module `linkageMapper.primerFinder`.
 
 For each designated loci, the app will try to find the complement and/or the original sequence
 of both primers on all genomes. If both primers are found in a genome, the sequence between those primers is extracted and it proceeds to the next genome.
@@ -77,9 +77,10 @@ $pip install -r requirements.txt
 
 ### Fetch genomes and annotation files
 
-The following code downloads each genome matching the query organism from NCBI, along with one annotation file for a specific strain.
-populating the folders `genomes` and `annotations`. 
-Standard usage requires one time execution of the following command:
+This step will define the organism under analysis, so it's adivised run this at one directory, having one dir for each organism.
+
+The following commands download each genome matching the query organism from NCBI, along with one annotation file for one specified strain.
+It will create and populate the folders `genomes` and `annotations`. 
 
 ```
 To download defaults: Toxoplasma gondii genomes, strain ME49 annotations;
@@ -92,7 +93,7 @@ With lactobacillus plantarum, strain WCFS1 annotations:
 $lmdownload --organism "Lactobacillus plantarum" --strain WCFS1
 ```
 
-Please note that although `fetchDataNCBI.py` contatins various methods to ensure the correct file names for downloaded genomes,
+Please note that although the script `lmdownload` contatins various methods to ensure the correct file names for downloaded genomes,
 it's recommended to check the folder after the process.
 
 The user can manually add desired genomes and annotations, as explained in the next subsections:

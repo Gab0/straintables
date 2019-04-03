@@ -156,17 +156,15 @@ def Execute(options):
 
     print("Loaded %i genomes." % len(genomes))
 
-    if len(genomes) > 20:
-        print("Discarding genomes, max is 20!")
+    maxGenomes = 25
+    if len(genomes) > maxGenomes:
+        print("Discarding genomes, max is %i!" % maxGenomes)
 
-    genomes = genomes[:20]
+    genomes = genomes[:maxGenomes]
 
     # APPLY GENOME FEATURES TO BRUTE FORCE MODULE;
 
     bruteForceSearcher = PrimerEngine.bruteForcePrimerSearch.bruteForceSearcher(genomeFeatures, genomeFilePaths)
-    # PrimerEngine.bruteForcePrimerSearch.genomeFeatures = genomeFeatures
-    # PrimerEngine.bruteForcePrimerSearch.matchingFeaturesGenome = None
-    # PrimerEngine.bruteForcePrimerSearch.genomeFilePaths = genomeFilePaths
 
     AllLociAmpliconSet = {}
     AllLociPrimerSet = OrderedDict()

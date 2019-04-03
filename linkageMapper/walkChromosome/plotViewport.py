@@ -117,10 +117,10 @@ def plotPwmIndex(fig, alnData, a, b, swap=False, showLabelColors=True):
     ordered_ma, matrix_order, B = matrixOperations.compute_serial_matrix(ma, method="complete")
     ordered_mb = matrixOperations.reorderMatrix(mb, matrix_order)
     orderedLabels = alnData.heatmapLabels[matrix_order]
-    
+
     # Crop label lengths;
     orderedLabels = cropLabels(orderedLabels)
-    
+
     # plot;
     r_axis1 = createMatrixSubplot(fig, 331, a_name, ordered_ma, orderedLabels)
     r_axis2 = createMatrixSubplot(fig, 333, b_name, ordered_mb, orderedLabels)
@@ -133,6 +133,10 @@ def plotPwmIndex(fig, alnData, a, b, swap=False, showLabelColors=True):
     o_axis2 = createMatrixSubplot(fig, 339, b_name, mb, alnData.heatmapLabels)
 
     original_axis = [o_axis1, o_axis2]
+
+    # left plots have yticks on the right side.
+    r_axis1.yaxis.tick_right()
+    o_axis1.yaxis.tick_right()
 
     # COLORIZE MATRIX LABELS BY MESHCLUSTER;
     if showLabelColors:
@@ -231,7 +235,7 @@ def plotPwmIndex(fig, alnData, a, b, swap=False, showLabelColors=True):
         ax_t.axis("off")
 
         # ALIGNMENT HEALTH INFORMATION FIGURE;
-        if "AlignmentHealth" in alnData.MatchData.keys():
+        if  "AlignmentHealth" in alnData.MatchData.keys():
             ax_ha = fig.add_subplot(334)
             ax_hb = fig.add_subplot(336)
 
