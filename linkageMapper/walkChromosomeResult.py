@@ -576,7 +576,10 @@ def loadImage(source_image):
 def Execute(options):
 
     # SHOW DATA;
-    viewer = matrixViewer(options.inputDirectory)
+    if os.path.isfile(os.path.join(options.inputDirectory, "PrimerData.csv")):
+        viewer = matrixViewer(options.inputDirectory)
+    else:
+        print("Analysis file not found at input directory %s." % options.inputDirectory)
 
 
 def parse_args():
