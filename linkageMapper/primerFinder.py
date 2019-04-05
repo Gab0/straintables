@@ -178,7 +178,6 @@ def Execute(options):
         bruteForceSearcher = None
 
     # -- SETUP OUTPUT DATA STRUCTURES;
-    AllLociAmpliconSet = {}
     AllLociPrimerSet = OrderedDict()
 
     # after this number of tries, we give up on matching primers for the locus.
@@ -233,7 +232,6 @@ def Execute(options):
 
     if matchedPrimerSequences:
         # SHOW AMPLICON DATABASE;
-        print(json.dumps(AllLociAmpliconSet, indent=2))
 
         # BUILD MATCHED PRIMER DATABASE;
         outputFilePath = os.path.join(options.outputPath, "MatchedPrimers.csv")
@@ -242,6 +240,7 @@ def Execute(options):
                                      *PrimerTypes,
                                      "RebootCount",
                                      "AlignmentHealth"])
+        
         data.to_csv(outputFilePath, index=False)
 
         # Primer Maps on Guide Genome:

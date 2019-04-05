@@ -131,8 +131,10 @@ def downloadAssembly(ID,
             print("Remote file key %s not found on FTP server." % ' '.join(wantedFileTypes))
             return 0
 
-        print("\nRemote files:")
+        print("\nRemote files: ==========")
         print('\n'.join(remoteFiles))
+        print()
+        print("========================")
         print()
 
     for remoteFileName in remoteFileNames:
@@ -245,7 +247,7 @@ def parse_options():
 
     parser.add_option("--strain",
                       dest="annotationStrain",
-                      default="ME49")
+                      default="")
 
     parser.add_option("--maxgenomecount",
                       dest="genomeSearchMaxResults",
@@ -257,26 +259,7 @@ def parse_options():
     return options
 
 
-def main():
-    options = parse_options()
-    dataTypes = []
-
-    # Fetch Genome IDs;
-    if options.downloadGenomes:
-        D = findAssemblyList(options.queryOrganism, retmax=options.genomeSearchMaxResults)
-        dataTypes.append((D, "genomes", ["_genomic.fna"]))
-
-    # -- Make sure output directories exist;
-    requiredDirectories = ["genomes", "annotations"]
-    for Dir in requiredDirectories:
-        if not os.path.isdir(Dir):
-            os.mkdir(Dir)
-
-    # Fetch Annotation IDs;
-    if options.downloadAnnotations:
-        A = findAssemblyList("%s %s" % (options.queryOrganism, options.annotationStrain))
-        dataTypes.append((A, "annotations", ["_genomic.gbff"]))
-
+def executeDatatypes(dataTypes):
     for (IDS, typeName, fileExtensions) in dataTypes:
         for d, ID in enumerate(IDS):
             print("Downloading %i of %i.\n" % (d + 1, len(IDS)))
@@ -286,8 +269,55 @@ def main():
                              onlyCompleteGenome=True,
                              wantedFileTypes=fileExtensions)
 
+
+def main():
+    options = parse_options()
+
+    # -- Make sure output directories exist;
+    requiredDirectories = ["genomes", "annotations"]
+    for Dir in requiredDirectories:
+        if not os.path.isdir(Dir):
+            os.mkdir(Dir)
+
+    # -- DOWNLOAD GENOMES;
+    dataTypes = []
+    # Fetch Genome IDs;
+    if options.downloadGenomes:
+        GenomeIDs = findAssemblyList(options.queryOrganism, retmax=options.genomeSearchMaxResults)
+        dataTypes.append((GenomeIDs, "genomes", ["_genomic.fna"]))
+
+    # Download genomes
+    executeDatatypes(dataTypes)
+
     # properly name genome files;
     renameGenomeFiles("genomes", options.queryOrganism)
+
+    # -- DOWNLOAD ANNOTATIONS;
+    dataTypes = []
+    # Fetch Annotation IDs;
+    if not options.annotationStrain:
+        # Try to find an annotation that matches any genome,
+        annotationStrains = [f.replace("_", " ").split(".")[0]
+                             for f in os.listdir("genomes")]
+    else:
+        # Try to find the user-defined annotation;
+        annotationStrains = [options.annotationStrain]
+
+    if options.downloadAnnotations:
+        for StrainName in annotationStrains:
+            Query = "%s %s" % (options.queryOrganism, StrainName)
+            print(">%s" % Query)
+            AnnotationIDs = findAssemblyList(Query)
+            if AnnotationIDs:
+                dataTypes.append(([AnnotationIDs[0]], "annotations", ["_genomic.gbff"]))
+
+        # Try to download a genome that has a matching annotation;
+        if not dataTypes:
+            print("Annotation not found.")
+            A = findAssemblyList(options.queryOrganism)
+            print(A)
+            dataTypes.append(([A[0]], "annotations", ["_genomic.gbff"]))
+        executeDatatypes(dataTypes)
 
     print()
     print("Sucess:")

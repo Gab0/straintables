@@ -127,7 +127,16 @@ def Execute(options):
     allResults = []
     for d, D in enumerate(Distances):
         print(arrayFilePaths[d])
-        res = skdist.anosim(D, grouping=grouping)
+        try:
+            res = skdist.anosim(D, grouping=grouping)
+        # IF ANOSIM FAILS:
+        except ValueError:
+            print()
+            print("Anosim failed:")
+            print("Distances are binary, add more genomes and/or regions to the pool.")
+            print("Check results at %s" % options.inputDirectory)
+            return False
+
         print(res)
         res["Locus"] = arrayFiles[d]
         allResults.append(res)
@@ -220,6 +229,8 @@ def Execute(options):
     outputData.to_csv(outputPath, index=False)
 
     print("Wrote %s analysis file." % outputPath)
+
+    return True
 
 
 if __name__ == "__main__":

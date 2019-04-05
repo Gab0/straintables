@@ -26,7 +26,7 @@ def find_primers(primerFile, outputPath):
         "WantedLoci": ""
     }
 
-    linkageMapper.primerFinder.Execute(Options(finderOptions))
+    return linkageMapper.primerFinder.Execute(Options(finderOptions))
 
 @active_if(lambda: options.DoAlignment)
 def run_alignment(filePrefix):
@@ -82,7 +82,7 @@ def matrix_analysis(WorkingDirectory):
     })
 
     linkageMapper.compareHeatmap.Execute(analysisOptions)
-    linkageMapper.matrixAnalysis.Execute(analysisOptions)
+    return linkageMapper.matrixAnalysis.Execute(analysisOptions)
 
 
 def parse_arguments():
@@ -167,7 +167,8 @@ def main():
                 detect_mutations(filePrefix)
                 run_meshclust(filePrefix)
 
-        matrix_analysis(WorkingDirectory)
+        if matrix_analysis(WorkingDirectory):
+            print("Analysis sucesfull.")
 
     # RUN BY RUFFUS;
     else:
