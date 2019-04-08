@@ -26,34 +26,24 @@ class bruteForceSearcher():
             print()
             return None
 
-    def locateMatchingGenome(self, genomeFilePaths, Verbose=False):
+    def locateMatchingGenome(self, genomeFilePaths, Verbose=True):
         AnnotationDescriptor = self.genomeFeatures[0].description
         if Verbose:
-            print("Searching a genome that matches the annotation:")
+            print("\nSearching a genome that matches the annotation:")
             print(AnnotationDescriptor)
 
         matchingGenomeFilePath = None
-
-        """
-        # -- SEARCH BY FILENAME;
-        for genomePath in genomeFilePaths:
-            strippedGenomeName = os.path.splitext(os.path.split(genomePath)[-1])[0]
-            if Verbose:
-                print(strippedGenomeName)
-            if strippedGenomeName in AnnotationDescription:
-                matchingGenomeFilePath = genomePath
-                print(strippedGenomeName)
-        """
+        annotationStrain = fetchStrainName(AnnotationDescriptor)
 
         # -- SEARCH BY ANNOTATION INFORMATION;
         for genomePath in genomeFilePaths:
             features = list(SeqIO.parse(genomePath, format="fasta"))
             GenomeDescriptor = features[0].description
             if Verbose:
-                print(GenomeDescriptor)
+                print(">%s" % GenomeDescriptor)
 
             strain = fetchStrainName(GenomeDescriptor)
-            if strain and strain in AnnotationDescriptor.replace(" ", "_"):
+            if strain and strain == annotationStrain:
                 matchingGenomeFilePath = genomePath
 
         if matchingGenomeFilePath is None:

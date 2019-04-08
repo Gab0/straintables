@@ -3,17 +3,17 @@
 import re
 
 
-def fetchStrainName(genomeDescriptor, organismName=None):
+def fetchStrainName(genomeDescriptor, organismName=None, Verbose=False):
 
     strainName = None
 
     # RENAMING CRITERIA 1:
     def renamingCriteria1():
         queries = [
-            "strain ([\w]+ [\d]+)"
-            "strain ([A-Z\-0-9]+)",
-            "[\w]+ [\d]+"
-            "[\w\-\d]+",
+            "strain ([\w\.]+ [\d\.]+)"
+            "strain ([A-Z\-0-9\.]+)",
+            "[\w\.]+ [\d\.]+"
+            "[\w\-\d\.]+",
             #"%s strain ([\w]+ [\d]+)" % organismName,
             #"%s strain ([\w\-\d]+)" % organismName,
 
@@ -23,7 +23,8 @@ def fetchStrainName(genomeDescriptor, organismName=None):
                            genomeDescriptor
 )
             if d:
-                print(q)
+                if Verbose:
+                    print(q)
                 return d[0]
 
     # RENAMING CRITERIA 2:
@@ -36,8 +37,11 @@ def fetchStrainName(genomeDescriptor, organismName=None):
 
     # RENAMING CRITERIA 3:
     def renamingCriteria3():
-        words = genomeDescriptor.split(" ")[1:]
-        uppercaseWords = [w.isupper() for w in words]
+        words = genomeDescriptor.replace(",", "")
+        words = words.split(" ")[1:]
+        uppercaseWords = [(w.isupper() and len(w) > 2) for w in words]
+        if Verbose:
+            print(uppercaseWords)
         if sum(uppercaseWords) == 1:
             return words[uppercaseWords.index(True)]
 
@@ -47,11 +51,14 @@ def fetchStrainName(genomeDescriptor, organismName=None):
         renamingCriteria3
     ]
 
+    # unsafe;
     genomeDescriptor = genomeDescriptor.replace("isolate ", "")
+
     for renamingCriteria in allCriteria:
         strainName = renamingCriteria()
         if strainName is not None:
-            print(renamingCriteria.__name__)
+            if Verbose:
+                print(renamingCriteria.__name__)
             return strainName.replace(" ", "_")
 
     return None

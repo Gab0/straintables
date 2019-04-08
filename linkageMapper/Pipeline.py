@@ -116,7 +116,10 @@ def main():
         AnalysisCode = os.path.splitext(options.PrimerFile)[0]
         AnalysisCode = os.path.basename(AnalysisCode)
 
-        WorkingDirectory = os.path.join("analysisResults",
+        WorkingDirectoryBase = "analysisResults"
+        if not os.path.isdir(WorkingDirectoryBase):
+            os.mkdir(WorkingDirectoryBase)
+        WorkingDirectory = os.path.join(WorkingDirectoryBase,
                                         AnalysisCode)
 
     # -- TEST CLUSTALW2 SETUP;

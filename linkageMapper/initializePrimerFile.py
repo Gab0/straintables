@@ -8,10 +8,12 @@ from .Database import annotationManager
 
 
 def Execute(options):
-    selectedScaffold = annotationManager.loadAnnotation(
+    selectedAnnotation = annotationManager.loadAnnotation(
         options.inputAnnotationFolder,
         identifier=options.inputAnnotationName
     )
+
+    selectedScaffold = selectedAnnotation[0]
 
     """
     if not options.inputAnnotationName:
@@ -21,7 +23,7 @@ def Execute(options):
         return
     """
 
-    if selectedScaffold is None or type(selectedScaffold) == list:
+    if not selectedScaffold:
 
         print("Chromosome %s not found." % options.inputAnnotationName)
         print(selectedScaffold)
@@ -29,24 +31,20 @@ def Execute(options):
 
     print("Found feature source scaffold, please review: \n\n%s" % selectedScaffold)
     chosenFeatures = []
-    for feature in selectedScaffold.features:
-        COND1 = "gene" in feature.qualifiers.keys()
-        COND2 = "locus_tag" in feature.qualifiers.keys() and random.random() < options.locusProbability
-
-        NAME = None
-        if COND1:
-            NAME = feature.qualifiers["gene"][0]
-        elif COND2:
-            NAME = feature.qualifiers["locus_tag"][0]
-
-        if NAME:
-            chosenFeatures.append(NAME)
+    nbFeatures = len(selectedScaffold.features)
+    print("Scaffold of length %i. " % nbFeatures)
 
     # IT REPEATS A LOT OF LOCI, BECAUSE THE ANNOTATION HAS MANY ENTRIES WITH SAME NAME.
     # MAYBE MAKING A SET IS SUFFICIENT?
-    chosenFeatures = list(set(chosenFeatures))
+    scaffoldGenes = list(set(annotationManager.loadGenesFromScaffoldAnnotation(selectedScaffold)))
 
-    data = [{"LocusName": feature} for feature in chosenFeatures]
+    data = []
+    for gene in scaffoldGenes:
+        if not gene.hasName:
+            if random.random() > options.locusProbability:
+                continue
+        data.append({"LocusName": gene.Name})
+
     data = pd.DataFrame(data, columns=[
         "LocusName",
         "ForwardPrimer",

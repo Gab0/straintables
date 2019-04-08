@@ -147,29 +147,38 @@ def Execute(options):
 
     # PROCESS VARIATION WINDOWS;
     mat = range(len(_Windows))
-    nb_snp = len(_Windows[0])
-    print(len(Windows))
-    print(nb_snp)
+
+    print(len(_Windows))
+    print(_Windows)
+
     MATRIX = [[0 for j in mat] for i in mat]
-    for i in mat:
-        for j in mat:
-            similarity = 0
-            for k in range(nb_snp):
-                A = _Windows[i][k]
-                B = _Windows[j][k]
+    print(MATRIX)
+    if MATRIX:
+        nb_snp = len(_Windows[0])
+        print(nb_snp)
+        for i in mat:
+            for j in mat:
+                similarity = 0
+                for k in range(nb_snp):
+                    A = _Windows[i][k]
+                    B = _Windows[j][k]
 
-                if A == B:
-                    similarity += 1
-                elif isUknown(A) and isLetter(B):
-                    similarity += 1
-                elif isUknown(B) and isLetter(A):
-                    similarity += 1
+                    if A == B:
+                        similarity += 1
+                    elif isUknown(A) and isLetter(B):
+                        similarity += 1
+                    elif isUknown(B) and isLetter(A):
+                        similarity += 1
 
-            similarity = similarity / nb_snp
+                similarity = similarity / nb_snp
 
-            MATRIX[i][j] = 1 - similarity
+                MATRIX[i][j] = 1 - similarity
 
-    d = np.matrix(MATRIX)
+        MATRIX = np.matrix(MATRIX)
+
+    else:
+        MATRIX = np.matrix(np.ones((len(Alignment), len(Alignment))))
+
 
     # CHECK MATRIX HEALTH
     globalMean = np.mean(MATRIX)
@@ -182,14 +191,13 @@ def Execute(options):
             healthFail = True
 
     # SHOW SIMILARITY MATRIX;
-    print(d.shape)
-    for i in MATRIX:
-        for j in i:
-            print("%.2f" % j, end=' ')
+    print(MATRIX.shape)
+    for i in mat:
+        for j in mat:
+            print("%.2f" % MATRIX[i, j], end=' ')
         print("\n")
 
     # PROCESS MATRIX;
-    c = np.exp(d)
     _MATRIX = copy.deepcopy(MATRIX)
     for i in mat:
         for j in mat:
@@ -199,7 +207,7 @@ def Execute(options):
 
     # SAVE DIVERSE VERSIONS OF THE MATRIX;
     storeMatrixData(MATRIX, alignPath, sequenceNames, subtitle=options.PlotSubtitle)
-    #storeMatrixData(_MATRIX, alignPath + "alt")
+    # storeMatrixData(_MATRIX, alignPath + "alt")
 
     # SAVE SNP INFO DATA FILE;
     DATA = pd.DataFrame(InfoWindows, columns=["POS"] + sequenceNames)
@@ -211,7 +219,9 @@ def Execute(options):
         problematicDirectory = os.path.join(os.path.dirname(options.InputFile), "problematic")
         if not os.path.isdir(problematicDirectory):
             os.mkdir(problematicDirectory)
-        shutil.copyfile(options.InputFile, os.path.join(problematicDirectory, os.path.basename(options.InputFile)))
+        shutil.copyfile(options.InputFile,
+                        os.path.join(problematicDirectory,
+                                     os.path.basename(options.InputFile)))
     print(matrixRowMeans)
 
 
@@ -223,6 +233,5 @@ if __name__ == "__main__":
     parser.add_option('-s', dest="PlotSubtitle")
 
     options, args = parser.parse_args()
-
 
     Execute(options)

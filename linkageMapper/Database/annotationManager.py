@@ -4,6 +4,31 @@ import os
 from Bio import SeqIO
 
 
+class Gene():
+    def __init__(self, Name, hasName):
+        self.Name = Name
+        self.hasName = hasName
+
+
+def loadGenesFromScaffoldAnnotation(Scaffold):
+    genes = []
+    for feature in Scaffold.features:
+        COND1 = "gene" in feature.qualifiers.keys()
+        COND2 = "locus_tag" in feature.qualifiers.keys()
+
+        NAME = None
+        hasName = False
+        if COND1:
+            NAME = feature.qualifiers["gene"][0]
+        elif COND2:
+            NAME = feature.qualifiers["locus_tag"][0]
+
+        if NAME:
+            genes.append(Gene(NAME, hasName))
+
+    return genes
+
+
 def loadFeatures(annotationFilePath):
     annotation = SeqIO.read(annotationFilePath, "genbank")
     outputFeatures = []
@@ -12,6 +37,14 @@ def loadFeatures(annotationFilePath):
             outputFeatures.append(feature)
 
     return outputFeatures
+
+
+"""
+
+This returns the most suitable annotation file from the annotations folder,
+as a list of scaffolds.
+
+"""
 
 
 def loadAnnotation(annotationFolder, identifier=None):
@@ -24,41 +57,65 @@ def loadAnnotation(annotationFolder, identifier=None):
         print("Annotation file not found! Check your annotation folder.")
         exit(1)
 
-    annotationFile = annotationFiles[0]
-    annotationFilePath = os.path.join(annotationFolder, annotationFile)
-    annotationContent = list(SeqIO.parse(annotationFilePath, "genbank"))
+    def sortScaffolds(scaffold):
+        genes = loadGenesFromScaffoldAnnotation(scaffold)
+        return len(genes)
 
-    print(identifier)
+    def sortAnnotations(annotation):
+        genes = loadGenesFromScaffoldAnnotation(annotation[0])
+        return len(genes)
 
-    if identifier:
-        wantedIdentifiers = [identifier, "chromosome_%s" % identifier]
-    else:
-        wantedIdentifiers = ["chromosome"]
+    annotationContents = []
+    for annotationFile in annotationFiles:
+        annotationFilePath = os.path.join(annotationFolder, annotationFile)
+        annotationScaffolds = list(SeqIO.parse(annotationFilePath, "genbank"))
 
-    allIdentifiers = []
+        #print(identifier)
 
-    noChromosomeIdentifierOnAnnotation = True
-    for Scaffold in annotationContent:
-        print(Scaffold.features[0].qualifiers)
-        Qualifiers = Scaffold.features[0].qualifiers
-        if 'chromosome' in Qualifiers.keys():
-            noChromosomeIdentifierOnAnnotation = False
-            ChromosomeName = Qualifiers['chromosome'][0]
+        if identifier:
+            wantedIdentifiers = [
+                identifier,
+                "chromosome_%s" % identifier
+            ]
 
-            # Identifier identified;
-            allIdentifiers.append(ChromosomeName)
+            # -- pick only those that contain the identifier
+            allIdentifiers = []
+            wantedScaffolds = []
+            for Scaffold in annotationScaffolds:
+                Qualifiers = Scaffold.features[0].qualifiers
+                if 'chromosome' in Qualifiers.keys():
+                    ChromosomeName = Qualifiers['chromosome'][0]
+                    allIdentifiers.append(ChromosomeName)
+                    for wantedIdentifier in wantedIdentifiers:
+                        #print(identifier)
+                        #print(ChromosomeName)
+                        if wantedIdentifier.lower() == ChromosomeName.lower():
+                            wantedScaffolds.append(Scaffold)
 
-            for wantedIdentifier in wantedIdentifiers:
-                print(identifier)
-                print(ChromosomeName)
-                if wantedIdentifier.lower() == ChromosomeName.lower():
-                    return Scaffold
+            annotationScaffolds = wantedScaffolds
 
-    if noChromosomeIdentifierOnAnnotation and not identifier:
-        print(">")
-        return annotationContent[0]
+        if not annotationScaffolds:
+            continue
 
-    return allIdentifiers
+        annotationScaffolds = sorted(
+            annotationScaffolds,
+            key=sortScaffolds,
+            reverse=True
+        )
+
+        annotationContents.append(annotationScaffolds)
+
+    print("\n====")
+    for aS in annotationScaffolds:
+        print(len(aS.features))
+
+    annotationContents = sorted(annotationContents, key=sortAnnotations, reverse=True)
+
+    return annotationContents[0]
+
+
+
+
 
 
 

@@ -15,11 +15,10 @@ from Bio import Seq, SeqIO
 
 from optparse import OptionParser
 
-sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
-
+#sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 
 from . import PrimerEngine
-
+from .Database import annotationManager
 
 class clonalTypeReference():
     def __init__(self):
@@ -112,18 +111,16 @@ def Execute(options):
             if not File.startswith(".")
         ]
 
-        genomeFeatures = [
+        genomeFeaturesSet = [
             list(SeqIO.parse(File, "genbank"))
             for File in genomeFeatureFiles if File.endswith(".gbff")
         ]
 
     else:
-        genomeFeatures = []
+        genomeFeaturesSet = []
 
     # CHECK GENOME FEATURES FILE EXISTENCE;
-    if genomeFeatures:
-        genomeFeatures = genomeFeatures[0]
-    else:
+    if not genomeFeaturesSet:
         print("Fatal: No features found.")
 
     """
@@ -172,8 +169,20 @@ def Execute(options):
         print("Fatal: No genomes found!")
         exit(1)
 
+    if len(genomes) < 4:
+        print("Fatal: need at least 4 genomes to proper execute the analysis, got only %i." % len(genomes))
+        exit(1)
     # APPLY GENOME FEATURES TO BRUTE FORCE MODULE;
-    bruteForceSearcher = PrimerEngine.bruteForcePrimerSearch.bruteForceSearcher(genomeFeatures, genomeFilePaths)
+    genomeFeatures = annotationManager.loadAnnotation("annotations")
+
+    print("Loaded Scaffold:")
+    print(genomeFeatures)
+
+    bruteForceSearcher = PrimerEngine.bruteForcePrimerSearch.bruteForceSearcher(
+        genomeFeatures,
+        genomeFilePaths
+    )
+
     if not bruteForceSearcher.matchedGenome:
         bruteForceSearcher = None
 
@@ -240,7 +249,7 @@ def Execute(options):
                                      *PrimerTypes,
                                      "RebootCount",
                                      "AlignmentHealth"])
-        
+
         data.to_csv(outputFilePath, index=False)
 
         # Primer Maps on Guide Genome:

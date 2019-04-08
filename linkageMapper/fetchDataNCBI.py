@@ -15,13 +15,95 @@ import random
 
 import shutil
 
-from ftplib import FTP
+import ftplib
 import optparse
+import time
 
 from linkageMapper.Database import StrainNames
-
+import socket
 # is this legal in the terms of the LAW?
 Entrez.email = 'researcher_%i@one-time-use.cn' % random.randrange(0, 1000)
+
+
+class FTPConnection():
+    def __init__(self, ftpServerAddress):
+        self.ftpServerAddress = ftpServerAddress
+
+        self.cdir = None
+
+        # ftp connection settings;
+        self.timeout = 120
+        self.retries = 5
+        self.launch()
+
+    def launch(self):
+        self.f = ftplib.FTP(self.ftpServerAddress, timeout=self.timeout)
+        self.f.login()
+
+        if self.cdir:
+            self.cd(self.cdir)
+
+    def cd(self, ftpDirectory):
+        self.cdir = ftpDirectory
+        self.execute(self.f.cwd, ftpDirectory)
+
+    def listdir(self):
+        return self.execute(self.f.nlst)
+
+    def downloadFile(self, remoteFileName, localfilepath):
+                localFile = open(localfilepath, 'wb')
+
+                downloaded = self.f.retrbinary(
+                    "RETR %s" % (remoteFileName),
+                localFile.write)
+
+                localFile.close()
+                return downloaded
+
+    def execute(self, operation, *args):
+        for k in range(self.retries):
+            if k == self.retries - 1:
+                print("Failure.")
+                exit(1)
+            try:
+                result = operation(*args)
+                return result
+
+            except (TimeoutError, socket.timeout, ftplib.error_temp, BrokenPipeError) as e:
+                print("Failure to execute %s on try #%i retries." % (operation.__name__,
+                                                                     k + 1))
+                print(e)
+                try:
+                    self.f.quit()
+                except Exception:
+                    pass
+                time.sleep(5)
+                self.launch()
+                print("Retrying....")
+
+        return result
+
+
+class DownloadQuery():
+    def __init__(self, IDs, downloadDirectory, FileTypes):
+        self.IDs = IDs
+        self.downloadDirectory = downloadDirectory
+        self.FileTypes = FileTypes
+
+    def execute(self):
+        DownloadSuccess = False
+
+        for d, ID in enumerate(self.IDs):
+            print("Downloading %i of %i.\n" % (d + 1, len(self.IDs)))
+
+            FileSuccess = downloadAssembly(ID,
+                                           downloadDirectory=self.downloadDirectory,
+                                           onlyCompleteGenome=True,
+                                           wantedFileTypes=self.FileTypes)
+            if FileSuccess:
+                DownloadSuccess = True
+
+        return DownloadSuccess
 
 
 def debug(message):
@@ -29,9 +111,9 @@ def debug(message):
 
 
 def findAssemblyList(Organism, Strain=None, retmax=100):
-    query = '(%s[Organism]' % Organism
+    query = '("%s"[Organism] AND "latest"[Filter]' % Organism
     if Strain:
-        query += " AND %s[Strain]" % Strain
+        query += ' AND "%s"[Strain]' % Strain
     result = Entrez.esearch(db='assembly', term=query, retmax=retmax)
 
     P = Entrez.read(result)
@@ -43,7 +125,7 @@ def findAssemblyList(Organism, Strain=None, retmax=100):
 def downloadAssembly(ID,
                      downloadDirectory='',
                      showSummaries=False,
-                     onlyCompleteGenome=False,
+                     onlyCompleteGenome=True,
                      wantedFileTypes=[],
                      Verbose=False):
     print(ID)
@@ -74,7 +156,8 @@ def downloadAssembly(ID,
     print()
 
     if onlyCompleteGenome:
-        if genomeRepresentation != "false":
+        print("Genome Representation is %s" % genomeRepresentation)
+        if genomeRepresentation not in ["full", "false"]:
             debug("Skipping partial genome.")
             return 0
         """
@@ -96,12 +179,14 @@ def downloadAssembly(ID,
 
     ftpServerAddress = re.findall("ftp\..*gov", ftpPath)[0]
     debug(ftpServerAddress)
-    f = FTP(ftpServerAddress)
-    f.login()
-    f.cwd(ftpDirectory)
+
+    # -- instantiate FTP connection;
+    Connection = FTPConnection(ftpServerAddress)
+    #Connection.f.cwd(ftpDirectory)
+    Connection.cd(ftpDirectory)
 
     # FETCH FTP DIRECTORY FILE LIST;
-    remoteFiles = f.nlst()
+    remoteFiles = Connection.listdir()
 
     if not wantedFileTypes:
         wantedFileTypes = [
@@ -137,20 +222,21 @@ def downloadAssembly(ID,
         print("========================")
         print()
 
+    DownloadSuccess = False
     for remoteFileName in remoteFileNames:
         localFileName = remoteFileName
 
         localfilepath = os.path.join(downloadDirectory, localFileName)
         debug("Writing assembly to %s" % localfilepath)
-        localFile = open(localfilepath, 'wb')
 
         debug("Downloading %s" % remoteFileName)
-        downloaded = f.retrbinary("RETR %s" % (remoteFileName),
-                                  localFile.write)
+
+        downloaded = Connection.execute(Connection.downloadFile, remoteFileName, localfilepath)
 
         debug(remoteFileName)
         debug("download result: %s" % downloaded)
-        localFile.close()
+
+        DownloadSuccess = True
 
         # GUNZIP FILE - decompress;
         if localfilepath.endswith(".gz"):
@@ -184,6 +270,8 @@ def downloadAssembly(ID,
                         SeqIO.write(chromosome, outputFilePath, 'gb')
 
             os.remove(localfilepath)
+
+    return DownloadSuccess
 
 
 def strainToDatabase(species):
@@ -219,6 +307,12 @@ def renameGenomeFiles(dirpath, organism):
         localfilepath = os.path.join(dirpath, genome)
         genome = list(SeqIO.parse(localfilepath, format='fasta'))
 
+        if not genome:
+            print("Error parsing genome!")
+            print("Filename: %s" % localfilepath)
+            print(genome)
+            continue
+
         genomeDescription = genome[0].description
         strainName = StrainNames.fetchStrainName(genomeDescription, organism)
 
@@ -230,7 +324,8 @@ def renameGenomeFiles(dirpath, organism):
 
 def parse_options():
     parser = optparse.OptionParser()
-    parser.add_option("--nogenome", dest='downloadGenomes',
+    parser.add_option("--nogenome",
+                      dest='downloadGenomes',
                       action='store_false',
                       default=True,
                       help="Skip genome downloads.")
@@ -259,15 +354,6 @@ def parse_options():
     return options
 
 
-def executeDatatypes(dataTypes):
-    for (IDS, typeName, fileExtensions) in dataTypes:
-        for d, ID in enumerate(IDS):
-            print("Downloading %i of %i.\n" % (d + 1, len(IDS)))
-
-            downloadAssembly(ID,
-                             downloadDirectory=typeName,
-                             onlyCompleteGenome=True,
-                             wantedFileTypes=fileExtensions)
 
 
 def main():
@@ -279,49 +365,70 @@ def main():
         if not os.path.isdir(Dir):
             os.mkdir(Dir)
 
+    # -- Search Assemblies for Organism;
+    AssemblyIDs = findAssemblyList(options.queryOrganism,
+                                   retmax=options.genomeSearchMaxResults)
+
     # -- DOWNLOAD GENOMES;
     dataTypes = []
     # Fetch Genome IDs;
     if options.downloadGenomes:
-        GenomeIDs = findAssemblyList(options.queryOrganism, retmax=options.genomeSearchMaxResults)
-        dataTypes.append((GenomeIDs, "genomes", ["_genomic.fna"]))
+        dataTypes.append(DownloadQuery(AssemblyIDs, "genomes", ["_genomic.fna"]))
 
     # Download genomes
-    executeDatatypes(dataTypes)
+    GenomeDownloadSuccess = [query.execute() for query in dataTypes]
 
-    # properly name genome files;
-    renameGenomeFiles("genomes", options.queryOrganism)
 
     # -- DOWNLOAD ANNOTATIONS;
+    print("\nFetching Annotations.\n")
     dataTypes = []
     # Fetch Annotation IDs;
-    if not options.annotationStrain:
-        # Try to find an annotation that matches any genome,
-        annotationStrains = [f.replace("_", " ").split(".")[0]
-                             for f in os.listdir("genomes")]
-    else:
-        # Try to find the user-defined annotation;
-        annotationStrains = [options.annotationStrain]
-
     if options.downloadAnnotations:
-        for StrainName in annotationStrains:
-            Query = "%s %s" % (options.queryOrganism, StrainName)
-            print(">%s" % Query)
-            AnnotationIDs = findAssemblyList(Query)
+        # DEPRECATED;
+        if not options.annotationStrain:
+            # Try to find an annotation that matches any genome,
+            annotationStrains = [f.replace("_", " ").split(".")[0]
+                                 for f in os.listdir("genomes")]
+        if options.annotationStrain:
+            # Try to find the user-defined annotation;
+            # Fetch user-defined annotation;
+            AnnotationIDs = findAssemblyList(options.queryOrganism,
+                                             Strain=options.annotationStrain,
+                                             retmax=options.genomeSearchMaxResults)
+
             if AnnotationIDs:
-                dataTypes.append(([AnnotationIDs[0]], "annotations", ["_genomic.gbff"]))
+                print("Annotation IDs:")
+                for i in AnnotationIDs:
+                    print(i)
+                print()
 
-        # Try to download a genome that has a matching annotation;
-        if not dataTypes:
+                dataTypes.append(DownloadQuery(AnnotationIDs, "annotations", ["_genomic.gbff"]))
+                dataTypes.append(DownloadQuery(AnnotationIDs, "genomes", ["_genomic.fna"]))
+            else:
+                print("User defined annotation strain %s not found!" % options.annotationStrain)
+                print("Aborting...")
+                exit(1)
+
+        else:
+            # Try to download a genome that has a matching annotation;
             print("Annotation not found.")
-            A = findAssemblyList(options.queryOrganism)
-            print(A)
-            dataTypes.append(([A[0]], "annotations", ["_genomic.gbff"]))
-        executeDatatypes(dataTypes)
+            dataTypes.append(DownloadQuery(AssemblyIDs, "annotations", ["_genomic.gbff"]))
 
-    print()
-    print("Sucess:")
-    print("Annotation and genome files downloaded.")
+        AnnotationDownloadSuccess = [query.execute() for query in dataTypes]
+
+
+    # -- REPORT SUCCESS (any?);
+    print("\nSummary:")
+    if any(GenomeDownloadSuccess):
+        print("Genome files downloaded.")
+
+        # properly name genome files;
+        renameGenomeFiles("genomes", options.queryOrganism)
+
+    if any(AnnotationDownloadSuccess):
+        print("Annotation files downloaded.")
+
+
 
 
 if __name__ == "__main__":
