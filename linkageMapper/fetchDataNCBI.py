@@ -32,7 +32,7 @@ class FTPConnection():
         self.cdir = None
 
         # ftp connection settings;
-        self.timeout = 120
+        self.timeout = 180
         self.retries = 5
         self.launch()
 
@@ -63,7 +63,7 @@ class FTPConnection():
     def execute(self, operation, *args):
         for k in range(self.retries):
             if k == self.retries - 1:
-                print("Failure.")
+                print("Failure... re-running this script should solve.")
                 exit(1)
             try:
                 result = operation(*args)
@@ -378,7 +378,7 @@ def main():
     # Download genomes
     GenomeDownloadSuccess = [query.execute() for query in dataTypes]
 
-
+    AnnotationDownloadSuccess = []
     # -- DOWNLOAD ANNOTATIONS;
     print("\nFetching Annotations.\n")
     dataTypes = []
@@ -397,7 +397,7 @@ def main():
                                              retmax=options.genomeSearchMaxResults)
 
             if AnnotationIDs:
-                print("Annotation IDs:")
+                print("Found Annotation IDs:")
                 for i in AnnotationIDs:
                     print(i)
                 print()
