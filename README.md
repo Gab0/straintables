@@ -77,7 +77,7 @@ $pip install -r requirements.txt
 
 ### Fetch genomes and annotation files
 
-This step will define the organism under analysis, so it's adivised run this at one directory, having one dir for each organism.
+This step will define the organism under analysis, so it's adivised run this inside a new directory, having one dir for each organism.
 
 The following commands download each genome matching the query organism from NCBI, along with one annotation file for one specified strain.
 It will create and populate the folders `genomes` and `annotations`. 
@@ -91,6 +91,9 @@ $lmdownload --organism "Toxoplasma gondii" --strain ME49
 
 With lactobacillus plantarum, strain WCFS1 annotations:
 $lmdownload --organism "Lactobacillus plantarum" --strain WCFS1
+
+Ten genomes of Saccharomyces cerevisiae:
+$lmdownload --organism "Saccharomyces cerevisiae" --max 10
 ```
 
 Please note that although the script `lmdownload` contatins various methods to ensure the correct file names for downloaded genomes,
@@ -125,9 +128,6 @@ The recombination analysis step of `linkageMapper` has [MeShCluSt](https://githu
 Having it installed on the system will enable genome group clustering to be totally independend from the alignment software, as MeShCluSt does the clustering
 on top of unaligned `.fasta` files.
 
-By not having it, the clustering will be made off distance matrix information only. 
-
-At this point, it is not important to have MeShCluSt installed.
 
 
 # Usage
@@ -143,8 +143,8 @@ At this point, it is not important to have MeShCluSt installed.
 
 ```
 $ lmprimer -i annotations -c X -o Primers/TEST.csv -p 0.01
-$ lmpline TEST
-$ lmview -i Alignments/TEST
+$ lmpline -p Primers/TEST.csv
+$ lmview analysisResults/TEST
 ```
 
 
@@ -165,7 +165,7 @@ TGME49_227830,,
 
 Then, execute:
 ```
-$ bash linkagePipeline.sh chr_X
+$lmpline -p Primers/chr_X.csv
 ```
 
 * Then view similarity matrixes and phylogenetic trees on `pdf` files at `Alignments/chr_X` folder.
