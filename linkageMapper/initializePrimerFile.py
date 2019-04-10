@@ -8,6 +8,8 @@ from .Database import annotationManager
 
 
 def Execute(options):
+    print("\nSelecting annotation scaffold...\n")
+
     selectedAnnotation = annotationManager.loadAnnotation(
         options.inputAnnotationFolder,
         identifier=options.inputAnnotationName
@@ -24,7 +26,6 @@ def Execute(options):
     """
 
     if not selectedScaffold:
-
         print("Chromosome %s not found." % options.inputAnnotationName)
         print(selectedScaffold)
         return

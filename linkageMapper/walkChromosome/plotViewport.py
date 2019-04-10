@@ -9,8 +9,89 @@ from . import matrixOperations, dissimilarityCluster
 from linkageMapper import detectMutations
 
 
+class LabelGroup():
+    def __init__(self, baseNames):
+        self.base = baseNames
+        self.cropped = self.crop(self.base)
+
+        # lowercase greek letters for niceness;
+        self.clusterSymbolMap = [chr(945 + x) for x in range(20)]
+        print(self.cropped)
+
+    @staticmethod
+    def crop(Labels, maxSize=13, Replacer="..."):
+        croppedLabels = []
+        maxSize -= len(Replacer)
+        for label in Labels:
+            if len(label) > maxSize:
+                crop_size = len(label) - maxSize
+                crop_size += crop_size % 2
+                crop_size //= 2
+
+                mid_point = len(label) // 2
+
+                allowed_side_size = mid_point - crop_size
+                cropped = label[:allowed_side_size] + Replacer + label[-allowed_side_size:]
+            else:
+                cropped = label
+
+            croppedLabels.append(cropped)
+
+        return croppedLabels
+
+    def clusterize(self, clusterGroup):
+        Cluster = [None for z in self.base]
+        for n in clusterGroup.keys():
+            if len(clusterGroup[n]) > 1:
+                for member in clusterGroup[n]:
+                    idx = None
+                    for l, label in enumerate(self.base):
+                        if label == member or label == member[:30]:
+                            idx = l
+                    if idx is not None:
+                        Cluster[idx] = n
+
+        return Cluster
+
+    def get_labels(self, Cluster=[], symbolSide=0):
+        Output = []
+
+        symbolSideFormat = [
+            "{symbol}{spacer}{label}",
+            "{label}{spacer}{symbol}"
+        ]
+
+        for k, label in enumerate(self.cropped):
+            if Cluster and Cluster[k] is not None:
+                symbol = self.clusterSymbolMap[Cluster[k]]
+            else:
+                symbol = " "
+
+            label_content = {
+                'label': label,
+                'spacer': " " * (15 - len(label)),
+                'symbol': symbol
+            }
+
+            output_label = symbolSideFormat[symbolSide].format(**label_content)
+            Output.append(output_label)
+
+        return Output
+
+    def get_ordered(self, reorderIndexes, **kwargs):
+        r = np.array(self.get_labels(**kwargs))
+        r = r[reorderIndexes]
+        r = list(r)
+        return r
+
+
 def fixArrayFilename(f):
     return f.split('.')[0]
+
+
+def reorderList(List, index_map):
+    l = np.array(List)[index_map]
+    return list(l)
 
 
 def singleLocusStatus(alnData, axis, locus_name):
@@ -54,38 +135,56 @@ def singleLocusStatus(alnData, axis, locus_name):
     axis.axis("off")
 
 
-def createMatrixSubplot(fig, position, name, matrix, labels):
+def createMatrixSubplot(fig, position, name, matrix, xlabels, ylabels):
     new_ax = fig.add_subplot(position)
 
-    detectMutations.heatmapToAxis(matrix, new_ax, labels=labels)
+    detectMutations.heatmapToAxis(matrix, new_ax,
+                                  xlabels=xlabels, ylabels=ylabels)
 
     new_ax.set_xlabel(name)
 
     return new_ax
 
 
-def cropLabels(Labels, maxSize=13, Replacer="..."):
-    croppedLabels = []
-    maxSize = maxSize - len(Replacer)
-    for label in Labels:
-        if len(label) > maxSize:
-            crop_size = len(label) - maxSize
-            crop_size += crop_size % 2
-            crop_size //= 2
+def colorizeSubplot(ax, Cluster):
+    # color map from matplotlib;
+    colorMap = plt.get_cmap("tab20")
 
-            mid_point = len(label) // 2
+    ClusterColors = [colorMap(x / 20)
+                     for x in range(20)]
 
-            allowed_side_size = mid_point - crop_size
-            cropped = label[:allowed_side_size] + Replacer + label[-allowed_side_size:]
-            
+    allLabels = enumerate(zip(ax.get_xticklabels(), ax.get_yticklabels()))
+    for idx, (xlabel, ylabel) in allLabels:
+        cluster = Cluster[idx]
+        if cluster is not None:
+            xlabel.set_color(ClusterColors[cluster])
+            ylabel.set_color(ClusterColors[cluster])
+
+
+def loadClusterData(alnData, a_name, b_name, abmatrix, Labels):
+
+    clusterOutputData = [None for n in range(2)]
+    # ITERATE LOCUS NAMES ON VIEW (TWO) iteration to load clusterOutputData;
+    for N, LocusName in enumerate([a_name, b_name]):
+        clusterFilePath = alnData.buildArrayPath(LocusName) + ".clst"
+
+        # MeShCluSt file exists.
+        if os.path.isfile(clusterFilePath):
+            locusClusterOutputData = dissimilarityCluster.parseMeshcluster(clusterFilePath)
+        # Otherwise...
         else:
-            cropped = label
-        
-        croppedLabels.append(cropped)
-        
-    return croppedLabels
-    
-        
+            locusClusterOutputData = dissimilarityCluster.fromDissimilarityMatrix(abmatrix[N], Labels.base)
+
+        # Assign obtained clusters;
+        clusterOutputData[N] = locusClusterOutputData
+
+    # REORGANIZE CLUSTER OUTPUT DATA;
+    if all(clusterOutputData):
+        clusterOutputData = dissimilarityCluster.matchPairOfClusterOutputData(clusterOutputData)
+
+    return clusterOutputData
+
+
 def plotPwmIndex(fig, alnData, a, b, swap=False, showLabelColors=True):
 
     if swap:
@@ -113,97 +212,56 @@ def plotPwmIndex(fig, alnData, a, b, swap=False, showLabelColors=True):
     ma = np.load(alnData.buildArrayPath(a))
     mb = np.load(alnData.buildArrayPath(b))
 
-    # REORDERED MATRIXES;
+    LABEL_LENGTH = 15
+    # Crop label lengths;
+    Labels = LabelGroup(alnData.heatmapLabels)
+
     ordered_ma, matrix_order, B = matrixOperations.compute_serial_matrix(ma, method="complete")
     ordered_mb = matrixOperations.reorderMatrix(mb, matrix_order)
-    orderedLabels = alnData.heatmapLabels[matrix_order]
 
-    # Crop label lengths;
-    orderedLabels = cropLabels(orderedLabels)
 
+    # -- CLUSTER INFORMATION TO LABEL;
+    abmatrix = [ma, mb]
+    clusterOutputData = loadClusterData(alnData, a_name, b_name, abmatrix, Labels)
+
+    LeftCluster = Labels.clusterize(clusterOutputData[0])
+    RightCluster = Labels.clusterize(clusterOutputData[1])
+    print(LeftCluster)
+    print(Labels.base)
+    print(clusterOutputData)
+    # REORDERED MATRIXES;
     # plot;
-    r_axis1 = createMatrixSubplot(fig, 331, a_name, ordered_ma, orderedLabels)
-    r_axis2 = createMatrixSubplot(fig, 333, b_name, ordered_mb, orderedLabels)
+    TA1_labels = Labels.get_ordered(matrix_order, Cluster=LeftCluster, symbolSide=0)
+    top_axis1 = createMatrixSubplot(fig, 231, a_name, ordered_ma, TA1_labels, TA1_labels)
 
-    reordered_axis = [r_axis1, r_axis2]
+    TA2_xlabels = Labels.get_ordered(matrix_order, Cluster=RightCluster, symbolSide=0)
+    TA2_ylabels = Labels.get_ordered(matrix_order, Cluster=RightCluster, symbolSide=1)
+    top_axis2 = createMatrixSubplot(fig, 233, b_name, ordered_mb, TA2_xlabels, TA2_ylabels)
+
+    reordered_axis = [top_axis1, top_axis2]
 
     # ORIGINAL MATRIXES;
     # plot;
-    o_axis1 = createMatrixSubplot(fig, 337, a_name, ma, alnData.heatmapLabels)
-    o_axis2 = createMatrixSubplot(fig, 339, b_name, mb, alnData.heatmapLabels)
+    BA1_labels = Labels.get_labels(Cluster=LeftCluster)
+    bottom_axis1 = createMatrixSubplot(fig, 234, a_name, ma, BA1_labels, BA1_labels)
 
-    original_axis = [o_axis1, o_axis2]
+    BA2_xlabels = Labels.get_labels(Cluster=RightCluster, symbolSide=0)
+    BA2_ylabels = Labels.get_labels(Cluster=RightCluster, symbolSide=1)
+    bottom_axis2 = createMatrixSubplot(fig, 236, b_name, mb, BA2_xlabels, BA2_ylabels)
+
+    original_axis = [bottom_axis1, bottom_axis2]
 
     # left plots have yticks on the right side.
-    r_axis1.yaxis.tick_right()
-    o_axis1.yaxis.tick_right()
+    top_axis1.yaxis.tick_right()
+    bottom_axis1.yaxis.tick_right()
 
     # COLORIZE MATRIX LABELS BY MESHCLUSTER;
     if showLabelColors:
-        # color map from matplotlib;
-        colorMap = plt.get_cmap("tab20")
+        colorizeSubplot(top_axis1, reorderList(LeftCluster, matrix_order))
+        colorizeSubplot(bottom_axis1, LeftCluster)
 
-        GroupColors = [colorMap(x / 20)
-                       for x in range(20)]
-
-
-        # lower case greek letters for niceness;
-        symbolMap = [chr(945 + x) for x in range(20)]
-
-        clusterOutputData = [None for n in range(2)]
-        abmatrix = [ma, mb]
-        # ITERATE LOCUS NAMES ON VIEW (TWO) iteration to load clusterOutputData;
-        for N, LocusName in enumerate([a_name, b_name]):
-            clusterFilePath = alnData.buildArrayPath(LocusName) + ".clst"
-
-            # MeShCluSt file exists.
-            if os.path.isfile(clusterFilePath):
-                locusClusterOutputData = dissimilarityCluster.parseMeshcluster(clusterFilePath)
-            # Otherwise...
-            else:
-                locusClusterOutputData = dissimilarityCluster.fromDissimilarityMatrix(abmatrix[N], alnData.heatmapLabels)
-
-            # Assign obtained clusters;
-            clusterOutputData[N] = locusClusterOutputData
-
-        # REORGANIZE CLUSTER OUTPUT DATA;
-        if all(clusterOutputData):
-            clusterOutputData = dissimilarityCluster.matchPairOfClusterOutputData(clusterOutputData)
-
-        # NEW ITERATION OF LOCUS NAMES, TO APPLY CLUSTER OUTPUT DATA INTO VIEW;
-        for N, LocusName in enumerate([a_name, b_name]):
-            if clusterOutputData[N] is not None:
-                NB_Groups = len(clusterOutputData[N].keys())
-                for Axis in [reordered_axis[N], original_axis[N]]:
-
-                    # COLORIZE LABELS;
-                    axisLabels = list(zip(Axis.get_xticklabels(), Axis.get_yticklabels()))
-                    for idx, (labelx, labely) in enumerate(axisLabels):
-                        text = labelx.get_text()
-                        for key in clusterOutputData[N].keys():
-                            if text in clusterOutputData[N][key]:
-
-                                # fetch current state of labels;
-                                xcurrentState = Axis.get_xticklabels()
-                                ycurrentState = Axis.get_yticklabels()
-
-                                # BLACK COLOR AND NULL SYMBOL FOR ONE INDIVIDUAL GROUPS;
-                                if len(clusterOutputData[N][key]) == 1:
-                                    Symbol = " "
-                                # COLOR AND GREEK SYMBOL FOR MULTI INDIVIDUAL GROUPS;
-                                else:
-                                    Symbol = symbolMap[key]
-                                    labelx.set_color(GroupColors[key])
-                                    labely.set_color(GroupColors[key])
-
-                                # modify current label;
-                                xcurrentState[idx] = Symbol + "   " + text
-                                ycurrentState[idx] = text + "   " + Symbol
-
-                                # apply new state to labels;
-                                Axis.set_xticklabels(xcurrentState)
-                                Axis.set_yticklabels(ycurrentState)
-                                break
+        colorizeSubplot(top_axis2, reorderList(RightCluster, matrix_order))
+        colorizeSubplot(bottom_axis2, RightCluster)
 
     # BUILD SHOWN INFO;
     if currentPWMData is not None:
@@ -224,20 +282,21 @@ def plotPwmIndex(fig, alnData, a, b, swap=False, showLabelColors=True):
         Title = "\n".join(Title)
 
         # ADDITIONAL INFORMATION FIGURE;
-        ax_t = fig.add_subplot(335)
+        ax_information = fig.add_subplot(235)
 
-        ax_t.text(-0.2,
-                  0.6,
-                  s=Title,
-                  clip_on=False
+        ax_information.text(
+            -0.2,
+            0.6,
+            s=Title,
+            clip_on=False
         )
 
-        ax_t.axis("off")
+        ax_information.axis("off")
 
         # ALIGNMENT HEALTH INFORMATION FIGURE;
-        if  "AlignmentHealth" in alnData.MatchData.keys():
-            ax_ha = fig.add_subplot(334)
-            ax_hb = fig.add_subplot(336)
+        if False and "AlignmentHealth" in alnData.MatchData.keys():
+            ax_ha = fig.add_subplot(234)
+            ax_hb = fig.add_subplot(236)
 
             singleLocusStatus(alnData, ax_ha, a_name)
             singleLocusStatus(alnData, ax_hb, b_name)
@@ -254,7 +313,7 @@ def plotPwmIndex(fig, alnData, a, b, swap=False, showLabelColors=True):
         try:
             Recombination = dissimilarityCluster.checkRecombination(
                 clusterOutputData,
-                orderedLabels,
+                Labels.get_ordered(matrix_order),
                 Threshold=0.4)
         except Exception as e:
             print(clusterOutputData)
@@ -283,8 +342,8 @@ def plotPwmIndex(fig, alnData, a, b, swap=False, showLabelColors=True):
                 a.append(x)
                 b.append(y)
 
-            ax_recombination = fig.add_subplot(332)
-            dm = list(range(len(orderedLabels)))
+            ax_recombination = fig.add_subplot(232)
+            dm = list(range(len(Labels.base)))
 
             # Reverse recombination array because matrix plot indexes and normal plot indexes are reversed.
             for r, rec in enumerate(reversed(Recombination)):
@@ -303,6 +362,6 @@ def plotPwmIndex(fig, alnData, a, b, swap=False, showLabelColors=True):
     plt.title("")
 
     plt.subplots_adjust(top=0.79, bottom=0.03, left=0.06, right=1.00)
+    fig.tight_layout()
 
     return fig
-

@@ -39,7 +39,8 @@ def fetchStrainName(genomeDescriptor, organismName=None, Verbose=False):
     def renamingCriteria3():
         words = genomeDescriptor.replace(",", "")
         words = words.split(" ")[1:]
-        uppercaseWords = [(w.isupper() and len(w) > 2) for w in words]
+        Roman = set("IVX")
+        uppercaseWords = [(w.isupper() and not set(w).issubset(Roman)) for w in words]
         if Verbose:
             print(uppercaseWords)
         if sum(uppercaseWords) == 1:

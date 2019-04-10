@@ -15,7 +15,8 @@ def parseMeshcluster(clusterFilePath):
         if "nt," in line:
             if key not in clusterOutputData.keys():
                 clusterOutputData[key] = []
-            Individual = re.findall(">([\w\d]+)...", line)[0]
+            _line = line.replace("...", "")
+            Individual = re.findall(">([^\s]+)", _line)[0]
             clusterOutputData[key].append(Individual)
     # print(clusterOutputData)
     return clusterOutputData

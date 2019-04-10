@@ -17,7 +17,7 @@ from . import DrawGraphics
 import optparse
 
 
-def heatmapToAxis(MATRIX, ax, labels=None):
+def heatmapToAxis(MATRIX, ax, xlabels=None, ylabels=None):
     ax.matshow(MATRIX, cmap='binary')
 
     SIZE = len(MATRIX)
@@ -34,9 +34,13 @@ def heatmapToAxis(MATRIX, ax, labels=None):
     ax.set_yticks(range(SIZE))
 
     # SET LABELS;
-    if labels is not None:
-        ax.set_xticklabels(labels, rotation=90)
-        ax.set_yticklabels(labels)
+    fontProperties = {
+        'family': 'monospace'
+    }
+    if xlabels is not None:
+        ax.set_xticklabels(xlabels, fontProperties, rotation=90)
+    if ylabels is not None:
+        ax.set_yticklabels(ylabels, fontProperties)
 
 
 # BUILD HEATMAP;
@@ -201,9 +205,9 @@ def Execute(options):
     _MATRIX = copy.deepcopy(MATRIX)
     for i in mat:
         for j in mat:
-            v = MATRIX[i][j]
+            v = MATRIX[i, j]
             new_v = (v / np.sum(MATRIX[i]))
-            _MATRIX[i][j] = new_v
+            _MATRIX[i, j] = new_v
 
     # SAVE DIVERSE VERSIONS OF THE MATRIX;
     storeMatrixData(MATRIX, alignPath, sequenceNames, subtitle=options.PlotSubtitle)

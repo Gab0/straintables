@@ -248,8 +248,10 @@ class LocusMapBar(Gtk.DrawingArea):
 
 
 # COMPLEX DISSIMILARITY MATRIX VIEWER GTK APPLICATION;
-class matrixViewer():
+class MatrixViewer():
     def __init__(self, inputDirectory=None):
+
+        self.Online = False
 
         # INITIALIZE STATE VARIABLES;
         self.labelColorsOn = 1
@@ -263,16 +265,43 @@ class matrixViewer():
         self.drawPlot = walkChromosome.plotViewport.plotPwmIndex
 
         # INITIALIZE GTK WINDOW;
-        win = Gtk.Window()
-        win.connect("destroy", lambda x: Gtk.main_quit())
-        win.set_default_size(400, 300)
-        win.set_title("linkageMapper - Walk Chromosome Result")
+        self.Window = Gtk.Window()
+        self.Window.connect("destroy", lambda x: Gtk.main_quit())
+        self.Window.set_default_size(400, 300)
+        self.Window.set_title("linkageMapper - Walk Chromosome Result")
 
-        # PREPARE BUTTON ICON IMAGE;
-        dna_icon_left = loadImage(graphic.dna_icon)
-        dna_icon_right = loadImage(graphic.dna_icon)
-        swap_icon = loadImage(graphic.swap)
+        # Children structures;
+        self.locusMap = LocusMapBar()
+        self.locusNavigator = locusNamesSelectionMenu(self)
 
+        # LOAD DATA;
+        self.loadNewFolder(inputDirectory)
+
+
+        #self.top_menu()
+        self.locus_navigator()
+        Layout = self.build_interface()
+
+
+        # -- THIS IS REQUIRED TO THE FIG.TIGHT_LAYOUT() TO SETTLE DOWN. A MYSTERY...
+
+        self.Online = True
+        # SHOW ALL;
+        self.Window.add(Layout)
+        self.Window.show_all()
+
+        # HIDE THIS ANNOYING THING.
+        self.toolbar.message.hide()
+
+        self.navigate(0)
+        self.navigate(0)
+        if self.alnData:
+            self.Window.connect("show", lambda x: self.navigate(0))
+
+        # LAUNCH
+        Gtk.main()
+
+    def top_menu(self):
         # INITIALIZE TOP MENU BAR;
         self.topMenubar = Gtk.MenuBar()
 
@@ -288,7 +317,7 @@ class matrixViewer():
         loadAlignment.connect("activate", self.selectFolderPath)
         self.menuFile.append(loadAlignment)
 
-        self.locusNavigator = locusNamesSelectionMenu(self)
+
 
         # NAVIGATION dropdown;
         self.menuNav = Gtk.Menu()
@@ -301,6 +330,11 @@ class matrixViewer():
         btn_jumpTo.connect("activate", lambda e: locusNamesSelectionMenu(self))
         self.menuNav.append(btn_jumpTo)
 
+    def locus_navigator(self):
+        # PREPARE BUTTON ICON IMAGE;
+        dna_icon_left = loadImage(graphic.dna_icon)
+        dna_icon_right = loadImage(graphic.dna_icon)
+        swap_icon = loadImage(graphic.swap)
 
         # INITIALIZE LOCUS NAVIGATION BUTTONS;
         self.openSequenceLeft = Gtk.Button()
@@ -321,20 +355,19 @@ class matrixViewer():
         self.btn_invert.connect("clicked", self.swapPlot)
         self.btn_invert.add(swap_icon)
 
-        toggleColor = Gtk.ToggleButton(label=None, image=Gtk.Image(stock=Gtk.STOCK_COLOR_PICKER))
-        toggleColor.set_tooltip_text("Show Matrix Label Colors")
-        toggleColor.set_active(True)
-        toggleColor.connect("clicked", self.toggleColor)
+        self.btn_toggleColor = Gtk.ToggleButton(label=None, image=Gtk.Image(stock=Gtk.STOCK_COLOR_PICKER))
+        self.btn_toggleColor.set_tooltip_text("Show Matrix Label Colors")
+        self.btn_toggleColor.set_active(True)
+        self.btn_toggleColor.connect("clicked", self.toggleColor)
 
-        self.locusMap = LocusMapBar()
 
         # INITIALIZE PLOT FIGURE;
         self.figure = plt.figure()
-
         self.figurecanvas = FigureCanvas(self.figure)
 
         self.figurecanvas.mpl_connect('button_press_event', self.onclickCanvas)
 
+    def build_interface(self):
         # BUILD INTERFACE;
         vbox = Gtk.VBox()
         # vbox.pack_start(self.topMenubar, expand=False, fill=False, padding=0)
@@ -358,7 +391,7 @@ class matrixViewer():
         vbox.pack_start(buttonBox, expand=False, fill=True, padding=0)
 
         # MODIFY MATPLOTLIB TOOLBAR;
-        self.toolbar = NavigationToolbar(self.figurecanvas, win)
+        self.toolbar = NavigationToolbar(self.figurecanvas, self.Window)
         self.toolbar.set_history_buttons()
 
         # SET BOTTOM TOOLBAR, WHICH INCLUDE MATPLOTLIB BAR;
@@ -369,7 +402,7 @@ class matrixViewer():
         panelBox.pack_start(self.loadAlignment, expand=False, fill=False, padding=3)
 
         panelBox.pack_start(self.toolbar, expand=False, fill=False, padding=0)
-        panelBox.pack_start(toggleColor, expand=False, fill=False, padding=0)
+        panelBox.pack_start(self.btn_toggleColor, expand=False, fill=False, padding=0)
 
         self.infoText.set_hexpand(True)
         panelBox.pack_start(self.infoText, expand=True, fill=True, padding=0)
@@ -377,18 +410,7 @@ class matrixViewer():
 
         vbox.pack_start(panelBox, expand=False, fill=False, padding=0)
 
-        # SHOW ALL;
-        win.add(vbox)
-        win.show_all()
-
-        # HIDE THIS ANNOYING THING.
-        self.toolbar.message.hide()
-
-        # LOAD DATA;
-        self.loadNewFolder(inputDirectory)
-
-        # LAUNCH!
-        Gtk.main()
+        return vbox
 
     def loadNewFolder(self, inputDirectory):
         if inputDirectory:
@@ -396,8 +418,9 @@ class matrixViewer():
             self.infoText.set_text(self.alnData.inputDirectory)
             self.locusNavigator.Update()
             self.locusMap.loadData(self.alnData)
-
-            self.navigate(0)
+            if self.Online:
+                self.navigate(0)
+            self.inputDirectory = inputDirectory
         else:
             self.alnData = None
 
@@ -512,7 +535,7 @@ class matrixViewer():
         LocusNames = self.getLocusNames()
         LocusName = LocusNames[side]
 
-        alignmentFilePath = os.path.join(options.inputDirectory, LocusName)
+        alignmentFilePath = os.path.join(self.inputDirectory, LocusName)
         command = ["aliview", alignmentFilePath]
         print(command)
 
@@ -577,7 +600,7 @@ def Execute(options):
 
     # SHOW DATA;
     if os.path.isfile(os.path.join(options.inputDirectory, "PrimerData.csv")):
-        viewer = matrixViewer(options.inputDirectory)
+        viewer = MatrixViewer(options.inputDirectory)
     else:
         print("Analysis file not found at input directory %s." % options.inputDirectory)
 
