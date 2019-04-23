@@ -211,9 +211,12 @@ def plotRegionBatch(fig, alnData, regionIndexes, showLabelColors=True):
     ]
 
     AllAxis = []
+
+    # Compute number of rows and columns for plot figure;
     NBL = len(data)
-    NBCOLS = math.ceil(NBL / 2)
+    NBCOLS = min(3, NBL)
     NBROWS = math.ceil(NBL / 3)
+
     print("Plot Count: %i\nColumns: %i\nRows: %i" % (NBL, NBCOLS, NBROWS))
     for m, Matrix in enumerate(Matrixes):
         print("Building...")
