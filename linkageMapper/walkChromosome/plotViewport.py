@@ -3,6 +3,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import os
+import math
 
 from . import matrixOperations, dissimilarityCluster
 
@@ -161,43 +162,89 @@ def colorizeSubplot(ax, Cluster):
             ylabel.set_color(ClusterColors[cluster])
 
 
-def loadClusterData(alnData, a_name, b_name, abmatrix, Labels):
+def loadClusterPairData(alnData, a_name, b_name, abmatrix, Labels):
 
     clusterOutputData = [None for n in range(2)]
     # ITERATE LOCUS NAMES ON VIEW (TWO) iteration to load clusterOutputData;
-    for N, LocusName in enumerate([a_name, b_name]):
-        clusterFilePath = alnData.buildArrayPath(LocusName) + ".clst"
-
-        # MeShCluSt file exists.
-        if os.path.isfile(clusterFilePath):
-            locusClusterOutputData = dissimilarityCluster.parseMeshcluster(clusterFilePath)
-        # Otherwise...
-        else:
-            locusClusterOutputData = dissimilarityCluster.fromDissimilarityMatrix(abmatrix[N], Labels.base)
-
-        # Assign obtained clusters;
-        clusterOutputData[N] = locusClusterOutputData
+    for N, region_name in enumerate([a_name, b_name]):
+        clusterOutputData[N] = loadClusterData(alnData, region_name, abmatrix[N], Labels)
 
     # REORGANIZE CLUSTER OUTPUT DATA;
     if all(clusterOutputData):
-        clusterOutputData = dissimilarityCluster.matchPairOfClusterOutputData(clusterOutputData)
+        clusterOutputData = dissimilarityCluster.matchPairOfClusterOutputData(
+            clusterOutputData)
 
     return clusterOutputData
 
 
-def plotPwmIndex(fig, alnData, a, b, swap=False, showLabelColors=True):
+def loadClusterData(alnData, region_name, matrix, Labels):
 
-    if swap:
-        c = b
-        b = a
-        a = c
+    # Assign obtained clusters;
+    clusterFilePath = alnData.buildArrayPath(region_name) + ".clst"
 
-    currentPWMData = alnData.findPWMDataRow(a, b)
+    # MeShCluSt file exists.
+    if os.path.isfile(clusterFilePath):
+        locusClusterOutputData =\
+            dissimilarityCluster.parseMeshcluster(clusterFilePath)
+
+    # Otherwise...
+    else:
+        locusClusterOutputData =\
+            dissimilarityCluster.fromDissimilarityMatrix(matrix, Labels.base)
+
+    return locusClusterOutputData
+
+
+def makePlotCode(a, b, c):
+    return a * 100 + b * 10 + c
+
+
+def plotRegionBatch(fig, alnData, regionIndexes, showLabelColors=True):
+    data = [alnData.MatchData["LocusName"].iloc[i] for i in regionIndexes]
+
+    Matrixes = [np.load(alnData.buildArrayPath("LOCI_" + a)) for a in data]
+
+    Labels = LabelGroup(alnData.heatmapLabels)
+    Clusters = [
+        loadClusterData(alnData, data[i], Matrixes[i], Labels)
+        for i in range(len(data))
+    ]
+
+    AllAxis = []
+    NBL = len(data)
+    NBCOLS = math.ceil(NBL / 2)
+    NBROWS = math.ceil(NBL / 3)
+    print("Plot Count: %i\nColumns: %i\nRows: %i" % (NBL, NBCOLS, NBROWS))
+    for m, Matrix in enumerate(Matrixes):
+        print("Building...")
+        PlotCode = makePlotCode(NBROWS, NBCOLS, m + 1)
+        print(Clusters[m])
+        plotCluster = Labels.clusterize(Clusters[m])
+        plotLabels = Labels.get_labels(Cluster=plotCluster)
+        plot = createMatrixSubplot(fig, PlotCode, data[m], Matrix, plotLabels, plotLabels)
+
+        if showLabelColors:
+            colorizeSubplot(plot, plotCluster)
+
+        AllAxis.append(plot)
+
+    fig.tight_layout()
+
+    return fig
+
+
+def plotPwmIndex(fig, alnData, regionIndexes, showLabelColors=True):
+
+    currentPWMData = alnData.findPWMDataRow(*regionIndexes)
 
     # walk loci by loci mode.
 
     # EXTRACR LOCUS NAMES;
-    a_name, b_name = fixArrayFilename(a), fixArrayFilename(b)
+    a = regionIndexes[0]
+    b = regionIndexes[1]
+
+    data = [alnData.MatchData["LocusName"].iloc[i] for i in regionIndexes]
+    a_name, b_name = ["LOCI_" + n for n in data]
     print(a_name)
 
     try:
@@ -209,8 +256,8 @@ def plotPwmIndex(fig, alnData, a, b, swap=False, showLabelColors=True):
         print("Failure on %s" % a_name)
 
     # LOAD MATRIX DATA;
-    ma = np.load(alnData.buildArrayPath(a))
-    mb = np.load(alnData.buildArrayPath(b))
+    ma = np.load(alnData.buildArrayPath(a_name))
+    mb = np.load(alnData.buildArrayPath(b_name))
 
     LABEL_LENGTH = 15
     # Crop label lengths;
@@ -222,7 +269,7 @@ def plotPwmIndex(fig, alnData, a, b, swap=False, showLabelColors=True):
 
     # -- CLUSTER INFORMATION TO LABEL;
     abmatrix = [ma, mb]
-    clusterOutputData = loadClusterData(alnData, a_name, b_name, abmatrix, Labels)
+    clusterOutputData = loadClusterPairData(alnData, a_name, b_name, abmatrix, Labels)
 
     LeftCluster = Labels.clusterize(clusterOutputData[0])
     RightCluster = Labels.clusterize(clusterOutputData[1])

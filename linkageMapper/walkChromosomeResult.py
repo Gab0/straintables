@@ -1,103 +1,25 @@
 #!/bin/python
 
-import re
 import os
-import pandas as pd
-import numpy as np
 import array
 
-import json
 import subprocess
 
 from argparse import ArgumentParser
 
 import matplotlib.pyplot as plt
 
-import fastcluster
-import scipy
-
-from linkageMapper import detectMutations
 from . import graphic
 from . import walkChromosome
 
-import gi
-gi.require_version('Gtk', '3.0')
-from gi.repository import Gtk, Gdk, GdkPixbuf
-import cairo
-
-from matplotlib.figure import Figure
 from matplotlib.backends.backend_gtk3agg import FigureCanvas
 from matplotlib.backends.backend_gtk3 import (
     NavigationToolbar2GTK3 as NavigationToolbar)
 
 
-class alignmentData():
-    def __init__(self, inputDirectory):
-
-        self.dataKeys = ["Unnamed: 0", "Unnamed: 1"]
-        self.loadDataFiles(inputDirectory)
-        self.inputDirectory = inputDirectory
-
-    def loadDataFiles(self, inputDirectory):
-        PrimerFilePath = os.path.join(inputDirectory, "PrimerData.csv")
-        MatchedPrimerFilePath = os.path.join(inputDirectory, "MatchedPrimers.csv")
-        PWMFilePath = os.path.join(inputDirectory, "PWMAnalysis.csv")
-
-        # LOAD RELEVANT DATABASES;
-        self.PrimerData = pd.read_csv(PrimerFilePath)
-        self.PWMData = pd.read_csv(PWMFilePath)
-        self.MatchData = pd.read_csv(MatchedPrimerFilePath)
-
-        # FETCH ORIGINAL HEATMAP GENOME LABELS;
-        heatmapLabelsFilePath = os.path.join(
-            inputDirectory,
-            "heatmap_labels.npy"
-        )
-
-        self.heatmapLabels = np.load(heatmapLabelsFilePath)
-
-        # FETCH VIEWABLE DATA INDEXES;
-        OnlySequence = True
-        if OnlySequence:
-            last = None
-            self.allowedIndexes = []
-            for I in range(self.PWMData.shape[0]):
-                d = self.PWMData.iloc[I]
-                a = d[self.dataKeys[0]]
-                if a == last:
-                    continue
-                self.allowedIndexes.append(I)
-                last = a
-        else:
-            self.allowedIndexes = list(range(self.PWMData.shape[0]))
-
-        print("Allowed: %s" % self.allowedIndexes)
-
-    def findPWMDataRow(self, a, b):
-        def setLength(w):
-            return len(list(set(w)))
-
-        for k in range(self.PWMData.shape[0]):
-            d = self.PWMData.iloc[k]
-            names = [d[x] for x in self.dataKeys]
-
-            if a in names and b in names and setLength(names) == setLength([a, b]):
-                print(d)
-                return d
-
-        return None
-
-    def buildArrayPath(self, f):
-        return os.path.join(self.inputDirectory, f)
-
-    def fetchLociList(self):
-        for t in self.dataKeys:
-            print(self.PWMData[t])
-        allLoci = [list(self.PWMData[d]) for d in self.dataKeys]
-        print(allLoci)
-        allLoci = [j for s in allLoci for j in s]
-
-        return list(set(allLoci))
+import gi
+gi.require_version('Gtk', '3.0')
+from gi.repository import Gtk, Gdk, GdkPixbuf
 
 
 class locusNamesSelectionMenu(Gtk.Grid):
@@ -135,11 +57,13 @@ class locusNamesSelectionMenu(Gtk.Grid):
     def Refresh(self, n):
         print(self.matrixViewer.figure)
 
-        a = self.allLoci[self.left_choice.get_active()]
-        b = self.allLoci[self.right_choice.get_active()]
-        self.matrixViewer.changeView(a, b)
+        LOCI = [
+            self.left_choice.get_active(),
+            self.right_choice.get_active()
+        ]
+        self.matrixViewer.changeView(LOCI, self.drawPlot)
 
-        print("REFRESHED %s %s" % (a, b))
+        print("REFRESHED %s %s" % LOCI)
 
     def Update(self, n=None):
         if self.matrixViewer.alnData:
@@ -162,89 +86,11 @@ class locusNamesSelectionMenu(Gtk.Grid):
             # DISCONNECT COMBOBOX SIGNALS;
             self.switchAutomaticDropdownLocusJump(Target=False)
 
-            self.left_choice.set_active(self.allLoci.index(a))
-            self.right_choice.set_active(self.allLoci.index(b))
+            self.left_choice.set_active(a)
+            self.right_choice.set_active(b)
 
             # RECOONECT COMBOBOX SIGNALS;
             self.switchAutomaticDropdownLocusJump(Target=True)
-
-
-class LocusMapBar(Gtk.DrawingArea):
-    def __init__(self):
-        Gtk.DrawingArea.__init__(self)
-
-        self.connect("draw", self.draw)
-        self.set_size_request(200, 10)
-
-        self.LocusNames = []
-        self.Active = []
-        self.show_all()
-
-    def drawCircle(self, ctx, color=None):
-
-        ctx.translate(self.circleSize, self.circleSize)
-
-        ctx.new_path()
-        ctx.arc(0, 0, self.circleSize, 0, 2 * 3.14)
-        ctx.close_path()
-
-        if color:
-            ctx.set_source_rgba(*color, 1.0)
-            ctx.fill()
-
-        ctx.translate(-self.circleSize, -self.circleSize)
-
-    def draw(self, da, ctx):
-        # print("DRAWING %s" % self.Active)
-
-        availableWidth = self.get_allocation().width
-
-        Size = len(self.LocusNames)
-
-        self.circleSize = max(min(availableWidth / (Size * 3), 12), 6)
-
-
-        ctx.set_source_rgb(0, 0, 0)
-
-        ctx.set_line_width(self.circleSize / 4)
-        ctx.set_tolerance(0.1)
-
-        # FIRST ROW;
-        ctx.set_line_join(cairo.LINE_JOIN_ROUND)
-
-        ctx.save()
-        ctx.new_path()
-
-        ctx.translate(self.circleSize, self.circleSize)
-
-        nb_rows = 1
-        for k, locus in enumerate(self.LocusNames):
-            color = (0, 0, 0)
-
-            if len(self.Active):
-                if locus in self.Active[0]:
-                    color = (0.1, 0.8, 0.1)
-                elif locus in self.Active[1]:
-                    color = (0.8, 0.1, 0.1)
-
-            self.drawCircle(ctx, color)
-            ctx.translate(3 * self.circleSize, 0)
-
-            position_x = ctx.get_matrix()[4]
-
-            if position_x > availableWidth:
-                ctx.restore()
-                ctx.save()
-                ctx.translate(self.circleSize, self.circleSize + 3 * self.circleSize * nb_rows)
-                nb_rows += 1
-
-        print(nb_rows)
-        self.set_size_request(200, 4 * self.circleSize * nb_rows)
-        ctx.restore()
-
-    def loadData(self, alnData):
-        self.LocusNames = list(alnData.MatchData["LocusName"])
-        print(self.LocusNames)
 
 
 # COMPLEX DISSIMILARITY MATRIX VIEWER GTK APPLICATION;
@@ -263,6 +109,7 @@ class MatrixViewer():
 
         # SELECT DRAWING FUNCTION;
         self.drawPlot = walkChromosome.plotViewport.plotPwmIndex
+        self.batchRegionPlot = walkChromosome.plotViewport.plotRegionBatch
 
         # INITIALIZE GTK WINDOW;
         self.Window = Gtk.Window()
@@ -271,7 +118,7 @@ class MatrixViewer():
         self.Window.set_title("linkageMapper - Walk Chromosome Result")
 
         # Children structures;
-        self.locusMap = LocusMapBar()
+        self.locusMap = walkChromosome.mapBar.LocusMapBar()
         self.locusNavigator = locusNamesSelectionMenu(self)
 
         # LOAD DATA;
@@ -317,8 +164,6 @@ class MatrixViewer():
         loadAlignment.connect("activate", self.selectFolderPath)
         self.menuFile.append(loadAlignment)
 
-
-
         # NAVIGATION dropdown;
         self.menuNav = Gtk.Menu()
         btn_menuNav = Gtk.MenuItem(label="Navigation")
@@ -335,14 +180,15 @@ class MatrixViewer():
         dna_icon_left = loadImage(graphic.dna_icon)
         dna_icon_right = loadImage(graphic.dna_icon)
         swap_icon = loadImage(graphic.swap)
-
         # INITIALIZE LOCUS NAVIGATION BUTTONS;
         self.openSequenceLeft = Gtk.Button()
-        self.openSequenceLeft.connect("clicked", lambda d: self.launchAlignViewer(0))
+        self.openSequenceLeft.connect("clicked",
+                                      lambda d: self.launchAlignViewer(0))
         self.openSequenceLeft.add(dna_icon_left)
 
         self.openSequenceRight = Gtk.Button()
-        self.openSequenceRight.connect("clicked", lambda d: self.launchAlignViewer(1))
+        self.openSequenceRight.connect("clicked",
+                                       lambda d: self.launchAlignViewer(1))
         self.openSequenceRight.add(dna_icon_right)
 
         self.btn_back = Gtk.Button(image=Gtk.Image(stock=Gtk.STOCK_GO_BACK))
@@ -355,16 +201,14 @@ class MatrixViewer():
         self.btn_invert.connect("clicked", self.swapPlot)
         self.btn_invert.add(swap_icon)
 
-        self.btn_toggleColor = Gtk.ToggleButton(label=None, image=Gtk.Image(stock=Gtk.STOCK_COLOR_PICKER))
-        self.btn_toggleColor.set_tooltip_text("Show Matrix Label Colors")
-        self.btn_toggleColor.set_active(True)
-        self.btn_toggleColor.connect("clicked", self.toggleColor)
-
+        self.btn_toggleColor = Gtk.ToggleButton(label=None,
+                                                image=Gtk.Image(stock=Gtk.STOCK_COLOR_PICKER))
 
         # INITIALIZE PLOT FIGURE;
         self.figure = plt.figure()
         self.figurecanvas = FigureCanvas(self.figure)
 
+        self.outputimagemenu = BuildImageMenu(self)
         self.figurecanvas.mpl_connect('button_press_event', self.onclickCanvas)
 
     def build_interface(self):
@@ -372,9 +216,14 @@ class MatrixViewer():
         vbox = Gtk.VBox()
         # vbox.pack_start(self.topMenubar, expand=False, fill=False, padding=0)
 
-        vbox.pack_start(self.locusMap, expand=False, fill=False, padding=0)
+        self.MainPanel = Gtk.HBox()
 
-        vbox.pack_start(self.figurecanvas, expand=True, fill=True, padding=0)
+        self.FigureBox = Gtk.VBox()
+        self.FigureBox.pack_start(self.locusMap, expand=False, fill=False, padding=0)
+        self.FigureBox.pack_start(self.figurecanvas, expand=True, fill=True, padding=0)
+
+        self.MainPanel.pack_start(self.FigureBox, expand=True, fill=True, padding=0)
+        vbox.pack_start(self.MainPanel, expand=True, fill=True, padding=0)
 
         # SHOW LOCUS NAVIGATION TOOLBAR;
         buttonBox = Gtk.Grid()
@@ -388,14 +237,26 @@ class MatrixViewer():
         buttonBox.attach(self.btn_next, 6, 0, 3, 1)
         buttonBox.attach(self.openSequenceRight, 9, 0, 2, 1)
 
-        vbox.pack_start(buttonBox, expand=False, fill=True, padding=0)
+        self.FigureBox.pack_start(buttonBox, expand=False, fill=True, padding=0)
 
         # MODIFY MATPLOTLIB TOOLBAR;
         self.toolbar = NavigationToolbar(self.figurecanvas, self.Window)
         self.toolbar.set_history_buttons()
 
+        panelBox = self.bottom_toolbar()
+        vbox.pack_start(panelBox, expand=False, fill=False, padding=0)
+
+        return vbox
+
+    def bottom_toolbar(self):
         # SET BOTTOM TOOLBAR, WHICH INCLUDE MATPLOTLIB BAR;
         panelBox = Gtk.HBox(homogeneous=False, spacing=2)
+
+        self.btn_toggleColor.set_tooltip_text("Show Matrix Label Colors")
+        self.btn_toggleColor.set_active(True)
+        self.btn_toggleColor.connect("clicked", self.toggleColor)
+
+        export_icon = loadImage(graphic.export)
 
         self.loadAlignment = Gtk.Button(image=Gtk.Image(stock=Gtk.STOCK_DND_MULTIPLE))
         self.loadAlignment.connect("clicked", self.selectFolderPath)
@@ -406,15 +267,34 @@ class MatrixViewer():
 
         self.infoText.set_hexpand(True)
         panelBox.pack_start(self.infoText, expand=True, fill=True, padding=0)
+
+
+        # -- MAIN VIEW SELECTORS;
+        self.ModifyViewButtons = Gtk.HBox()
+
+        self.btn_viewalignment = Gtk.Button(image=Gtk.Image(stock=Gtk.STOCK_MEDIA_PLAY))
+        self.btn_viewalignment.connect("clicked", lambda d: self.ModifyPanelView("alignment"))
+
+        self.btn_openfolder = Gtk.Button(image=Gtk.Image(stock=Gtk.STOCK_OPEN))
+        self.btn_openfolder.connect("clicked", lambda d: self.ModifyPanelView("openfolder"))
+
+        self.btn_outputimage = Gtk.Button()
+        self.btn_outputimage.connect("clicked", lambda d: self.ModifyPanelView("outputimage"))
+        self.btn_outputimage.add(export_icon)
+
+        self.ModifyViewButtons.pack_start(self.btn_viewalignment, expand=True, fill=True, padding=0)
+        self.ModifyViewButtons.pack_start(self.btn_openfolder, expand=True, fill=True, padding=0)
+        self.ModifyViewButtons.pack_start(self.btn_outputimage, expand=True, fill=True, padding=0)
+
+        panelBox.pack_start(self.ModifyViewButtons, False, False, 5)
+
         panelBox.pack_end(self.locusNavigator, False, False, 0)
 
-        vbox.pack_start(panelBox, expand=False, fill=False, padding=0)
-
-        return vbox
+        return panelBox
 
     def loadNewFolder(self, inputDirectory):
         if inputDirectory:
-            self.alnData = alignmentData(inputDirectory)
+            self.alnData = walkChromosome.alignmentData.AlignmentData(inputDirectory)
             self.infoText.set_text(self.alnData.inputDirectory)
             self.locusNavigator.Update()
             self.locusMap.loadData(self.alnData)
@@ -443,8 +323,8 @@ class MatrixViewer():
         self.swap = False
         self.cycleIndexes(value)
         if self.alnData:
-            a, b = self.getLocusNames(fullName=True)
-            self.changeView(a, b)
+            LOCI = self.alnData.getPWMRegionIndexes(self.index)
+            self.changeView(LOCI, self.drawPlot)
 
     def toggleColor(self, d):
         self.labelColorsOn = 1 - self.labelColorsOn
@@ -453,27 +333,40 @@ class MatrixViewer():
     def swapPlot(self, d):
         if self.alnData:
             self.swap = 1 - self.swap
-            loci = self.getLocusNames(fullName=True)
+            loci = self.alnData.getPWMRegionIndexes(self.index, fullName=True)
             if self.swap:
                 loci.reverse()
-            self.changeView(*loci)
+            self.changeView(loci, self.drawPlot)
 
-    def changeView(self, a, b):
+    def changeView(self, regions, plotMethod):
         self.figure.clf()
         if self.alnData:
             # UPDATE LOCUS NAVIGATOR;
-            self.locusNavigator.updateInfo(a, b)
+            if len(regions) == 2:
+                self.locusNavigator.updateInfo(*regions)
 
             # UPDATE LOCUS MAP;
-            self.locusMap.Active = [a, b]
+            Half = len(regions) // 2
+            self.locusMap.Active["green"] = regions[:Half]
+            self.locusMap.Active["red"] = regions[Half:]
+
             self.locusMap.queue_draw()
 
-            self.drawPlot(self.figure, self.alnData, a, b, showLabelColors=self.labelColorsOn)
+            plotMethod(
+                self.figure,
+                self.alnData,
+                regions,
+                showLabelColors=self.labelColorsOn
+            )
 
             self.figurecanvas.draw()
             self.figurecanvas.flush_events()
 
-            LocusNames = self.getLocusNames()
+            LocusIndexes = self.alnData.getPWMRegionIndexes(self.index)
+            LocusNames = [
+                self.alnData.MatchData["LocusName"][name]
+                for name in LocusIndexes
+            ]
 
             self.openSequenceLeft.set_tooltip_text("View Alignment For %s" % LocusNames[0])
             self.openSequenceRight.set_tooltip_text("View Alignment For %s" % LocusNames[1])
@@ -503,37 +396,20 @@ class MatrixViewer():
 
             elif self.zoomedPlot is not None:
                 # JUST REDRAW... SLOWER BUT GUARANTEED (matplotlib is mystical);
-                #self.changeView(self.)
+                # self.changeView(self.)
                 self.zoomedPlot = None
                 """
                     self.zoomedPlot.set_position(self.zoomedPlot._orig_position)
                     for Axis in event.canvas.figure.axes:
                         Axis.set_visible(True)
                     self.zoomedPlot = None
-                    """
+                """
         else:
             print("OFF AXIS.;")
-        """
-            bbox = self.figure.get_window_extent().transformed(
-                self.figure.dpi_scale_trans.inverted())
-            width, height = bbox.width*self.figure.dpi, bbox.height*self.figure.dpi
-
-            side = 0 if event.x < width // 2 else 1
-
-            #self.launchAlignViewer(side)
-        """
-
-    def getLocusNames(self, fullName=False):
-        Data = self.alnData.PWMData.iloc[self.index]
-        KeyNames = ["Unnamed: 0", "Unnamed: 1"]
-        locusNames = [Data[kn] for kn in KeyNames]
-        if not fullName:
-            locusNames = [n.replace(".npy", "") for n in locusNames]
-        return locusNames
 
     def launchAlignViewer(self, side):
-        LocusNames = self.getLocusNames()
-        LocusName = LocusNames[side]
+        LocusIndexes = self.alnData.getPWMRegionIndexes(self.index)
+        LocusName = self.alnData.MatchData["LocusName"][LocusIndexes[side]]
 
         alignmentFilePath = os.path.join(self.inputDirectory, LocusName)
         command = ["aliview", alignmentFilePath]
@@ -544,43 +420,122 @@ class MatrixViewer():
     def selectFolderPath(self, n):
         a = folderPathSelector(self)
 
+    def ModifyPanelView(self, target):
+        if target == "outputimage":
+            ADD = self.outputimagemenu
+        elif target == "openfolder":
+            self.folderpathselector = folderPathSelector(self)
+            ADD = self.folderpathselector
+        elif target == "alignment":
+            ADD = self.FigureBox
 
-class folderPathSelector(Gtk.FileChooserDialog):
-    def onResponse(self, widget, response):
+        if self.FigureBox.get_parent():
+            REMOVE = self.FigureBox
+        elif self.outputimagemenu.get_parent():
+            REMOVE = self.outputimagemenu
+        elif hasattr(self, 'folderpathselector') and self.folderpathselector.get_parent():
+            REMOVE = self.folderpathselector
 
-        if response:
-            inputDirectory = widget.get_filename()
-            try:
-                self.mainApplication.loadNewFolder(inputDirectory)
-                widget.destroy()
-            except Exception as e:
-                ERR = e
-                widget.errorMessage.set_text("Error: %s" % e)
+        if REMOVE:
+            self.MainPanel.remove(REMOVE)
+        if ADD:
+            self.MainPanel.pack_start(ADD, True, True, 0)
+
+
+class BuildImageMenu(Gtk.VBox):
+    def __init__(self, matrix_viewer):
+
+        self.matrix_viewer = matrix_viewer
+        self.interface = self.build_interface(self.matrix_viewer.alnData)
+        self.pack_start(self.interface, True, True, 0)
+
+        self.show_all()
+
+    def makeCustomPlot(self, btn):
+        states = [c.get_active() for c in self.Checkboxes]
+
+        if sum(states) > 6:
+            self.Information.set_text("Maximum region count is six.")
+
+        elif not sum(states):
+            self.Information.set_text("Please select at least one region.")
+
         else:
-            widget.destroy()
+            Regions = [x for x in range(len(states)) if states[x]]
+            print(Regions)
+            self.matrix_viewer.changeView(Regions,
+                                          self.matrix_viewer.batchRegionPlot)
+            self.matrix_viewer.ModifyPanelView("alignment")
 
-    def __init__(self, mainApplication):
-        Gtk.FileChooserDialog.__init__(self,
-                                       title="Select Results Folder",
-                                       parent=None,
-                                       action=Gtk.FileChooserAction.SELECT_FOLDER)
+    def build_interface(self, alnData):
+        Gtk.VBox.__init__(self)
 
-        self.mainApplication = mainApplication
+        Layout = Gtk.VBox()
+        hbox = Gtk.HBox()
+
+        n = Gtk.Label("Reordered Matrixes")
+        w = Gtk.Button.new_with_label('IO')
+
+        btn_Confirm = Gtk.Button.new_with_label("Export.")
+        btn_Confirm.connect("clicked", self.makeCustomPlot)
+        loci_list = alnData.fetchLociList()
+        loci_list_selector = Gtk.VBox()
+
+        self.Information = Gtk.Label()
+
+        self.Checkboxes = []
+        for locus in loci_list:
+            L = Gtk.Label(locus)
+            C = Gtk.CheckButton()
+
+            self.Checkboxes.append(C)
+
+            lbox = Gtk.HBox()
+            lbox.pack_start(C, False, False, 0)
+            lbox.pack_start(L, False, False, 0)
+            loci_list_selector.pack_start(lbox, False, False, 0)
+
+        # hbox.pack_start(n, True, True, 0)
+        hbox.pack_start(w, False, False, 0)
+        hbox.pack_start(btn_Confirm, False, False, 0)
+        hbox.pack_start(loci_list_selector, True, True, 0)
+
+        Layout.pack_start(hbox, True, True, 5)
+        Layout.pack_start(self.Information, True, True, 5)
+
+        return Layout
+
+
+class folderPathSelector(Gtk.VBox):
+    def onResponse(self, btn):
+
+        inputDirectory = self.FileChooser.get_filename()
+        try:
+            self.mainApplication.loadNewFolder(inputDirectory)
+            self.mainApplication.ModifyPanelView("alignment")
+        except Exception as e:
+            self.errorMessage.set_text("Error: %s" % e)
+
+    def __init__(self, matrix_viewer):
+        Gtk.VBox.__init__(self)
+        self.FileChooser = Gtk.FileChooserWidget(
+            action=Gtk.FileChooserAction.SELECT_FOLDER)
+
+        self.mainApplication = matrix_viewer
         self.errorMessage = Gtk.Label.new("Select file.")
         self.errorMessage.set_hexpand(True)
-        ok = Gtk.Button(Gtk.STOCK_OPEN)
-        cancel = Gtk.Button(Gtk.STOCK_CANCEL)
+        btn_ok = Gtk.Button(Gtk.STOCK_OPEN)
+        btn_cancel = Gtk.Button(Gtk.STOCK_CANCEL)
 
         buttonGrid = Gtk.Grid()
         buttonGrid.attach(self.errorMessage, 0, 0, 1, 1)
-        #buttonGrid.attach(ok, 0, 1, 1, 1)
-        #buttonGrid.attach(cancel, 0, 2, 1, 1)
+        buttonGrid.attach(btn_ok, 0, 1, 1, 1)
+        buttonGrid.attach(btn_cancel, 0, 2, 1, 1)
 
-        self.vbox.pack_start(buttonGrid, False, False, 0)
+        self.pack_start(self.FileChooser, True, True, 5)
+        self.pack_start(buttonGrid, False, False, 10)
 
-        self.add_button(Gtk.STOCK_OPEN, response_id=1)
-        self.add_button(Gtk.STOCK_CANCEL, response_id=0)
-        self.connect("response", self.onResponse)
+        btn_ok.connect("clicked", self.onResponse)
 
         self.show_all()
 
@@ -589,7 +544,13 @@ def loadImage(source_image):
     bsource_image = source_image.tobytes()
     dnd = array.array('B', bsource_image)
     width, height = source_image.size
-    image_pixelbuffer = GdkPixbuf.Pixbuf.new_from_data(dnd, GdkPixbuf.Colorspace.RGB, True, 8, width, height, width * 4)
+    image_pixelbuffer = GdkPixbuf.Pixbuf.new_from_data(
+        dnd,
+        GdkPixbuf.Colorspace.RGB,
+        True, 8,
+        width, height,
+        width * 4
+    )
 
     output_image = Gtk.Image()
     output_image.set_from_pixbuf(image_pixelbuffer)
@@ -600,7 +561,7 @@ def Execute(options):
 
     # SHOW DATA;
     if os.path.isfile(os.path.join(options.inputDirectory, "PrimerData.csv")):
-        viewer = MatrixViewer(options.inputDirectory)
+        MatrixViewer(options.inputDirectory)
     else:
         print("Analysis file not found at input directory %s." % options.inputDirectory)
 
@@ -608,10 +569,14 @@ def Execute(options):
 def parse_args():
     parser = ArgumentParser()
 
-    parser.add_argument('inputDir', type=str, nargs=1, metavar="inputDirectory",
+    parser.add_argument('inputDir',
+                        type=str,
+                        nargs=1,
+                        metavar="inputDirectory",
                         help='inputDirectory')
 
-    parser.add_argument("-d", metavar="inputDirectory",
+    parser.add_argument("-d",
+                        metavar="inputDirectory",
                         dest="inputDirectory")
 
     options = parser.parse_args()
