@@ -189,20 +189,14 @@ IMC2A,,GACGGACGCATGGCTTGCTG
 AP2X1,GCTCAAGCTGCTCCCCGGGC,TCGACGGAGGTGCTCCAACC
 
 ```
-
-<!--- DEPRECATED?
-### Example 4:
-
-* Make your own primer file, as explained in `Example 2`.
-* The first locus should be one that is used commonly as *T. gondii* PCR-RFLP analysis
-* For the primer files, we are using primers for SAG3 locus, and then other primers located at chromosome XII.
+# Executable Scripts
 
 ```
-$ bash linkagePipelinea.sh chr_XII clustal SAG3
+lmdownload
+lmprimer
+lmpline
 ```
 
-* Then view similarity matrixes and phylogenetic trees on `pdf` files at `Alignments/chr_X` folder.
--->
 
 # Results
 
@@ -213,6 +207,13 @@ $ bash linkagePipelinea.sh chr_XII clustal SAG3
 3. `.aln.npy` Dissimilarity Matrix files, one for each loci.
 4. `.pdf` Dissimilarity Matrix Plot files, one for each loci;
 
+* We also have some `.csv` files with information on those regions.
+
+1. `MatchedRegions.csv`: Information on matched regions, their position on each genome and more.
+
+2. `AlignedRegions.csv`: Information on matched regions after alignment, mostly number of snps.
+3. `PrimerData.csv`:  Information on matched primers, mostly their position on each genome and orientation.
+4. `PWMAnalysis.csv`: Extended analysis on matched regions, a comparison of each pair of regions.
 
 ## Result Analysis Tools
 

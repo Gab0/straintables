@@ -42,11 +42,11 @@ def heatmapToAxis(MATRIX, ax, xlabels=None, ylabels=None):
 
 
 # BUILD HEATMAP;
-def plotHeatmap(MATRIX, sequenceNames, filename=None, subtitle=None):
+def createPdfHeatmap(MATRIX, sequenceNames, filename=None, subtitle=None):
     fig = plt.figure()
     ax = fig.add_subplot(111)
 
-    heatmapToAxis(MATRIX, ax, sequenceNames)
+    heatmapToAxis(MATRIX, ax, xlabels=sequenceNames, ylabels=sequenceNames)
 
     # ax.grid(which='minor', color='r', linestyle='-', linewidth=2)
 
@@ -91,8 +91,8 @@ def sortAlignments(sequenceNames, _Windows):
 
 def storeMatrixData(MATRIX, baseFileName, sequenceNames, subtitle=None):
     # SAVE HEATMAP GRAPHIC;
-    plotHeatmap(MATRIX, sequenceNames,
-                baseFileName + ".pdf", subtitle=subtitle)
+    createPdfHeatmap(MATRIX, sequenceNames,
+                     baseFileName + ".pdf", subtitle=subtitle)
 
     # SAVE HEATMAP MATRIX;
     np.save(baseFileName, MATRIX)
@@ -170,7 +170,29 @@ def buildMatrixFromWindow(Alignment, _Windows):
     else:
         MATRIX = np.matrix(np.ones((len(Alignment), len(Alignment))))
 
-    return MATRIX
+    return MATRIX, nb_snp
+
+
+def updateAlignmentInfo(AlignmentInfoFilepath, data):
+    if os.path.isfile(AlignmentInfoFilepath):
+        AlignmentInfo = pd.read_csv(AlignmentInfoFilepath)
+    else:
+        AlignmentInfoColumns = [
+            "LocusName"
+            "AlignmentLength"
+            "SNPCount"
+        ]
+        AlignmentInfo = pd.DataFrame(columns=AlignmentInfoColumns)
+
+    if "LocusName" in AlignmentInfo.keys():
+        ExistingAlignmentEntry = AlignmentInfo[
+            AlignmentInfo["LocusName"] == data["LocusName"]
+        ]
+        if not ExistingAlignmentEntry.empty:
+            pass
+
+    AlignmentInfo.append(data, ignore_index=True)
+    AlignmentInfo.to_csv(AlignmentInfoFilepath)
 
 
 def Execute(options):
@@ -196,7 +218,7 @@ def Execute(options):
 
     sequenceNames, _Windows = sortAlignments(sequenceNames, _Windows)
 
-    MATRIX = buildMatrixFromWindow(Alignment, _Windows)
+    MATRIX, nb_snp = buildMatrixFromWindow(Alignment, _Windows)
 
     # CHECK MATRIX HEALTH
     globalMean = np.mean(MATRIX)
@@ -239,10 +261,21 @@ def Execute(options):
     DATA.to_csv(SnpInfoPath, index=False)
     print("Written mutation region info at %s." % SnpInfoPath)
 
+    FileDirectory = os.path.dirname(options.InputFile)
+    AlignmentInfoFilepath = os.path.join(FileDirectory, "AlignedRegions.csv")
+    LocusName = os.path.splitext(os.path.split(alignPath)[-1])[0]
+
+    # Update Alignment Info database;
+    data = {
+        "LocusName": LocusName,
+        "AlignmentLenght": len(Alignment[0]),
+        "SNPCount": nb_snp
+    }
+    updateAlignmentInfo(AlignmentInfoFilepath, data)
+
     # SHOW OUTCOMES
     if healthFail:
         print("SIMILARITY MATRIX IS NOT HEALTHY.")
-        FileDirectory = os.path.dirname(options.InputFile)
         problematicDirectory = os.path.join(FileDirectory, "problematic")
         if not os.path.isdir(problematicDirectory):
             os.mkdir(problematicDirectory)

@@ -12,15 +12,24 @@ class AlignmentData():
         self.loadDataFiles(inputDirectory)
         self.inputDirectory = inputDirectory
 
+    def loadDataFile(self, inputDirectory, filename):
+        FilePath = os.path.join(inputDirectory, filename)
+        return pd.read_csv(FilePath)
+
     def loadDataFiles(self, inputDirectory):
-        PrimerFilePath = os.path.join(inputDirectory, "PrimerData.csv")
-        MatchedPrimerFilePath = os.path.join(inputDirectory, "MatchedRegions.csv")
-        PWMFilePath = os.path.join(inputDirectory, "PWMAnalysis.csv")
 
         # LOAD RELEVANT DATABASES;
-        self.PrimerData = pd.read_csv(PrimerFilePath)
-        self.PWMData = pd.read_csv(PWMFilePath)
-        self.MatchData = pd.read_csv(MatchedPrimerFilePath)
+        self.PrimerData = self.loadDataFiles(inputDirectory,
+                                             "PrimerData.csv")
+
+        self.PWMData = self.loadDataFile(inputDirectory,
+                                         "PWMAnalysis.csv")
+
+        self.MatchData = self.loadDataFile(inputDirectory,
+                                           "MatchedRegions.csv")
+
+        self.AlignmentData = self.loadDataFile(inputDirectory,
+                                               "AlignmentData.csv")
 
         # FETCH ORIGINAL HEATMAP GENOME LABELS;
         heatmapLabelsFilePath = os.path.join(

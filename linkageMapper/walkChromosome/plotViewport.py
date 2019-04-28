@@ -32,7 +32,11 @@ class LabelGroup():
                 mid_point = len(label) // 2
 
                 allowed_side_size = mid_point - crop_size
-                cropped = label[:allowed_side_size] + Replacer + label[-allowed_side_size:]
+
+                cropped = label[:allowed_side_size]
+                cropped += Replacer
+                cropped += label[-allowed_side_size:]
+
             else:
                 cropped = label
 
@@ -91,8 +95,8 @@ def fixArrayFilename(f):
 
 
 def reorderList(List, index_map):
-    l = np.array(List)[index_map]
-    return list(l)
+    lst = np.array(List)[index_map]
+    return list(lst)
 
 
 def singleLocusStatus(alnData, axis, locus_name):
@@ -147,8 +151,8 @@ def createMatrixSubplot(fig, position, name, matrix, xlabels, ylabels):
     return new_ax
 
 
-def sequenceInfoOnAxis(ax):
-    Message = "nb_snp=???\nmeanlen=???\nstdlen=???"
+def sequenceInfoOnAxis(ax, nb_snp=0, aln_len=0):
+    Message = "nb_snp=%i\nlength=%i" % (nb_snp, aln_len)
     ax.text(
             -7.0,
             -1.2,
@@ -177,7 +181,9 @@ def loadClusterPairData(alnData, a_name, b_name, abmatrix, Labels):
     clusterOutputData = [None for n in range(2)]
     # ITERATE LOCUS NAMES ON VIEW (TWO) iteration to load clusterOutputData;
     for N, region_name in enumerate([a_name, b_name]):
-        clusterOutputData[N] = loadClusterData(alnData, region_name, abmatrix[N], Labels)
+        clusterOutputData[N] = loadClusterData(alnData,
+                                               region_name,
+                                               abmatrix[N], Labels)
 
     # REORGANIZE CLUSTER OUTPUT DATA;
     if all(clusterOutputData):
@@ -212,6 +218,11 @@ def makePlotCode(a, b, c):
 def plotRegionBatch(fig, alnData, regionIndexes, showLabelColors=True):
     data = [alnData.MatchData["LocusName"].iloc[i] for i in regionIndexes]
 
+    alignmentData = [
+        alnData[alnData.AlignmentData["LocusName"] == name][0]
+        for name in data
+    ]
+
     Matrixes = [np.load(alnData.buildArrayPath("LOCI_" + a)) for a in data]
 
     Labels = LabelGroup(alnData.heatmapLabels)
@@ -234,12 +245,15 @@ def plotRegionBatch(fig, alnData, regionIndexes, showLabelColors=True):
         print(Clusters[m])
         plotCluster = Labels.clusterize(Clusters[m])
         plotLabels = Labels.get_labels(Cluster=plotCluster)
-        plot = createMatrixSubplot(fig, PlotCode, data[m], Matrix, plotLabels, plotLabels)
+        plot = createMatrixSubplot(fig, PlotCode,
+                                   data[m], Matrix, plotLabels, plotLabels)
 
         if showLabelColors:
             colorizeSubplot(plot, plotCluster)
 
-        sequenceInfoOnAxis(plot)
+        sequenceInfoOnAxis(plot,
+                           nb_snp=alignmentData[m]["SNPCount"],
+                           aln_len=alignmentData[m]["AlignmentLength"])
         AllAxis.append(plot)
 
     fig.tight_layout()
@@ -263,7 +277,9 @@ def plotPwmIndex(fig, alnData, regionIndexes, showLabelColors=True):
 
     try:
         data = [
-            alnData.PrimerData[alnData.PrimerData.Locus == name.replace("LOCI_", "")].iloc[0]
+            alnData.PrimerData[
+                alnData.PrimerData.Locus == name.replace("LOCI_", "")
+            ].iloc[0]
             for name in [a_name, b_name]
         ]
     except IndexError:
@@ -273,17 +289,18 @@ def plotPwmIndex(fig, alnData, regionIndexes, showLabelColors=True):
     ma = np.load(alnData.buildArrayPath(a_name))
     mb = np.load(alnData.buildArrayPath(b_name))
 
-    LABEL_LENGTH = 15
     # Crop label lengths;
     Labels = LabelGroup(alnData.heatmapLabels)
 
-    ordered_ma, matrix_order, B = matrixOperations.compute_serial_matrix(ma, method="complete")
-    ordered_mb = matrixOperations.reorderMatrix(mb, matrix_order)
+    ordered_ma, matrix_order, B =\
+        matrixOperations.compute_serial_matrix(ma, method="complete")
 
+    ordered_mb = matrixOperations.reorderMatrix(mb, matrix_order)
 
     # -- CLUSTER INFORMATION TO LABEL;
     abmatrix = [ma, mb]
-    clusterOutputData = loadClusterPairData(alnData, a_name, b_name, abmatrix, Labels)
+    clusterOutputData = loadClusterPairData(alnData, a_name,
+                                            b_name, abmatrix, Labels)
 
     LeftCluster = Labels.clusterize(clusterOutputData[0])
     RightCluster = Labels.clusterize(clusterOutputData[1])
@@ -292,25 +309,32 @@ def plotPwmIndex(fig, alnData, regionIndexes, showLabelColors=True):
     print(clusterOutputData)
     # REORDERED MATRIXES;
     # plot;
-    TA1_labels = Labels.get_ordered(matrix_order, Cluster=LeftCluster, symbolSide=0)
-    top_axis1 = createMatrixSubplot(fig, 231, a_name, ordered_ma, TA1_labels, TA1_labels)
+    TA1_labels = Labels.get_ordered(matrix_order,
+                                    Cluster=LeftCluster, symbolSide=0)
+    top_axis1 = createMatrixSubplot(fig, 231,
+                                    a_name, ordered_ma,
+                                    TA1_labels, TA1_labels)
 
-    TA2_xlabels = Labels.get_ordered(matrix_order, Cluster=RightCluster, symbolSide=0)
-    TA2_ylabels = Labels.get_ordered(matrix_order, Cluster=RightCluster, symbolSide=1)
-    top_axis2 = createMatrixSubplot(fig, 233, b_name, ordered_mb, TA2_xlabels, TA2_ylabels)
-
-    reordered_axis = [top_axis1, top_axis2]
+    TA2_xlabels = Labels.get_ordered(matrix_order,
+                                     Cluster=RightCluster, symbolSide=0)
+    TA2_ylabels = Labels.get_ordered(matrix_order,
+                                     Cluster=RightCluster, symbolSide=1)
+    top_axis2 = createMatrixSubplot(fig, 233,
+                                    b_name, ordered_mb,
+                                    TA2_xlabels, TA2_ylabels)
 
     # ORIGINAL MATRIXES;
     # plot;
     BA1_labels = Labels.get_labels(Cluster=LeftCluster)
-    bottom_axis1 = createMatrixSubplot(fig, 234, a_name, ma, BA1_labels, BA1_labels)
+    bottom_axis1 = createMatrixSubplot(fig, 234,
+                                       a_name, ma,
+                                       BA1_labels, BA1_labels)
 
     BA2_xlabels = Labels.get_labels(Cluster=RightCluster, symbolSide=0)
     BA2_ylabels = Labels.get_labels(Cluster=RightCluster, symbolSide=1)
-    bottom_axis2 = createMatrixSubplot(fig, 236, b_name, mb, BA2_xlabels, BA2_ylabels)
-
-    original_axis = [bottom_axis1, bottom_axis2]
+    bottom_axis2 = createMatrixSubplot(fig, 236,
+                                       b_name, mb,
+                                       BA2_xlabels, BA2_ylabels)
 
     # left plots have yticks on the right side.
     top_axis1.yaxis.tick_right()
@@ -331,11 +355,12 @@ def plotPwmIndex(fig, alnData, regionIndexes, showLabelColors=True):
 
         distance = abs(data[0].PositionStart - data[1].PositionStart)
 
-        INF_SYMBOL = chr(8734)
+        # INF_SYMBOL = chr(8734)
         Title = [
             "Distance = {:,} bp".format(distance),
             "%s vs %s" % (a_name, b_name),
-            "Mantel=%.4f     p=%.4f" % (currentPWMData["mantel"], currentPWMData["mantel_p"]),
+            "Mantel=%.4f     p=%.4f" % (currentPWMData["mantel"],
+                                        currentPWMData["mantel_p"]),
             "DIFF=%i" % currentPWMData["matrix_ranking_diff"],
             " "
         ]
@@ -364,7 +389,9 @@ def plotPwmIndex(fig, alnData, regionIndexes, showLabelColors=True):
 
             # Additional info on secondary axis DEPRECATED;
             if False:
-                RecombinationMessage = "True" if currentPWMData["recombination"] else "False"
+                RecombinationMessage = "True" \
+                    if currentPWMData["recombination"] else "False"
+
                 Message = "Recombination? %s" % RecombinationMessage
                 ax_hb.text(0.8, 1, s=Message)
 
@@ -389,8 +416,12 @@ def plotPwmIndex(fig, alnData, regionIndexes, showLabelColors=True):
             pre = 0.7
             div = 2
             mul = 2.1
-            plot_53 = [baseIndex + np.sin(pre + mul * x) / div for x in x_values]
-            plot_35 = [baseIndex - np.sin(pre + mul * x) / div for x in x_values]
+
+            plot_53 = [baseIndex + np.sin(pre + mul * x) / div
+                       for x in x_values]
+
+            plot_35 = [baseIndex - np.sin(pre + mul * x) / div
+                       for x in x_values]
 
             ax.plot(x_values, plot_53, color=color_red)
             ax.plot(x_values, plot_35, color=color_green)
@@ -406,7 +437,10 @@ def plotPwmIndex(fig, alnData, regionIndexes, showLabelColors=True):
             ax_recombination = fig.add_subplot(232)
             dm = list(range(len(Labels.base)))
 
-            # Reverse recombination array because matrix plot indexes and normal plot indexes are reversed.
+            # Reverse recombination array,
+            # because matrix plot indexes
+            # and normal plot indexes are reversed.
+
             for r, rec in enumerate(reversed(Recombination)):
                 if rec:
                     plotRecombinationPanel(ax_recombination, r)
@@ -415,9 +449,9 @@ def plotPwmIndex(fig, alnData, regionIndexes, showLabelColors=True):
             ax_recombination.scatter([10 for x in dm], dm, color=color_red)
 
             b = np.array(b)
-            d = 500
-            #ax_symbol.plot(b - d, a, color='gray')
-            #ax_symbol.plot(-b + d, a, color='brown')
+            # d = 500
+            # ax_symbol.plot(b - d, a, color='gray')
+            # ax_symbol.plot(-b + d, a, color='brown')
             ax_recombination.axis("off")
 
     plt.title("")
