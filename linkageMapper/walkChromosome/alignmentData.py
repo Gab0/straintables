@@ -14,7 +14,7 @@ class AlignmentData():
 
     def loadDataFiles(self, inputDirectory):
         PrimerFilePath = os.path.join(inputDirectory, "PrimerData.csv")
-        MatchedPrimerFilePath = os.path.join(inputDirectory, "MatchedPrimers.csv")
+        MatchedPrimerFilePath = os.path.join(inputDirectory, "MatchedRegions.csv")
         PWMFilePath = os.path.join(inputDirectory, "PWMAnalysis.csv")
 
         # LOAD RELEVANT DATABASES;

@@ -21,7 +21,7 @@ parser.add_option("-d",
 
 options, args = parser.parse_args()
 
-DataFilePath = os.path.join(options.inputDirectory, "MatchedPrimers.csv")
+DataFilePath = os.path.join(options.inputDirectory, "MatchedRegions.csv")
 LocusData = pd.read_csv(DataFilePath)
 
 Scores = []
@@ -35,7 +35,7 @@ for locus in LocusData.LocusName:
 
 
 LocusData["AlignmentHealth"] = Scores
-LocusData.to_csv(dataDir("MatchedPrimers.csv"), index=False)
+LocusData.to_csv(dataDir("MatchedRegions.csv"), index=False)
 
 print()
 print("Amplicon scores updated for %s" % DataFilePath)

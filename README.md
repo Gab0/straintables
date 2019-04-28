@@ -62,11 +62,9 @@ By looking at a pair of D. Matrixes at a time, both corresponding to locus that 
 
 ### Download and install the python module
 
-1. Clone this repository.
+1. Download or clone this repository.
 
-2. Enter the directory on the cmd, and run:
-
-`$python setup.py install`
+`git clone https://github.com/Gab0/linkageMapper.git`
 
 2. Install python dependencies:
 
@@ -74,6 +72,13 @@ By looking at a pair of D. Matrixes at a time, both corresponding to locus that 
 $pip install numpy
 $pip install -r requirements.txt
 ```
+
+3. Enter the directory on the cmd, and run:
+
+`$pip install .`
+
+
+
 
 ### Fetch genomes and annotation files
 

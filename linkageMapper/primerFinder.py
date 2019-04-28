@@ -20,6 +20,7 @@ from optparse import OptionParser
 from . import PrimerEngine
 from .Database import annotationManager
 
+
 class clonalTypeReference():
     def __init__(self):
         self.genotypeData = pd.read_csv("genomes_haplogroups.csv")
@@ -223,7 +224,9 @@ def Execute(options):
                 bruteForceSearcher=bruteForceSearcher
             )
 
+        # -- Additional region statistics;
         if LocusAmpliconSet is not None:
+            # AlignmentHealth.
             score = PrimerEngine.ampliconSanity.evaluateSetOfAmplicons(LocusAmpliconSet)
             print("\tAlignment Health = %.2f%%" % score)
             print()
@@ -232,6 +235,13 @@ def Execute(options):
                            LocusAmpliconSet, clonalReference=clonalReference)
 
             primerPair["AlignmentHealth"] = score
+
+            RegionLengths = [len(r) for r in LocusAmpliconSet]
+
+            primerPair["MeanLength"] = np.mean(RegionLengths)
+            primerPair["StdLength"] = np.std(RegionLengths)
+
+            # Append region data;
             matchedPrimerSequences.append(primerPair)
             AllLociPrimerSet[locus_name] = matchSuccess
             # print("Bad Amplicon set for %s! Ignoring...." % locus_name)
@@ -243,12 +253,16 @@ def Execute(options):
         # SHOW AMPLICON DATABASE;
 
         # BUILD MATCHED PRIMER DATABASE;
-        outputFilePath = os.path.join(options.outputPath, "MatchedPrimers.csv")
+        outputFilePath = os.path.join(options.outputPath, "MatchedRegions.csv")
         data = pd.DataFrame(matchedPrimerSequences,
-                            columns=["LocusName",
-                                     *PrimerTypes,
-                                     "RebootCount",
-                                     "AlignmentHealth"])
+                            columns=[
+                                "LocusName",
+                                *PrimerTypes,
+                                "RebootCount",
+                                "AlignmentHealth",
+                                "MeanLength",
+                                "StdLength"
+                            ])
 
         data.to_csv(outputFilePath, index=False)
 

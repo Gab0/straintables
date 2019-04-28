@@ -158,7 +158,7 @@ def main():
             print("Unknown alignment mode %s." % (options.AlignmentMode))
             exit(1)
 
-        MatchedPrimersPath = os.path.join(WorkingDirectory, "MatchedPrimers.csv")
+        MatchedPrimersPath = os.path.join(WorkingDirectory, "MatchedRegions.csv")
         SucessfulLoci = pd.read_csv(MatchedPrimersPath)["LocusName"]
 
         if options.DoAlignment:

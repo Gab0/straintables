@@ -6,11 +6,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 import shutil
-import sys
 import copy
 import re
 import os
-import math
 
 from . import DrawGraphics
 
@@ -63,8 +61,10 @@ def plotHeatmap(MATRIX, sequenceNames, filename=None, subtitle=None):
     else:
         watermarkLabel = os.path.split(filename)[-1].split(".")[0]
 
-    DrawGraphics.geneGraphs.watermarkAndSave(watermarkLabel, filename,
-                                             subtitle=subtitle, verticalLabel=340)
+    DrawGraphics.geneGraphs.watermarkAndSave(watermarkLabel,
+                                             filename,
+                                             subtitle=subtitle,
+                                             verticalLabel=340)
 
 
 # reorder windows and sequenceNames;
@@ -91,7 +91,8 @@ def sortAlignments(sequenceNames, _Windows):
 
 def storeMatrixData(MATRIX, baseFileName, sequenceNames, subtitle=None):
     # SAVE HEATMAP GRAPHIC;
-    plotHeatmap(MATRIX, sequenceNames, baseFileName + ".pdf", subtitle=subtitle)
+    plotHeatmap(MATRIX, sequenceNames,
+                baseFileName + ".pdf", subtitle=subtitle)
 
     # SAVE HEATMAP MATRIX;
     np.save(baseFileName, MATRIX)
@@ -100,27 +101,16 @@ def storeMatrixData(MATRIX, baseFileName, sequenceNames, subtitle=None):
     np.save(labelsPath, np.array(sequenceNames))
 
 
-def Execute(options):
-
-    alignPath = options.InputFile
-    if not alignPath:
-        print("No input file specified!")
-        exit(1)
-
-    # LOAD ALIGNMENT;
-    Alignment = AlignIO.read(open(alignPath), "clustal")
-
-    # GET SEQUENCE NAMES;
-    sequenceNames = [d.id for d in Alignment]
-
-    # BUILD VARIATION WINDOWS;
+def buildVariationWindows(Alignment):
     Windows = []
     InfoWindows = []
+
     for s in range(len(Alignment[0].seq)):
         window = [dna.seq[s] for dna in Alignment]
         if len(list(set(window))) > 1:
 
-            # Special Cases: HUGE INSERTIONS AT THE BEGINNING OR END OF ANY SEQUENCE;
+            # Special Cases: HUGE INSERTIONS
+            # AT THE BEGINNING OR END OF ANY SEQUENCE;
             # TBD
             print(window)
             Windows.append(window)
@@ -130,12 +120,10 @@ def Execute(options):
             if snp_variations > 2:
                 print("TRI_SNP")
 
-    # VARIATION WINDOWS TO SIMILARITY MATRIX;
-    # transpose windows;
-    _Windows = list(zip(*Windows))
+    return Windows, InfoWindows
 
-    sequenceNames, _Windows = sortAlignments(sequenceNames, _Windows)
 
+def buildMatrixFromWindow(Alignment, _Windows):
     def isLetter(v):
         v = v.lower()
         if v in ['a', 'c', 't', 'g', 'u', 'n']:
@@ -148,7 +136,6 @@ def Execute(options):
             return True
         return False
 
-
     # PROCESS VARIATION WINDOWS;
     mat = range(len(_Windows))
 
@@ -156,7 +143,7 @@ def Execute(options):
     print(_Windows)
 
     MATRIX = [[0 for j in mat] for i in mat]
-    print(MATRIX)
+
     if MATRIX:
         nb_snp = len(_Windows[0])
         print(nb_snp)
@@ -183,6 +170,33 @@ def Execute(options):
     else:
         MATRIX = np.matrix(np.ones((len(Alignment), len(Alignment))))
 
+    return MATRIX
+
+
+def Execute(options):
+
+    alignPath = options.InputFile
+
+    if not alignPath:
+        print("No input file specified!")
+        exit(1)
+
+    # LOAD ALIGNMENT;
+    Alignment = AlignIO.read(open(alignPath), "clustal")
+
+    # GET SEQUENCE NAMES;
+    sequenceNames = [d.id for d in Alignment]
+
+    # BUILD VARIATION WINDOWS;
+    Windows, InfoWindows = buildVariationWindows(Alignment)
+
+    # VARIATION WINDOWS TO SIMILARITY MATRIX;
+    # transpose windows;
+    _Windows = list(zip(*Windows))
+
+    sequenceNames, _Windows = sortAlignments(sequenceNames, _Windows)
+
+    MATRIX = buildMatrixFromWindow(Alignment, _Windows)
 
     # CHECK MATRIX HEALTH
     globalMean = np.mean(MATRIX)
@@ -194,6 +208,7 @@ def Execute(options):
         if rm < (globalMean / 2):
             healthFail = True
 
+    mat = range(len(_Windows))
     # SHOW SIMILARITY MATRIX;
     print(MATRIX.shape)
     for i in mat:
@@ -210,17 +225,25 @@ def Execute(options):
             _MATRIX[i, j] = new_v
 
     # SAVE DIVERSE VERSIONS OF THE MATRIX;
-    storeMatrixData(MATRIX, alignPath, sequenceNames, subtitle=options.PlotSubtitle)
+    storeMatrixData(MATRIX,
+                    alignPath,
+                    sequenceNames,
+                    subtitle=options.PlotSubtitle)
+
     # storeMatrixData(_MATRIX, alignPath + "alt")
 
     # SAVE SNP INFO DATA FILE;
     DATA = pd.DataFrame(InfoWindows, columns=["POS"] + sequenceNames)
-    DATA.to_csv(alignPath + ".csv", index=False)
+    SnpInfoPath = alignPath + ".csv"
+
+    DATA.to_csv(SnpInfoPath, index=False)
+    print("Written mutation region info at %s." % SnpInfoPath)
 
     # SHOW OUTCOMES
     if healthFail:
         print("SIMILARITY MATRIX IS NOT HEALTHY.")
-        problematicDirectory = os.path.join(os.path.dirname(options.InputFile), "problematic")
+        FileDirectory = os.path.dirname(options.InputFile)
+        problematicDirectory = os.path.join(FileDirectory, "problematic")
         if not os.path.isdir(problematicDirectory):
             os.mkdir(problematicDirectory)
         shutil.copyfile(options.InputFile,

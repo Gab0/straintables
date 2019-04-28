@@ -147,6 +147,16 @@ def createMatrixSubplot(fig, position, name, matrix, xlabels, ylabels):
     return new_ax
 
 
+def sequenceInfoOnAxis(ax):
+    Message = "nb_snp=???\nmeanlen=???\nstdlen=???"
+    ax.text(
+            -7.0,
+            -1.2,
+            s=Message,
+            clip_on=False
+        )
+
+
 def colorizeSubplot(ax, Cluster):
     # color map from matplotlib;
     colorMap = plt.get_cmap("tab20")
@@ -229,6 +239,7 @@ def plotRegionBatch(fig, alnData, regionIndexes, showLabelColors=True):
         if showLabelColors:
             colorizeSubplot(plot, plotCluster)
 
+        sequenceInfoOnAxis(plot)
         AllAxis.append(plot)
 
     fig.tight_layout()
@@ -412,6 +423,6 @@ def plotPwmIndex(fig, alnData, regionIndexes, showLabelColors=True):
     plt.title("")
 
     plt.subplots_adjust(top=0.79, bottom=0.03, left=0.06, right=1.00)
-    fig.tight_layout()
+    plt.tight_layout()
 
     return fig

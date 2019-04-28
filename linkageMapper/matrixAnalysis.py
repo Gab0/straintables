@@ -31,27 +31,6 @@ def compareMatrixRankings(mat0, mat1):
 
 
 def checkRecombination(ma, mb, Verbose=False):
-    """
-    DEPRECATED
-    mean_a = np.mean(ma)
-    mean_b = np.mean(mb)
-
-    gap = 0.85
-    gapA = gap * mean_a / 2
-    gapB = gap * mean_b / 2
-
-    if Verbose:
-        print(gap)
-        print("Matrix A stats: mean/gap")
-        print(mean_a)
-        print(gapA)
-
-        print("Matrix B stats: mean/gap")
-        print(mean_b)
-        print(gapB)
-        print()
-
-    """
 
     def isZero(v):
         if v < 0.05:
@@ -90,7 +69,6 @@ def checkRecombination(ma, mb, Verbose=False):
     return RecombinationDetected
 
 
-
 def Execute(options):
     # CHECK INPUT ARGUMENTS;
     if not options.InputDirectory:
@@ -99,7 +77,7 @@ def Execute(options):
 
     # LOAD RESULT FILES;
     matchedLociData = pd.read_csv(os.path.join(options.InputDirectory,
-                                               "MatchedPrimers.csv"))
+                                               "MatchedRegions.csv"))
     matchedLoci = matchedLociData["LocusName"]
 
     arrayFiles = ["LOCI_%s.aln.npy" % Locus for Locus in matchedLoci]
@@ -216,7 +194,6 @@ def Execute(options):
 
     for IFA, IFB in PWM_Index_Indices:
         pass
-
 
     print("Writing output files...")
     # WRITE OUTPUT PWM FILE;

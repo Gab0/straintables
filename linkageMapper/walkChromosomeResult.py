@@ -114,7 +114,8 @@ class MatrixViewer():
         # INITIALIZE GTK WINDOW;
         self.Window = Gtk.Window()
         self.Window.connect("destroy", lambda x: Gtk.main_quit())
-        self.Window.set_default_size(400, 300)
+        #screen = Gdk.Screen()
+        #self.Window.set_default_size(screen.get_width(), screen.get_height())
         self.Window.set_title("linkageMapper - Walk Chromosome Result")
 
         # Children structures;
@@ -130,23 +131,25 @@ class MatrixViewer():
         Layout = self.build_interface()
 
 
-        # -- THIS IS REQUIRED TO THE FIG.TIGHT_LAYOUT() TO SETTLE DOWN. A MYSTERY...
-
         self.Online = True
         # SHOW ALL;
         self.Window.add(Layout)
-        self.Window.show_all()
 
         # HIDE THIS ANNOYING THING.
         self.toolbar.message.hide()
 
-        self.navigate(0)
-        self.navigate(0)
         if self.alnData:
-            self.Window.connect("show", lambda x: self.navigate(0))
+            #self.figurecanvas.connect("draw", lambda x, y: self.navigate(0))
+            self.figurecanvas.connect("show", lambda x: self.navigate(0))
+
+        self.Window.show_all()
 
         # LAUNCH
         Gtk.main()
+
+        self.navigate(0)
+        while Gtk.events_pending:
+            Gtk.main_iteration()
 
     def top_menu(self):
         # INITIALIZE TOP MENU BAR;
