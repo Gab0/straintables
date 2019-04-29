@@ -174,14 +174,19 @@ def buildMatrixFromWindow(Alignment, _Windows):
 
 
 def updateAlignmentInfo(AlignmentInfoFilepath, data):
-    if os.path.isfile(AlignmentInfoFilepath):
-        AlignmentInfo = pd.read_csv(AlignmentInfoFilepath)
-    else:
-        AlignmentInfoColumns = [
-            "LocusName"
-            "AlignmentLength"
+    AlignmentInfoColumns = [
+            "LocusName",
+            "AlignmentLength",
             "SNPCount"
         ]
+
+    AlignmentInfo = None
+    if os.path.isfile(AlignmentInfoFilepath):
+        AlignmentInfo = pd.read_csv(AlignmentInfoFilepath)
+        if list(AlignmentInfo.columns) != AlignmentInfoColumns:
+            AlignmentInfo = None
+
+    if AlignmentInfo is None:
         AlignmentInfo = pd.DataFrame(columns=AlignmentInfoColumns)
 
     if "LocusName" in AlignmentInfo.keys():
@@ -191,8 +196,8 @@ def updateAlignmentInfo(AlignmentInfoFilepath, data):
         if not ExistingAlignmentEntry.empty:
             pass
 
-    AlignmentInfo.append(data, ignore_index=True)
-    AlignmentInfo.to_csv(AlignmentInfoFilepath)
+    AlignmentInfo = AlignmentInfo.append([data], ignore_index=True)
+    AlignmentInfo.to_csv(AlignmentInfoFilepath, index=False)
 
 
 def Execute(options):
@@ -263,12 +268,12 @@ def Execute(options):
 
     FileDirectory = os.path.dirname(options.InputFile)
     AlignmentInfoFilepath = os.path.join(FileDirectory, "AlignedRegions.csv")
-    LocusName = os.path.splitext(os.path.split(alignPath)[-1])[0]
+    LocusName = os.path.splitext(os.path.split(alignPath)[-1])[0].replace("LOCI_", "")
 
     # Update Alignment Info database;
     data = {
         "LocusName": LocusName,
-        "AlignmentLenght": len(Alignment[0]),
+        "AlignmentLength": len(Alignment[0]),
         "SNPCount": nb_snp
     }
     updateAlignmentInfo(AlignmentInfoFilepath, data)

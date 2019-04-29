@@ -219,7 +219,7 @@ def plotRegionBatch(fig, alnData, regionIndexes, showLabelColors=True):
     data = [alnData.MatchData["LocusName"].iloc[i] for i in regionIndexes]
 
     alignmentData = [
-        alnData[alnData.AlignmentData["LocusName"] == name][0]
+        alnData.AlignmentData[alnData.AlignmentData["LocusName"] == name].iloc[0]
         for name in data
     ]
 
