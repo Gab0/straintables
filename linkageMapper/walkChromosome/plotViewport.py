@@ -151,13 +151,16 @@ def createMatrixSubplot(fig, position, name, matrix, xlabels, ylabels):
     return new_ax
 
 
-def sequenceInfoOnAxis(ax, nb_snp=0, aln_len=0):
+def sequenceInfoOnAxis(ax, reference=None, nb_snp=0, aln_len=0):
     Message = "nb_snp=%i\nlength=%i" % (nb_snp, aln_len)
-    ax.text(
-            -7.0,
-            -1.2,
-            s=Message,
-            clip_on=False
+    ax.annotate(
+        Message,
+        #xy=(-0.2, 1.2),
+        xy=(0, 5),
+        xycoords=reference,
+        clip_on=False,
+        ha='left',
+        va='top'
         )
 
 
@@ -235,9 +238,10 @@ def plotRegionBatch(fig, alnData, regionIndexes, showLabelColors=True):
 
     # Compute number of rows and columns for plot figure;
     NBL = len(data)
-    NBCOLS = min(3, NBL)
-    NBROWS = math.ceil(NBL / 3)
+    NBROWS = min(2, math.ceil(NBL / 2))
+    NBCOLS = math.ceil(NBL / NBROWS)
 
+    AllPlots = []
     print("Plot Count: %i\nColumns: %i\nRows: %i" % (NBL, NBCOLS, NBROWS))
     for m, Matrix in enumerate(Matrixes):
         print("Building...")
@@ -248,15 +252,22 @@ def plotRegionBatch(fig, alnData, regionIndexes, showLabelColors=True):
         plot = createMatrixSubplot(fig, PlotCode,
                                    data[m], Matrix, plotLabels, plotLabels)
 
+        AllPlots.append(plot)
         if showLabelColors:
             colorizeSubplot(plot, plotCluster)
 
-        sequenceInfoOnAxis(plot,
-                           nb_snp=alignmentData[m]["SNPCount"],
-                           aln_len=alignmentData[m]["AlignmentLength"])
         AllAxis.append(plot)
 
     fig.tight_layout()
+
+    for m, Matrix in enumerate(Matrixes):
+        axLabels = AllPlots[m].get_yticklabels()
+        axLabel = axLabels[0]
+
+        sequenceInfoOnAxis(AllPlots[m],
+                           reference=axLabel,
+                           nb_snp=alignmentData[m]["SNPCount"],
+                           aln_len=alignmentData[m]["AlignmentLength"])
 
     return fig
 
