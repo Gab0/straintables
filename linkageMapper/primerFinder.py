@@ -21,47 +21,32 @@ from . import PrimerEngine
 from .Database import annotationManager
 
 
-class clonalTypeReference():
-    def __init__(self):
-        self.genotypeData = pd.read_csv("genomes_haplogroups.csv")
-        self.rflpGenotypes = pd.read_csv("genotypes.csv")
-
-    def getGenotypeNumber(self, name):
-        found = self.genotypeData[self.genotypeData.Genome == name]
-        GenotypeNumber = found.iloc[0].ToxoDB
-
-        return GenotypeNumber
-
-    def getRFLPLocus(self, genotypeNumber, referenceLocus):
-
-        found = self.rflpGenotypes[
-            self.rflpGenotypes.Genotype == genotypeNumber]
-        RFLPLocus = found.iloc[0][referenceLocus]
-        return RFLPLocus
-
-
 def writeFastaFile(outputPath,
                    locusName,
                    locusSequences,
-                   clonalReference=None):
+                   RFLPReference=None):
     fastaSequences = []
 
     for genome in locusSequences.keys():
         Name = genome + ".fasta"
         try:
-            if clonalReference:
+            if RFLPReference:
                 REF = options.LocusReference
                 referenceLocus = REF if REF else options.LocusName
 
-                GN = clonalReference.getGenotypeNumber(Name)
-                RFLPLocus = clonalReference.getRFLPLocus(GN, REF)
+                GenotypeNumber = RFLPReference.getGenotypeNumber(Name)
+                RFLPLocus = RFLPReference.getRFLPLocus(
+                    GenotypeNumber, REF)
                 Name += "___%s" % RFLPLocus
                 print("Loci data found for %s" % Name)
+
         except Exception as e:
-            pass
+            print("RFLP marker reference failure.")
 
         sequence = SeqIO.SeqRecord(Seq.Seq(locusSequences[genome]),
-                                   id=genome, name=genome, description="")
+                                   id=genome,
+                                   name=genome,
+                                   description="")
         fastaSequences.append(sequence)
 
     with open(outputPath, "w") as output_handle:
@@ -80,21 +65,27 @@ def loadPrimerList(filePath):
     if fileColumns != expectedColumns:
 
         newFirstRowData = dict([(expected, fileColumns[e])
-                                for e, expected in enumerate(expectedColumns)])
+                                for e, expected
+                                in enumerate(expectedColumns)])
 
-        newFirstRow = pd.DataFrame([newFirstRowData], columns=expectedColumns)
+        newFirstRow = pd.DataFrame([newFirstRowData],
+                                   columns=expectedColumns)
+
         lociPrimerList.columns = expectedColumns
 
         lociPrimerList = pd.concat([newFirstRow, lociPrimerList],
-                                   axis=0, ignore_index=True).reset_index(drop=True)
+                                   axis=0,
+                                   ignore_index=True).reset_index(drop=True)
 
     return lociPrimerList
 
 
 def Execute(options):
     # LOAD CLONAL TYPE LOCUS INFORMATION (Su et al.);
-    #clonalReference = clonalTypeReference()
-    clonalReference = None
+    RFLPInfoDirectory = os.basedir(options.PrimerFile)
+    RFLPReference = None
+    RFLPReference = PrimerEngine.RFLPMarker.RFLPReference(RFLPInfoDirectory)
+
 
     # CHECK DECLARATION OF PRIMER FILE;
     if not options.primerFile:
@@ -190,7 +181,8 @@ def Execute(options):
     # -- SETUP OUTPUT DATA STRUCTURES;
     AllLociPrimerSet = OrderedDict()
 
-    # after this number of tries, we give up on matching primers for the locus.
+    # after this number of tries,
+    # we give up on matching primers for the locus.
     RebootLocusTolerance = 13
     matchedPrimerSequences = []
 
@@ -227,12 +219,13 @@ def Execute(options):
         # -- Additional region statistics;
         if LocusAmpliconSet is not None:
             # AlignmentHealth.
-            score = PrimerEngine.ampliconSanity.evaluateSetOfAmplicons(LocusAmpliconSet)
+            score = PrimerEngine.ampliconSanity.evaluateSetOfAmplicons(
+                LocusAmpliconSet)
             print("\tAlignment Health = %.2f%%" % score)
             print()
             # record amplicon and primer data;
             writeFastaFile(outputFastaPath, locus_name,
-                           LocusAmpliconSet, clonalReference=clonalReference)
+                           LocusAmpliconSet, clonalReference=RFLPReference)
 
             primerPair["AlignmentHealth"] = score
 
@@ -253,7 +246,9 @@ def Execute(options):
         # SHOW AMPLICON DATABASE;
 
         # BUILD MATCHED PRIMER DATABASE;
-        outputFilePath = os.path.join(options.outputPath, "MatchedRegions.csv")
+        outputFilePath = os.path.join(options.outputPath,
+                                      "MatchedRegions.csv")
+
         data = pd.DataFrame(matchedPrimerSequences,
                             columns=[
                                 "LocusName",
