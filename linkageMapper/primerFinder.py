@@ -82,7 +82,7 @@ def loadPrimerList(filePath):
 
 def Execute(options):
     # LOAD CLONAL TYPE LOCUS INFORMATION (Su et al.);
-    RFLPInfoDirectory = os.basedir(options.PrimerFile)
+    RFLPInfoDirectory = os.path.dirname(options.primerFile)
     RFLPReference = None
     RFLPReference = PrimerEngine.RFLPMarker.RFLPReference(RFLPInfoDirectory)
 
