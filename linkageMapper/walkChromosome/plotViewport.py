@@ -155,7 +155,7 @@ def sequenceInfoOnAxis(ax, reference=None, nb_snp=0, aln_len=0):
     Message = "nb_snp=%i\nlength=%i" % (nb_snp, aln_len)
     ax.annotate(
         Message,
-        #xy=(-0.2, 1.2),
+        # xy=(-0.2, 1.2),
         xy=(0, 5),
         xycoords=reference,
         clip_on=False,
@@ -190,8 +190,9 @@ def loadClusterPairData(alnData, a_name, b_name, abmatrix, Labels):
 
     # REORGANIZE CLUSTER OUTPUT DATA;
     if all(clusterOutputData):
-        clusterOutputData = dissimilarityCluster.matchPairOfClusterOutputData(
-            clusterOutputData)
+        clusterOutputData =\
+            dissimilarityCluster.matchPairOfClusterOutputData(
+                clusterOutputData)
 
     return clusterOutputData
 
@@ -218,21 +219,38 @@ def makePlotCode(a, b, c):
     return a * 100 + b * 10 + c
 
 
-def plotRegionBatch(fig, alnData, regionIndexes, showLabelColors=True):
+def plotRegionBatch(fig, alnData, regionIndexes,
+                    showLabelColors=True, reorganizeIndex=None):
     data = [alnData.MatchData["LocusName"].iloc[i] for i in regionIndexes]
 
     alignmentData = [
-        alnData.AlignmentData[alnData.AlignmentData["LocusName"] == name].iloc[0]
+        alnData.AlignmentData[
+            alnData.AlignmentData["LocusName"] == name].iloc[0]
         for name in data
     ]
 
-    Matrixes = [np.load(alnData.buildArrayPath("LOCI_" + a)) for a in data]
+    Matrixes = [np.load(alnData.buildArrayPath(a)) for a in data]
 
     Labels = LabelGroup(alnData.heatmapLabels)
     Clusters = [
         loadClusterData(alnData, data[i], Matrixes[i], Labels)
         for i in range(len(data))
     ]
+
+    # Reorganize matrix logic;
+    if reorganizeIndex is not None:
+        _, matrix_order, B =\
+            matrixOperations.compute_serial_matrix(
+                Matrixes[reorganizeIndex],
+                method="complete"
+            )
+
+        Matrixes = [
+            matrixOperations.reorderMatrix(mat, matrix_order)
+            for mat in Matrixes
+        ]
+
+        Labels = LabelGroup(alnData.heatmapLabels[matrix_order])
 
     AllAxis = []
 
@@ -283,22 +301,25 @@ def plotPwmIndex(fig, alnData, regionIndexes, showLabelColors=True):
     b = regionIndexes[1]
 
     data = [alnData.MatchData["LocusName"].iloc[i] for i in regionIndexes]
-    a_name, b_name = ["LOCI_" + n for n in data]
+    a_name, b_name = data
+    names = data
     print(a_name)
 
     try:
         data = [
             alnData.PrimerData[
-                alnData.PrimerData.Locus == name.replace("LOCI_", "")
+                alnData.PrimerData.Locus == name
             ].iloc[0]
-            for name in [a_name, b_name]
+            for name in names
         ]
     except IndexError:
         print("Failure on %s" % a_name)
 
     # LOAD MATRIX DATA;
-    ma = np.load(alnData.buildArrayPath(a_name))
-    mb = np.load(alnData.buildArrayPath(b_name))
+    [ma, mb] = [
+        np.load(alnData.buildArrayPath(name))
+        for name in names
+    ]
 
     # Crop label lengths;
     Labels = LabelGroup(alnData.heatmapLabels)
@@ -315,9 +336,11 @@ def plotPwmIndex(fig, alnData, regionIndexes, showLabelColors=True):
 
     LeftCluster = Labels.clusterize(clusterOutputData[0])
     RightCluster = Labels.clusterize(clusterOutputData[1])
+
     print(LeftCluster)
     print(Labels.base)
     print(clusterOutputData)
+
     # REORDERED MATRIXES;
     # plot;
     TA1_labels = Labels.get_ordered(matrix_order,

@@ -71,7 +71,25 @@ class AlignmentData():
         return None
 
     def buildArrayPath(self, f):
-        return os.path.join(self.inputDirectory, f + ".aln.npy")
+        possibleFilenames = [
+            "%s.aln.npy" % f,
+            "LOCI_%s.aln.npy" % f
+        ]
+
+        possibleFilepaths = [
+            os.path.join(self.inputDirectory, f)
+            for f in possibleFilenames
+        ]
+
+        for filepath in possibleFilepaths:
+            if os.path.isfile(filepath):
+                return filepath
+
+        print("Failure to find array %s" % f)
+        exit(1)
+        
+    def fetchOriginalLociList(self):
+        return list(self.AlignmentData["LocusName"])
 
     def fetchLociList(self):
         for t in self.dataKeys:

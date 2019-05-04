@@ -41,7 +41,8 @@ def writeFastaFile(outputPath,
                 print("Loci data found for %s" % Name)
 
         except Exception as e:
-            print("RFLP marker reference failure.")
+            pass
+            # print("RFLP marker reference failure.")
 
         sequence = SeqIO.SeqRecord(Seq.Seq(locusSequences[genome]),
                                    id=genome,
@@ -225,7 +226,7 @@ def Execute(options):
             print()
             # record amplicon and primer data;
             writeFastaFile(outputFastaPath, locus_name,
-                           LocusAmpliconSet, clonalReference=RFLPReference)
+                           LocusAmpliconSet, RFLPReference=RFLPReference)
 
             primerPair["AlignmentHealth"] = score
 

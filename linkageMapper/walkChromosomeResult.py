@@ -341,7 +341,7 @@ class MatrixViewer():
                 loci.reverse()
             self.changeView(loci, self.drawPlot)
 
-    def changeView(self, regions, plotMethod):
+    def changeView(self, regions, plotMethod, **kwargs):
         self.figure.clf()
         if self.alnData:
             # UPDATE LOCUS NAVIGATOR;
@@ -359,7 +359,8 @@ class MatrixViewer():
                 self.figure,
                 self.alnData,
                 regions,
-                showLabelColors=self.labelColorsOn
+                showLabelColors=self.labelColorsOn,
+                **kwargs
             )
 
             self.figurecanvas.draw()
@@ -371,8 +372,11 @@ class MatrixViewer():
                 for name in LocusIndexes
             ]
 
-            self.openSequenceLeft.set_tooltip_text("View Alignment For %s" % LocusNames[0])
-            self.openSequenceRight.set_tooltip_text("View Alignment For %s" % LocusNames[1])
+            ls_tooltip = "View Alignment For %s" % LocusNames[0]
+            self.openSequenceLeft.set_tooltip_text(ls_tooltip)
+
+            rs_tooltip = "View Alignment For %s" % LocusNames[1]
+            self.openSequenceRight.set_tooltip_text(rs_tooltip)
 
     def onclickCanvas(self, event):
         # print(event)
@@ -466,8 +470,11 @@ class BuildImageMenu(Gtk.VBox):
         else:
             Regions = [x for x in range(len(states)) if states[x]]
             print(Regions)
-            self.matrix_viewer.changeView(Regions,
-                                          self.matrix_viewer.batchRegionPlot)
+            self.matrix_viewer.changeView(
+                Regions,
+                self.matrix_viewer.batchRegionPlot,
+                reorganizeIndex=0
+            )
             self.matrix_viewer.ModifyPanelView("alignment")
 
     def build_interface(self, alnData):
@@ -481,7 +488,7 @@ class BuildImageMenu(Gtk.VBox):
 
         btn_Confirm = Gtk.Button.new_with_label("Export.")
         btn_Confirm.connect("clicked", self.makeCustomPlot)
-        loci_list = alnData.fetchLociList()
+        loci_list = alnData.fetchOriginalLociList()
         loci_list_selector = Gtk.VBox()
 
         self.Information = Gtk.Label()

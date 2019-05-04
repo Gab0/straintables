@@ -23,8 +23,7 @@ def Execute(options):
 
     heatmap = 1 - np.abs(heatmaps[0] - heatmaps[1])
 
-    outputDir = os.path.dirname(options.InputDirectory)
-    outputPath = os.path.join(outputDir, "discrepancy_matrix.pdf")
+    outputPath = os.path.join(options.InputDirectory, "discrepancy_matrix.pdf")
     detectMutations.createPdfHeatmap(heatmap, heatmapLabels, outputPath)
 
 
