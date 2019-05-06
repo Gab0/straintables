@@ -354,8 +354,6 @@ def parse_options():
     return options
 
 
-
-
 def main():
     options = parse_options()
 

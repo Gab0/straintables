@@ -7,49 +7,26 @@ def fetchStrainName(genomeDescriptor, organismName=None, Verbose=False):
 
     strainName = None
 
+    def scoreCandidateStrainName(word):
+        Roman = set("IVX")
+        if set(word).issubset(Roman):
+            return 0
+
+        return sum([w.isupper() + w.isdigit() for w in word]) / len(word)
+
+
     # RENAMING CRITERIA 1:
     def renamingCriteria1():
-        queries = [
-            "strain ([\w\.]+ [\d\.]+)"
-            "strain ([A-Z\-0-9\.]+)",
-            "[\w\.]+ [\d\.]+"
-            "[\w\-\d\.]+",
-            #"%s strain ([\w]+ [\d]+)" % organismName,
-            #"%s strain ([\w\-\d]+)" % organismName,
-
-        ]
-        for q, Query in enumerate(queries):
-            d = re.findall(Query,
-                           genomeDescriptor
-)
-            if d:
-                if Verbose:
-                    print(q)
-                return d[0]
-
-    # RENAMING CRITERIA 2:
-    def renamingCriteria2():
-        e = re.findall("%s ([\w\-\d]+)" % (organismName),
-                       genomeDescriptor,
-                       flags=re.IGNORECASE)
-        if e:
-            return e[0]
-
-    # RENAMING CRITERIA 3:
-    def renamingCriteria3():
         words = genomeDescriptor.replace(",", "")
         words = words.split(" ")[1:]
-        Roman = set("IVX")
-        uppercaseWords = [(w.isupper() and not set(w).issubset(Roman)) for w in words]
+        wordWeights = [scoreCandidateStrainName(w) for w in words]
         if Verbose:
-            print(uppercaseWords)
-        if sum(uppercaseWords) == 1:
-            return words[uppercaseWords.index(True)]
+            print(wordWeights)
+        if sum(wordWeights) > 0:
+            return words[wordWeights.index(max(wordWeights))]
 
     allCriteria = [
-        renamingCriteria1,
-        #renamingCriteria2,
-        renamingCriteria3
+        renamingCriteria1
     ]
 
     # unsafe;
