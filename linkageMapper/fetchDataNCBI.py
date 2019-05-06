@@ -1,11 +1,13 @@
 #!/bin/python
+
 """
 
 Downloads assemblies found on 'assembly' entrez database,
  they are fetched from 'nucleotide' database.
 
 """
-from Bio import Entrez, SeqIO, Seq, Alphabet
+
+from Bio import Entrez, SeqIO
 import gzip
 import json
 import os
@@ -50,15 +52,18 @@ class FTPConnection():
     def listdir(self):
         return self.execute(self.f.nlst)
 
-    def downloadFile(self, remoteFileName, localfilepath):
-                localFile = open(localfilepath, 'wb')
+    def downloadFile(self,
+                     remoteFileName,
+                     localfilepath):
 
-                downloaded = self.f.retrbinary(
-                    "RETR %s" % (remoteFileName),
-                localFile.write)
+        with open(localfilepath, 'wb') as localFile:
 
-                localFile.close()
-                return downloaded
+            downloaded = self.f.retrbinary(
+                "RETR %s" % (remoteFileName),
+                localFile.write,
+                blocksize=32 * 1024)
+
+        return downloaded
 
     def execute(self, operation, *args):
         for k in range(self.retries):
@@ -69,17 +74,22 @@ class FTPConnection():
                 result = operation(*args)
                 return result
 
-            except (TimeoutError, socket.timeout, ftplib.error_temp, BrokenPipeError) as e:
-                print("Failure to execute %s on try #%i retries." % (operation.__name__,
-                                                                     k + 1))
+            except (EOFError, TimeoutError,
+                    socket.timeout, ftplib.error_temp) as e:
+                print("Failure to execute %s on try #%i retries." %
+                      (operation.__name__,
+                       k + 1))
                 print(e)
                 try:
                     self.f.quit()
                 except Exception:
-                    pass
-                time.sleep(5)
-                self.launch()
-                print("Retrying....")
+                    time.sleep(5)
+                    self.execute(self.launch)
+                    time.sleep(3)
+                    print("Retrying....")
+
+            except BrokenPipeError as e:
+                raise e
 
         return result
 
@@ -182,7 +192,6 @@ def downloadAssembly(ID,
 
     # -- instantiate FTP connection;
     Connection = FTPConnection(ftpServerAddress)
-    #Connection.f.cwd(ftpDirectory)
     Connection.cd(ftpDirectory)
 
     # FETCH FTP DIRECTORY FILE LIST;
@@ -213,13 +222,14 @@ def downloadAssembly(ID,
         if remoteFileNames:
             print("Found %s." % ' '.join(remoteFileNames))
         else:
-            print("Remote file key %s not found on FTP server." % ' '.join(wantedFileTypes))
+            print("Remote file key %s not found on FTP server." %
+                  ' '.join(wantedFileTypes))
             return 0
 
-        print("\nRemote files: ==========")
+        print("\nRemote files: " + "=" * 10)
         print('\n'.join(remoteFiles))
         print()
-        print("========================")
+        print("=" * 22)
         print()
 
     DownloadSuccess = False
@@ -231,7 +241,8 @@ def downloadAssembly(ID,
 
         debug("Downloading %s" % remoteFileName)
 
-        downloaded = Connection.execute(Connection.downloadFile, remoteFileName, localfilepath)
+        downloaded = Connection.execute(
+            Connection.downloadFile, remoteFileName, localfilepath)
 
         debug(remoteFileName)
         debug("download result: %s" % downloaded)
@@ -248,28 +259,6 @@ def downloadAssembly(ID,
                 os.remove(localfilepath)
                 localfilepath = decompressedPath
                 print('\n')
-
-        # ANNOTATION FILE - split by scaffold (unused);
-        if False and localfilepath.endswith(".gbff"):
-            with open(localfilepath) as af:
-                data = list(SeqIO.parse(af, 'gb'))
-                for chromosome in data:
-                    seq_len = len(str(chromosome.seq))
-                    print(chromosome.description)
-
-                    label = re.findall("chromosome (\w+),", chromosome.description)
-                    if label:
-                        label = label[0]
-                        outputFile = "chromosome_%s" % label
-
-                        outputFilePath = os.path.join(downloadDirectory, outputFile)
-                        print("Creating %s" % outputFilePath)
-
-                        # erase chromosome sequence;
-                        chromosome.seq = Seq.Seq("", Alphabet.generic_dna)
-                        SeqIO.write(chromosome, outputFilePath, 'gb')
-
-            os.remove(localfilepath)
 
     return DownloadSuccess
 
@@ -317,7 +306,8 @@ def renameGenomeFiles(dirpath, organism):
         strainName = StrainNames.fetchStrainName(genomeDescription, organism)
 
         if strainName is not None:
-            newFilePath = os.path.join(os.path.dirname(localfilepath), strainName + '.fna')
+            newFilePath = os.path.join(os.path.dirname(localfilepath),
+                                       strainName + '.fna')
             shutil.move(localfilepath, newFilePath)
             print("Moving genome %s file to %s" % (localfilepath, newFilePath))
 
@@ -371,7 +361,9 @@ def main():
     dataTypes = []
     # Fetch Genome IDs;
     if options.downloadGenomes:
-        dataTypes.append(DownloadQuery(AssemblyIDs, "genomes", ["_genomic.fna"]))
+        dataTypes.append(DownloadQuery(AssemblyIDs,
+                                       "genomes",
+                                       ["_genomic.fna"]))
 
     # Download genomes
     GenomeDownloadSuccess = [query.execute() for query in dataTypes]
@@ -400,10 +392,15 @@ def main():
                     print(i)
                 print()
 
-                dataTypes.append(DownloadQuery(AnnotationIDs, "annotations", ["_genomic.gbff"]))
-                dataTypes.append(DownloadQuery(AnnotationIDs, "genomes", ["_genomic.fna"]))
+                dataTypes.append(DownloadQuery(AnnotationIDs,
+                                               "annotations",
+                                               ["_genomic.gbff"]))
+                dataTypes.append(DownloadQuery(AnnotationIDs,
+                                               "genomes",
+                                               ["_genomic.fna"]))
             else:
-                print("User defined annotation strain %s not found!" % options.annotationStrain)
+                print("User defined annotation strain %s not found!" %
+                      options.annotationStrain)
                 print("Aborting...")
                 exit(1)
 
@@ -413,7 +410,6 @@ def main():
             dataTypes.append(DownloadQuery(AssemblyIDs, "annotations", ["_genomic.gbff"]))
 
         AnnotationDownloadSuccess = [query.execute() for query in dataTypes]
-
 
     # -- REPORT SUCCESS (any?);
     print("\nSummary:")
@@ -425,8 +421,6 @@ def main():
 
     if any(AnnotationDownloadSuccess):
         print("Annotation files downloaded.")
-
-
 
 
 if __name__ == "__main__":
