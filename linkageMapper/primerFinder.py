@@ -1,21 +1,14 @@
 #!/bin/python
 import os
-import re
-import itertools
-import json
-import random
 import numpy as np
 import pandas as pd
 
-import sys
 from collections import OrderedDict
 
-from Bio.SeqFeature import SeqFeature, FeatureLocation
 from Bio import Seq, SeqIO
 
 from optparse import OptionParser
 
-#sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 
 from . import PrimerEngine
 from .Database import annotationManager
@@ -86,7 +79,6 @@ def Execute(options):
     RFLPInfoDirectory = os.path.dirname(options.primerFile)
     RFLPReference = None
     RFLPReference = PrimerEngine.RFLPMarker.RFLPReference(RFLPInfoDirectory)
-
 
     # CHECK DECLARATION OF PRIMER FILE;
     if not options.primerFile:
@@ -171,10 +163,11 @@ def Execute(options):
     print("Loaded Scaffold:")
     print(genomeFeatures)
 
-    bruteForceSearcher = PrimerEngine.bruteForcePrimerSearch.bruteForceSearcher(
-        genomeFeatures,
-        genomeFilePaths
-    )
+    bruteForceSearcher =\
+        PrimerEngine.bruteForcePrimerSearch.bruteForceSearcher(
+            genomeFeatures,
+            genomeFilePaths
+        )
 
     if not bruteForceSearcher.matchedGenome:
         bruteForceSearcher = None
@@ -222,6 +215,7 @@ def Execute(options):
             # AlignmentHealth.
             score = PrimerEngine.ampliconSanity.evaluateSetOfAmplicons(
                 LocusAmpliconSet)
+
             print("\tAlignment Health = %.2f%%" % score)
             print()
             # record amplicon and primer data;
@@ -239,7 +233,6 @@ def Execute(options):
             matchedPrimerSequences.append(primerPair)
             AllLociPrimerSet[locus_name] = matchSuccess
             # print("Bad Amplicon set for %s! Ignoring...." % locus_name)
-
         else:
             print("WARNING: PrimerDock failure.")
 
