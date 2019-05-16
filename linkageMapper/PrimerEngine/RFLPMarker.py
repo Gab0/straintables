@@ -15,7 +15,7 @@ class RFLPReference():
         self.inputDirectory = inputDirectory
         self.genotypeData = self.getDatabase("genomes_haplogroups.csv")
         self.rflpGenotypes = self.getDatabase("genotypes.csv")
-        if not self.genotypeData:
+        if self.genotypeData is None:
             return None
 
     def getGenotypeNumber(self, name):
