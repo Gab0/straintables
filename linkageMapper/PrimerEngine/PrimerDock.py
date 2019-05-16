@@ -8,7 +8,6 @@ import numpy as np
 from Bio.Seq import Seq
 
 from . import GeneticEntities
-from . import bruteForcePrimerSearch
 
 
 PrimerTypes = ["ForwardPrimer", "ReversePrimer"]
@@ -78,11 +77,17 @@ def searchPrimerPairOnGenome(locusName, primerPair, genome):
             # TRY TO FIX PRIMER LEAK;
             # outright delete matches that doesn't have a pair in the same chromosome;
             # if PrimerTypes[1 - PT] in matchedPrimers.keys():
-            opponentIndexes = [P.chr_index for P in matchedPrimers[PrimerTypes[1 - PT]]]
+            opponentIndexes = [
+                P.chr_index
+                for P in matchedPrimers[PrimerTypes[1 - PT]]
+            ]
             for p, P in enumerate(matchedPrimers[PrimerType]):
                 if P.chr_index not in opponentIndexes:
                     matchedPrimers[PrimerType][p] = None
-            matchedPrimers[PrimerType] = [p for p in matchedPrimers[PrimerType] if p]
+
+            matchedPrimers[PrimerType] = [
+                p for p in matchedPrimers[PrimerType] if p
+            ]
 
             # might be unnecessary
             matchedPrimers[PrimerType] = sorted(matchedPrimers[PrimerType],
@@ -104,7 +109,8 @@ def searchPrimerPairOnGenome(locusName, primerPair, genome):
     if matchCount == 2:
         Primers = [matchedPrimers[PrimerTypes[i]][0] for i in range(2)]
         # if anything goes wrong while building the amplicon, the match fails.
-        # Amplicon may rase errors deliberately when match result is not optimal.
+        # Amplicon may rase errors deliberately
+        # when match result is not optimal.
         try:
             amplicon = GeneticEntities.Amplicon(genome, Primers[0], Primers[1])
         except ValueError:
@@ -140,10 +146,11 @@ def matchPrimerOnGenome(genome, PrimerSequence,
             print("pos %i of %i" % (match.start(), chromosome.length))
 
             # RECORD PRIMER;
-            matchedPrimer = GeneticEntities.primerMatch(match,
-                                                        PrimerType,
-                                                        chromosome,
-                                                        PrimerSequence
+            matchedPrimer = GeneticEntities.primerMatch(
+                match,
+                PrimerType,
+                chromosome,
+                PrimerSequence
             )
 
             matchedPrimers.append(matchedPrimer)
@@ -190,20 +197,26 @@ def matchLocusOnGenomes(locus_name,
     for Genome in itertools.cycle(genomes):
         # print("Genome: %s --\n" % genome)
 
-        HEADER_INFO = (*overallProgress,
-                       RebootCount + 1, locus_name, Genome.name)
-        print(">>> Locus %i of %i | run number %i ->  Searching %s on %s" % HEADER_INFO)
+        # Show header;
+        HEADER_INFO = (
+            *overallProgress,
+            RebootCount + 1,
+            locus_name,
+            Genome.name
+        )
+        M = ">>> Locus %i of %i | run number %i ->  Searching %s on %s"
+        print(M % HEADER_INFO)
 
-        # primer sequence may baae uknown;
-        matchSuccess = [True, True]
-        for PT, PrimerType in enumerate(PrimerTypes):
-            if not validatePrimer(primerPair[PrimerType]):
-                matchSuccess[PT] = False
+        # primer sequence may be uknown/invalid;
+        primerIntegrity = [
+            validatePrimer(primerPair[PrimerType])
+            for PrimerType in PrimerTypes
+        ]
 
         AmpliconSequence = ""
         print("\n")
 
-        if all(matchSuccess):
+        if all(primerIntegrity):
             print("Searching sequence for locus %s" % locus_name)
 
             AmpliconSequence, matchSuccess =\
@@ -226,12 +239,11 @@ def matchLocusOnGenomes(locus_name,
 
                     # RESET ALL MATCHES!
                     LocusAmpliconSet = {}
-                    LocusPrimerSet = {}
 
                     RebootCount += 1
                     # brute force for the problematic genome!
                     print("Searching new primer on gene sequence...")
-                    #print(bruteForceSearcher.matchedGenome)
+                    # print(bruteForceSearcher.matchedGenome)
 
                     # MANAGE PRIMERS ON HOLSTER;
                     if not testablePrimers[PrimerType]:
@@ -253,17 +265,28 @@ def matchLocusOnGenomes(locus_name,
                         if primerPair[PrimerType] not in primerTrash[PrimerType]:
                             break
         else:
-            # SUCCESS.
-            if len(AmpliconSequence) > 100:
-                print("Found amplicon of length %i" % len(AmpliconSequence))
-                LocusAmpliconSet[Genome.name] = AmpliconSequence
+            # Final sucess check.
+            Sucess = True
+            print("Found amplicon of length %i" % len(AmpliconSequence))
+            if len(AmpliconSequence) <= 100:
                 # AMPLICON IS TOO SHORT;
+                print("Resetting due to short amplicon.")
+                Sucess = False
+
+            if "n" in AmpliconSequence.lower():
+                print("Resetting due to N found in sequence.")
+                Sucess = False
+
+            if Sucess:
+                LocusAmpliconSet[Genome.name] = AmpliconSequence
             else:
                 print("Resetting all primers, amplicon too short.")
                 for s in range(2):
                     if validatePrimer(primerPair[PrimerTypes[s]]):
                         primerTrash[PrimerTypes[s]].append(primerPair[PrimerTypes[s]])
                     primerPair[PrimerTypes[s]] = None
+                # Reset Matches;
+                LocusAmpliconSet = {}
 
         # CHECK LOCUS PROGRESS ACROSS ALL GENOMES;
         progressMark = len(list(LocusAmpliconSet.keys())) / len(genomes)
@@ -284,5 +307,3 @@ def matchLocusOnGenomes(locus_name,
         # IF IT FAILS ENOUGH, SKIP LOCUS;
         elif RebootCount > rebootTolerance:
             return None, None, None
-
-
