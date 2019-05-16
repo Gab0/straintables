@@ -47,7 +47,7 @@ class locusNamesSelectionMenu(Gtk.Grid):
         btn = Gtk.Label.new("<-")
         self.attach(btn, 0, 0, 1, 1)
         self.attach(self.left_choice, 1, 0, 1, 1)
-        self.attach(Refresh, 2, 0, 1, 1)
+        # self.attach(Refresh, 2, 0, 1, 1)
         self.attach(self.right_choice, 3, 0, 1, 1)
         self.attach(Gtk.Label.new("->"), 4, 0, 1, 1)
 
@@ -61,13 +61,12 @@ class locusNamesSelectionMenu(Gtk.Grid):
             self.left_choice.get_active(),
             self.right_choice.get_active()
         ]
-        self.matrixViewer.changeView(LOCI, self.drawPlot)
 
-        print("REFRESHED %s %s" % LOCI)
+        self.matrixViewer.changeView(LOCI, self.matrixViewer.drawPlot)
 
     def Update(self, n=None):
         if self.matrixViewer.alnData:
-            self.allLoci = self.matrixViewer.alnData.fetchLociList()
+            self.allLoci = self.matrixViewer.alnData.fetchOriginalLociList()
 
             self.optsAllLoci.clear()
             for l in self.allLoci:
@@ -418,7 +417,7 @@ class MatrixViewer():
         LocusIndexes = self.alnData.getPWMRegionIndexes(self.index)
         LocusName = self.alnData.MatchData["LocusName"][LocusIndexes[side]]
 
-        alignmentFilePath = os.path.join(self.inputDirectory, LocusName)
+        alignmentFilePath = os.path.join(self.inputDirectory, "LOCI_%s.aln" % LocusName)
         command = ["aliview", alignmentFilePath]
         print(command)
 
