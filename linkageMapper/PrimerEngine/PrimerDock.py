@@ -216,6 +216,9 @@ def matchLocusOnGenomes(locus_name,
         AmpliconSequence = ""
         print("\n")
 
+        # fix this later..
+        matchSuccess = primerIntegrity
+
         if all(primerIntegrity):
             print("Searching sequence for locus %s" % locus_name)
 
