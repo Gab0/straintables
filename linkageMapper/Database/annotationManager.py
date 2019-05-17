@@ -47,7 +47,7 @@ as a list of scaffolds.
 """
 
 
-def loadAnnotation(annotationFolder, identifier=None):
+def loadAnnotation(annotationFolder, identifier=None, Verbose=False):
     annotationFiles = os.listdir(annotationFolder)
     annotationFiles = sorted([File
                               for File in annotationFiles
@@ -105,9 +105,10 @@ def loadAnnotation(annotationFolder, identifier=None):
 
         annotationContents.append(annotationScaffolds)
 
-    print("\n====")
-    for aS in annotationScaffolds:
-        print(len(aS.features))
+    if Verbose:
+        print("\n====")
+        for aS in annotationScaffolds:
+            print(len(aS.features))
 
     annotationContents = sorted(annotationContents, key=sortAnnotations, reverse=True)
 
