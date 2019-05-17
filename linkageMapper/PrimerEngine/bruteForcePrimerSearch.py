@@ -45,15 +45,14 @@ class bruteForceSearcher():
             strain = fetchStrainName(GenomeDescriptor)
             if strain and strain == annotationStrain:
                 matchingGenomeFilePath = genomePath
-
+                matchingGenomeDescriptor = GenomeDescriptor
         if matchingGenomeFilePath is None:
             print("No genome matching annotation!")
             return None
         else:
             print("Found matching genome to annotation, for automatic primer search: %s" % matchingGenomeFilePath)
-            print(GenomeDescriptor)
-            print(strain)
-            print(AnnotationDescriptor)
+            print("Matching genome descriptor: %s" % matchingGenomeDescriptor)
+            print("Detected genome strain:" % strain)
 
         genome = list(SeqIO.parse(matchingGenomeFilePath, format="fasta"))
         return genome
