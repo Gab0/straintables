@@ -177,6 +177,8 @@ def Execute(options):
     RebootLocusTolerance = 13
     matchedPrimerSequences = []
 
+    print("\n")
+
     # ITERATE LOCI;
     for i in range(lociPrimerList.shape[0]):
         locus_info = lociPrimerList.iloc[i]
@@ -186,6 +188,7 @@ def Execute(options):
         outputFastaName = "LOCI_%s.fasta" % locus_name
 
         outputFastaPath = os.path.join(options.outputPath, outputFastaName)
+        print("Fasta file: %s" % outputFastaPath)
         if os.path.isfile(outputFastaPath):
             print("Skipping locus %s. Already exists..." % locus_name)
             continue
