@@ -52,7 +52,7 @@ class bruteForceSearcher():
         else:
             print("Found matching genome to annotation, for automatic primer search: %s" % matchingGenomeFilePath)
             print("Matching genome descriptor: %s" % matchingGenomeDescriptor)
-            print("Detected genome strain:" % strain)
+            print("Detected genome strain: %s" % strain)
 
         genome = list(SeqIO.parse(matchingGenomeFilePath, format="fasta"))
         return genome
