@@ -160,9 +160,6 @@ def Execute(options):
     # APPLY GENOME FEATURES TO BRUTE FORCE MODULE;
     genomeFeatures = annotationManager.loadAnnotation("annotations")
 
-    print("Loaded Scaffold:")
-    print(genomeFeatures)
-
     bruteForceSearcher =\
         PrimerEngine.bruteForcePrimerSearch.bruteForceSearcher(
             genomeFeatures,
@@ -191,6 +188,7 @@ def Execute(options):
         outputFastaPath = os.path.join(options.outputPath, outputFastaName)
         if os.path.isfile(outputFastaName):
             print("Skipping locus %s. Already exists..." % locus_name)
+            continue
 
         # MAYBE WE WANT TO SKIP GIVEN LOCUS?
         if options.WantedLoci:
