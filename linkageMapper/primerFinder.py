@@ -186,7 +186,7 @@ def Execute(options):
         outputFastaName = "LOCI_%s.fasta" % locus_name
 
         outputFastaPath = os.path.join(options.outputPath, outputFastaName)
-        if os.path.isfile(outputFastaName):
+        if os.path.isfile(outputFastaPath):
             print("Skipping locus %s. Already exists..." % locus_name)
             continue
 
