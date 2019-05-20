@@ -11,34 +11,8 @@ import re
 import os
 
 from . import DrawGraphics
-
+from . import walkChromosome
 import optparse
-
-
-def heatmapToAxis(MATRIX, ax, xlabels=None, ylabels=None):
-    ax.matshow(MATRIX, cmap='binary')
-
-    SIZE = len(MATRIX)
-
-    # MINOR TICKS -> GRID;
-    DIV = SIZE // 3
-    gridPoints = np.arange(0, SIZE, DIV)[1:-1] + 0.5
-
-    ax.set_xticks(gridPoints, minor=True)
-    ax.set_yticks(gridPoints, minor=True)
-
-    # MAJOR TICKS -> LABELS;
-    ax.set_xticks(range(SIZE))
-    ax.set_yticks(range(SIZE))
-
-    # SET LABELS;
-    fontProperties = {
-        'family': 'monospace'
-    }
-    if xlabels is not None:
-        ax.set_xticklabels(xlabels, fontProperties, rotation=90)
-    if ylabels is not None:
-        ax.set_yticklabels(ylabels, fontProperties)
 
 
 # BUILD HEATMAP;
@@ -46,7 +20,7 @@ def createPdfHeatmap(MATRIX, sequenceNames, filename=None, subtitle=None):
     fig = plt.figure()
     ax = fig.add_subplot(111)
 
-    heatmapToAxis(MATRIX, ax, xlabels=sequenceNames, ylabels=sequenceNames)
+    walkChromosome.MatrixPlot.heatmapToAxis(MATRIX, ax, xlabels=sequenceNames, ylabels=sequenceNames)
 
     # ax.grid(which='minor', color='r', linestyle='-', linewidth=2)
 
