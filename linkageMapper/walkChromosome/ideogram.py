@@ -145,9 +145,9 @@ def readAnnotation(Annotation, HighlightGenes):
     return Regions
 
 
-def plotIdeogram(fig, ax, Regions):
+def drawIdeogram(fig, Regions, options=None):
 
-
+    ax = fig.add_subplot(111)
     DIM = 1.0
     ax.set_xlim([0.0, DIM * 1.8])
     ax.set_ylim([0.0, DIM * 1.4])
@@ -160,30 +160,20 @@ def plotIdeogram(fig, ax, Regions):
     for i, k in enumerate(Regions.keys()):
         plot_chromosome(ax, Regions[k], reference_length, i)
 
-    plt.axis('off')
-    plt.show()
+    ax.axis('off')
 
 
-if __name__ == '__main__':
+def plotIdeogram(fig, alnData,
+                 RegionIndexes,
+                 showLabelColors=False,
+                 AnnotationPath=None):
 
-    fn = 'karyotype_hg19.txt'
-    url = 'http://pastebin.com/raw.php?i=6nBX6sdE'
-    if not os.path.exists(fn):
-        print('Downloading %s to local file: %s' % (url, fn))
-        with open(fn, 'w') as k_file:
-            f = requests.get(url)
-            k_file.write(f.text)
+    if not AnnotationPath:
+        return
 
-    HighlightGenes = [
-            "GRA6",
-            "GRA15",
-            "ROP18",
-            "ROP15"
-    ]
-    Annotation = SeqIO.parse(
-        "/home/gabs/linkage_analysis/toxoplasma/annotations/GCA_000006565.2_TGA4_genomic.gbff", format="genbank")
+    HighlightGenes = alnData.fetchOriginalLociList()
+    Annotation = SeqIO.parse(AnnotationPath, format="genbank")
 
     Features = readAnnotation(Annotation, HighlightGenes)
-    fig, ax = plt.subplots()
-    plotIdeogram(fig, ax, Features)
-    plt.show()
+
+    drawIdeogram(fig, Features)
