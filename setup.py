@@ -15,7 +15,7 @@ entry_points = {
 
 setup(
     name='linkageMapper',
-    version='0.7',
+    version='0.8',
     description='Genomic similarities per region',
     author='Gabriel Araujo',
     author_email='gabriel_scf@hotmail.com',
