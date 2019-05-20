@@ -5,9 +5,7 @@ import numpy as np
 import os
 import math
 
-from . import matrixOperations, dissimilarityCluster
-
-from linkageMapper import detectMutations
+from . import matrixOperations, dissimilarityCluster, MatrixPlot
 
 
 class LabelGroup():
@@ -140,11 +138,19 @@ def singleLocusStatus(alnData, axis, locus_name):
     axis.axis("off")
 
 
-def createMatrixSubplot(fig, position, name, matrix, xlabels, ylabels):
+def createMatrixSubplot(fig, position,
+                        name, matrix,
+                        xlabels, ylabels,
+                        fontsize=9):
     new_ax = fig.add_subplot(position)
 
-    detectMutations.heatmapToAxis(matrix, new_ax,
-                                  xlabels=xlabels, ylabels=ylabels)
+    MatrixPlot.heatmapToAxis(
+        matrix,
+        new_ax,
+        xlabels=xlabels,
+        ylabels=ylabels,
+        fontsize=fontsize
+    )
 
     new_ax.set_xlabel(name)
 
@@ -221,7 +227,10 @@ def makePlotCode(a, b, c):
 
 def plotRegionBatch(fig, alnData, regionIndexes,
                     showLabelColors=True, reorganizeIndex=None):
-    data = [alnData.MatchData["LocusName"].iloc[i] for i in regionIndexes]
+    data = [
+        alnData.MatchData["LocusName"].iloc[i]
+        for i in regionIndexes
+    ]
 
     alignmentData = [
         alnData.AlignmentData[
@@ -267,16 +276,21 @@ def plotRegionBatch(fig, alnData, regionIndexes,
         print(Clusters[m])
         plotCluster = Labels.clusterize(Clusters[m])
         plotLabels = Labels.get_labels(Cluster=plotCluster)
-        plot = createMatrixSubplot(fig, PlotCode,
-                                   data[m], Matrix, plotLabels, plotLabels)
+
+        fontsize = 12 - 2 * (NBL - 2)
+
+        plot = createMatrixSubplot(
+            fig, PlotCode,
+            data[m], Matrix,
+            plotLabels, plotLabels,
+            fontsize=fontsize
+        )
 
         AllPlots.append(plot)
         if showLabelColors:
             colorizeSubplot(plot, plotCluster)
 
         AllAxis.append(plot)
-
-    fig.tight_layout()
 
     for m, Matrix in enumerate(Matrixes):
         axLabels = AllPlots[m].get_yticklabels()
@@ -287,6 +301,9 @@ def plotRegionBatch(fig, alnData, regionIndexes,
                            nb_snp=alignmentData[m]["SNPCount"],
                            aln_len=alignmentData[m]["AlignmentLength"])
 
+    fig.tight_layout()
+    fig.tight_layout()
+    fig.tight_layout()
     return fig
 
 
