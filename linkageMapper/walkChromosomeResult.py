@@ -41,9 +41,9 @@ class locusNamesSelectionMenu(Gtk.Grid):
         Refresh = Gtk.Button(label=".")
         Refresh.connect("clicked", self.Refresh)
 
-        #w = Gtk.Button.new(Gdk.RGBA(100,100,100,100))
-        #btn = ColoredButton()
-        #btn.changeColor("red")
+        # w = Gtk.Button.new(Gdk.RGBA(100,100,100,100))
+        # btn = ColoredButton()
+        # btn.changeColor("red")
         btn = Gtk.Label.new("<-")
         self.attach(btn, 0, 0, 1, 1)
         self.attach(self.left_choice, 1, 0, 1, 1)
@@ -74,8 +74,10 @@ class locusNamesSelectionMenu(Gtk.Grid):
 
     def switchAutomaticDropdownLocusJump(self, Target=False):
         if Target:
-            self.left_handler = self.left_choice.connect("changed", self.Refresh)
-            self.right_handler = self.right_choice.connect("changed", self.Refresh)
+            self.left_handler = self.left_choice.connect(
+                "changed", self.Refresh)
+            self.right_handler = self.right_choice.connect(
+                "changed", self.Refresh)
         else:
             self.left_choice.disconnect(self.left_handler)
             self.right_choice.disconnect(self.right_handler)
@@ -109,6 +111,7 @@ class MatrixViewer():
         # SELECT DRAWING FUNCTION;
         self.drawPlot = walkChromosome.plotViewport.plotPwmIndex
         self.batchRegionPlot = walkChromosome.plotViewport.plotRegionBatch
+        self.plotIdeogram = walkChromosome.ideogram.plotIdeogram
 
         # INITIALIZE GTK WINDOW;
         self.Window = Gtk.Window()
@@ -128,7 +131,6 @@ class MatrixViewer():
         #self.top_menu()
         self.locus_navigator()
         Layout = self.build_interface()
-
 
         self.Online = True
         # SHOW ALL;
@@ -275,18 +277,26 @@ class MatrixViewer():
         self.ModifyViewButtons = Gtk.HBox()
 
         self.btn_viewalignment = Gtk.Button(image=Gtk.Image(stock=Gtk.STOCK_MEDIA_PLAY))
-        self.btn_viewalignment.connect("clicked", lambda d: self.ModifyPanelView("alignment"))
+        self.btn_viewalignment.connect("clicked",
+                                       lambda d: self.ModifyPanelView("alignment"))
 
         self.btn_openfolder = Gtk.Button(image=Gtk.Image(stock=Gtk.STOCK_OPEN))
-        self.btn_openfolder.connect("clicked", lambda d: self.ModifyPanelView("openfolder"))
+        self.btn_openfolder.connect("clicked",
+                                    lambda d: self.ModifyPanelView("openfolder"))
 
         self.btn_outputimage = Gtk.Button()
-        self.btn_outputimage.connect("clicked", lambda d: self.ModifyPanelView("outputimage"))
+        self.btn_outputimage.connect("clicked",
+                                     lambda d: self.ModifyPanelView("outputimage"))
         self.btn_outputimage.add(export_icon)
+
+        self.btn_ideogram = Gtk.Button(image=Gtk.Image(stock=Gtk.STOCK_CLOSE))
+        self.btn_ideogram.connect("clicked",
+                                  self.showIdeogram)
 
         self.ModifyViewButtons.pack_start(self.btn_viewalignment, expand=True, fill=True, padding=0)
         self.ModifyViewButtons.pack_start(self.btn_openfolder, expand=True, fill=True, padding=0)
         self.ModifyViewButtons.pack_start(self.btn_outputimage, expand=True, fill=True, padding=0)
+        self.ModifyViewButtons.pack_start(self.btn_ideogram, expand=True, fill=True, padding=0)
 
         panelBox.pack_start(self.ModifyViewButtons, False, False, 5)
 
@@ -339,6 +349,9 @@ class MatrixViewer():
             if self.swap:
                 loci.reverse()
             self.changeView(loci, self.drawPlot)
+
+    def showIdeogram(self, d):
+        self.changeView([], self.plotIdeogram)
 
     def changeView(self, regions, plotMethod, **kwargs):
         self.figure.clf()
@@ -435,6 +448,7 @@ class MatrixViewer():
         elif target == "alignment":
             ADD = self.FigureBox
 
+
         if self.FigureBox.get_parent():
             REMOVE = self.FigureBox
         elif self.outputimagemenu.get_parent():
@@ -458,7 +472,10 @@ class BuildImageMenu(Gtk.VBox):
         self.show_all()
 
     def makeCustomPlot(self, btn):
-        states = [c.get_active() for c in self.Checkboxes]
+        states = [
+            c.get_active()
+            for c in self.Checkboxes
+        ]
 
         if sum(states) > 6:
             self.Information.set_text("Maximum region count is six.")
