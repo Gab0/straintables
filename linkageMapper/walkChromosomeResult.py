@@ -293,10 +293,14 @@ class MatrixViewer():
         self.btn_ideogram.connect("clicked",
                                   self.showIdeogram)
 
-        self.ModifyViewButtons.pack_start(self.btn_viewalignment, expand=True, fill=True, padding=0)
-        self.ModifyViewButtons.pack_start(self.btn_openfolder, expand=True, fill=True, padding=0)
-        self.ModifyViewButtons.pack_start(self.btn_outputimage, expand=True, fill=True, padding=0)
-        self.ModifyViewButtons.pack_start(self.btn_ideogram, expand=True, fill=True, padding=0)
+        for WIDGET in [self.btn_viewalignment,
+                       self.btn_openfolder,
+                       self.btn_outputimage,
+                       self.btn_ideogram]:
+            self.ModifyViewButtons.pack_start(WIDGET,
+                                              expand=True,
+                                              fill=True,
+                                              padding=0)
 
         panelBox.pack_start(self.ModifyViewButtons, False, False, 5)
 
