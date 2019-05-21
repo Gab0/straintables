@@ -12,9 +12,11 @@ from Bio.Align.Applications import ClustalwCommandline
 
 from linkageMapper.logo import logo
 
+
 class Options():
     def __init__(self, options):
         self.__dict__.update(options)
+
 
 @active_if(lambda: options.DoAmplicon)
 @subdivide(lambda: options.PrimerFile, formatter(), "*.fasta")
@@ -27,6 +29,7 @@ def find_primers(primerFile, outputPath):
     }
 
     return linkageMapper.primerFinder.Execute(Options(finderOptions))
+
 
 @active_if(lambda: options.DoAlignment)
 def run_alignment(filePrefix):
@@ -136,8 +139,11 @@ def main():
         exit(1)
 
     if not os.path.isdir(WorkingDirectory):
-        print("Creating %s." % WorkingDirectory)
-        os.mkdir(WorkingDirectory)
+        Path = os.path.split(WorkingDirectory)
+        for d, Directory in enumerate(Path):
+            subDirectoryPath = os.path.join(*Path[:d+1])
+            print("Creating directory %s." % subDirectoryPath)
+            os.mkdir(subDirectoryPath)
 
     # SHOW BEAUTIFUL ASCII ART;
     print(logo)
