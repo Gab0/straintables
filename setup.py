@@ -13,6 +13,7 @@ entry_points = {
         ]
 }
 
+requirements = list(open("requirements.txt").readlines())
 setup(
     name='linkageMapper',
     version='0.8',
@@ -21,6 +22,7 @@ setup(
     author_email='gabriel_scf@hotmail.com',
     url='https://www.github.com/Gab0/linkageMapper',
     #packages=find_packages(),
+    install_requires=requirements,
     packages=[
         'linkageMapper',
         'linkageMapper.walkChromosome',
