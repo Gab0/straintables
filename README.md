@@ -60,9 +60,9 @@ By looking at a pair of D. Matrixes at a time, both corresponding to locus that 
 
 # Setup
 
-### Download and install `linkageMapper` python module
-
-`pip install git+https://github.com/Gab0/linkageMapper.git`
+### Download and install python modules
+1. numpy: `pip install numpy`
+2. linkageMapper: `pip install git+https://github.com/Gab0/linkageMapper.git`
 
 
 ### Fetch genomes and annotation files
