@@ -3,7 +3,7 @@
 import numpy as np
 
 
-def heatmapToAxis(MATRIX, ax, xlabels=None, ylabels=None, fontsize=9):
+def heatmapToAxis(MATRIX, ax, xlabels=None, ylabels=None, fontsize=9, MatrixName=None):
     ax.matshow(MATRIX, cmap='binary')
 
     SIZE = len(MATRIX)
@@ -29,4 +29,5 @@ def heatmapToAxis(MATRIX, ax, xlabels=None, ylabels=None, fontsize=9):
     if ylabels is not None:
         ax.set_yticklabels(ylabels, fontProperties)
 
-
+    if MatrixName:
+        ax.set_xlabel(MatrixName, fontProperties)
