@@ -22,6 +22,7 @@ setup(
     author_email='gabriel_scf@hotmail.com',
     url='https://www.github.com/Gab0/linkageMapper',
     #packages=find_packages(),
+    setup_requires=["numpy"],
     install_requires=requirements,
     packages=[
         'linkageMapper',
