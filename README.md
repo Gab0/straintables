@@ -60,24 +60,9 @@ By looking at a pair of D. Matrixes at a time, both corresponding to locus that 
 
 # Setup
 
-### Download and install the python module
+### Download and install `linkageMapper` python module
 
-1. Download or clone this repository.
-
-`git clone https://github.com/Gab0/linkageMapper.git`
-
-2. Install python dependencies:
-
-```
-$pip install numpy
-$pip install -r requirements.txt
-```
-
-3. Enter the directory on the cmd, and run:
-
-`$pip install .`
-
-
+`pip install git+https://github.com/Gab0/linkageMapper.git`
 
 
 ### Fetch genomes and annotation files
