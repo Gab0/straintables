@@ -149,10 +149,9 @@ def createMatrixSubplot(fig, position,
         new_ax,
         xlabels=xlabels,
         ylabels=ylabels,
-        fontsize=fontsize
+        fontsize=fontsize,
+        Name=name
     )
-
-    new_ax.set_xlabel(name)
 
     return new_ax
 
