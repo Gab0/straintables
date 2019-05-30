@@ -142,8 +142,10 @@ def main():
         Path = os.path.split(WorkingDirectory)
         for d, Directory in enumerate(Path):
             subDirectoryPath = os.path.join(*Path[:d+1])
-            print("Creating directory %s." % subDirectoryPath)
-            os.mkdir(subDirectoryPath)
+            print(subDirectoryPath)
+            if not os.path.isdir(subDirectoryPath):
+                print("Creating directory %s." % subDirectoryPath)
+                os.mkdir(subDirectoryPath)
 
     # SHOW BEAUTIFUL ASCII ART;
     print(logo)
