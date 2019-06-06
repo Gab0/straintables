@@ -118,7 +118,10 @@ The recombination analysis step of `linkageMapper` has [MeShCluSt](https://githu
 Having it installed on the system will enable genome group clustering to be totally independend from the alignment software, as MeShCluSt does the clustering
 on top of unaligned `.fasta` files.
 
+### Aliview [optional]
 
+This is the program called by the `view alignment` buttons, and you should have
+it in order to quickly access them from the viewer.
 
 # Usage
 
