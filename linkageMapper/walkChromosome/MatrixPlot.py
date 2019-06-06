@@ -3,10 +3,48 @@
 import numpy as np
 
 
-def heatmapToAxis(MATRIX, ax, xlabels=None, ylabels=None, fontsize=9, MatrixName=None):
+def normalizeMatrix(MATRIX, parameters=None):
+
+    """
+    nMATRIX = np.copy(MATRIX)
+    s = MATRIX.shape
+    for i in range(s[0]):
+        for j in range(s[1]):
+            V = MATRIX[i, j]
+            if V:
+                nMATRIX[i, j] = np.log(V)
+    return nMATRIX
+    """
+
+    if not parameters:
+        parameters = {
+            "pre_multiplier": 6,
+            "normalizer": 2
+        }
+
+    MATRIX = MATRIX * parameters["pre_multiplier"]
+    MODE = parameters["normalizer"]
+    if MODE == 0:
+        MATRIX = 1/(1+np.exp(-MATRIX))
+    elif MODE == 1:
+        MATRIX = np.tanh(MATRIX)
+    elif MODE == 2:
+        std = np.std(MATRIX)
+        MATRIX = MATRIX * std
+        MATRIX = np.tanh(MATRIX)
+
+    return MATRIX
+
+
+def heatmapToAxis(MATRIX, ax, xlabels=None,
+                  ylabels=None, fontsize=9,
+                  MatrixName=None, MatrixParameters=None):
+
+    MATRIX = normalizeMatrix(MATRIX, MatrixParameters)
     ax.matshow(MATRIX, cmap='binary')
 
     SIZE = len(MATRIX)
+
 
     # MINOR TICKS -> GRID;
     DIV = SIZE // 3
