@@ -16,11 +16,11 @@ import optparse
 
 
 # BUILD HEATMAP;
-def createPdfHeatmap(MATRIX, sequenceNames, filename=None, subtitle=None):
+def createPdfHeatmap(MATRIX, sequenceNames, filename=None, subtitle=None, MatrixParameters=None):
     fig = plt.figure()
     ax = fig.add_subplot(111)
 
-    walkChromosome.MatrixPlot.heatmapToAxis(MATRIX, ax, xlabels=sequenceNames, ylabels=sequenceNames)
+    walkChromosome.MatrixPlot.heatmapToAxis(MATRIX, ax, xlabels=sequenceNames, ylabels=sequenceNames, MatrixParameters=MatrixParameters)
 
     # ax.grid(which='minor', color='r', linestyle='-', linewidth=2)
 
