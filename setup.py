@@ -1,5 +1,5 @@
 #!/bin/python
-
+import os
 from setuptools import setup, find_packages
 #from distutils.core import setup
 
@@ -13,10 +13,11 @@ entry_points = {
         ]
 }
 
-requirements = list(open("requirements.txt").readlines())
+base_folder = os.path.dirname(os.path.realpath(__file__))
+requirements = list(open(os.path.join(base_folder, "requirements.txt")).readlines())
 setup(
     name='linkageMapper',
-    version='0.8',
+    version='0.85',
     description='Genomic similarities per region',
     author='Gabriel Araujo',
     author_email='gabriel_scf@hotmail.com',
