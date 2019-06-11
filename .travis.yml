@@ -10,7 +10,7 @@ before_install:
   - cat container_id
 
 install:
-  - docker exec "$(cat container_id)" pip3 install app
+  - docker exec "$(cat container_id)" pip3 install /app
 script:
   # run our tests in the running contained
   - docker exec "$(cat container_id)" xvfb-run -a lmview
