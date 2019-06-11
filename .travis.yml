@@ -6,7 +6,7 @@ env:
 
 before_install:
   - docker build -t lmp -f "$DOCKER_FILE" .
-  - docker run --volume "$(pwd):/app" --workdir "/app" --tty --detach lmp bash > container_id
+  - docker run --volume "$(pwd):/app" --workdir "/app" --tty --detach lmp > container_id
   - cat container_id
 
 install:
