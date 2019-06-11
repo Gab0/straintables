@@ -7,7 +7,7 @@ env:
 before_install:
   # Create a docker image called "myimage"
   - docker build -t lmp -f "$DOCKER_FILE" .
-  - docker run --volume "$(pwd):/app" --workdir "/app" --tty --detach myimage bash > container_id
+  - docker run --volume "$(pwd):/app" --workdir "/app" --tty --detach lmp bash > container_id
 
 install:
   - docker exec "$(cat container_id)" pip3 install app
