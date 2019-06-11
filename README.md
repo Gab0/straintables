@@ -1,3 +1,5 @@
+
+[![PyPI version](https://badge.fury.io/py/linkageMapper.svg)](https://badge.fury.io/py/linkageMapper)
 # About
 
 linkageMapper is a tool that helps evaluate the difference among gene loci across an organism genomes, based on primer matching across the sequenced genome files.
