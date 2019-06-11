@@ -1,4 +1,4 @@
-
+[![Travis build]](https://travis-ci.com/Gab0/linkageMapper.svg?branch=master)
 [![PyPI version](https://badge.fury.io/py/linkageMapper.svg)](https://badge.fury.io/py/linkageMapper)
 # About
 
