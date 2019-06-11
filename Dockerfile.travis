@@ -10,7 +10,7 @@ RUN apk add --no-cache --allow-untrusted --repository http://dl-3.alpinelinux.or
 RUN apk add --no-cache \
     xauth \
     xvfb \
-    xvfb-run gcc gfortran build-base wget freetype-dev libpng-dev openblas-dev
+    xvfb-run gcc gfortran build-base wget freetype-dev libpng-dev openblas-dev glib cairo cairo-dev
 
 RUN pip install numpy
 
