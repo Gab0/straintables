@@ -17,7 +17,7 @@ base_folder = os.path.dirname(os.path.realpath(__file__))
 requirements = list(open(os.path.join(base_folder, "requirements.txt")).readlines())
 setup(
     name='linkageMapper',
-    version='0.85',
+    version='0.87',
     description='Genomic similarities per region',
     author='Gabriel Araujo',
     author_email='gabriel_scf@hotmail.com',
@@ -30,7 +30,8 @@ setup(
         'linkageMapper.walkChromosome',
         'linkageMapper.PrimerEngine',
         'linkageMapper.DrawGraphics',
-        'linkageMapper.Database'
+        'linkageMapper.Database',
+        'linkageMapper.skdistance'
     ],
     platforms='any',
     entry_points=entry_points
