@@ -11,8 +11,8 @@ from functools import partial
 import numpy as np
 from scipy.stats import rankdata
 
-from ._base import (_preprocess_input, _run_monte_carlo_stats, _build_results)
-from skbio.util._decorator import experimental
+from ._base import (_preprocess_input, _run_monte_carlo_stats, _build_results, experimental)
+
 
 
 @experimental(as_of="0.4.0")
