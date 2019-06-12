@@ -14,13 +14,197 @@ from IPython.core.display import Image, SVG
 import numpy as np
 import pandas as pd
 from scipy.spatial.distance import squareform
+import abc
+import textwrap
+class _state_decorator:
+    """ Base class for decorators of all public functionality.
+    """
 
-from skbio._base import SkbioObject
-from skbio.stats._misc import _pprint_strs
-from skbio.util import find_duplicates
-from skbio.util._decorator import experimental, classonlymethod
-from skbio.util._misc import resolve_key
+    _required_kwargs = ()
 
+    def _get_indentation_level(self, docstring_lines,
+                               default_existing_docstring=4,
+                               default_no_existing_docstring=0):
+        """ Determine the level of indentation of the docstring to match it.
+            The indented content after the first line of a docstring can
+            differ based on the nesting of the functionality being documented.
+            For example, a top-level function may have its "Parameters" section
+            indented four-spaces, but a method nested under a class may have
+            its "Parameters" section indented eight spaces. This function
+            determines the indentation level of the first non-whitespace line
+            following the initial summary line.
+        """
+        # if there is no existing docstring, return the corresponding default
+        if len(docstring_lines) == 0:
+            return default_no_existing_docstring
+
+        # if there is an existing docstring with only a single line, return
+        # the corresponding default
+        if len(docstring_lines) == 1:
+            return default_existing_docstring
+
+        # find the first non-blank line (after the initial summary line) and
+        # return the number of leading spaces on that line
+        for line in docstring_lines[1:]:
+            if len(line.strip()) == 0:
+                # ignore blank lines
+                continue
+            else:
+                return len(line) - len(line.lstrip())
+
+        # if there is an existing docstring with only a single non-whitespace
+        # line, return the corresponding default
+        return default_existing_docstring
+
+    def _update_docstring(self, docstring, state_desc,
+                          state_desc_prefix='State: '):
+        # Hande the case of no initial docstring
+        if docstring is None:
+            return "%s%s" % (state_desc_prefix, state_desc)
+
+        docstring_lines = docstring.split('\n')
+        docstring_content_indentation = \
+            self._get_indentation_level(docstring_lines)
+
+        # wrap lines at 79 characters, accounting for the length of
+        # docstring_content_indentation and start_desc_prefix
+        len_state_desc_prefix = len(state_desc_prefix)
+        wrap_at = 79 - (docstring_content_indentation + len_state_desc_prefix)
+        state_desc_lines = textwrap.wrap(state_desc, wrap_at)
+        # The first line of the state description should start with
+        # state_desc_prefix, while the others should start with spaces to align
+        # the text in this section. This is for consistency with numpydoc
+        # formatting of deprecation notices, which are done using the note
+        # Sphinx directive.
+        state_desc_lines[0] = '%s%s%s' % (' ' * docstring_content_indentation,
+                                          state_desc_prefix,
+                                          state_desc_lines[0])
+        header_spaces = ' ' * (docstring_content_indentation +
+                               len_state_desc_prefix)
+        for i, line in enumerate(state_desc_lines[1:], 1):
+            state_desc_lines[i] = '%s%s' % (header_spaces, line)
+
+        new_doc_lines = '\n'.join(state_desc_lines)
+        docstring_lines[0] = '%s\n\n%s' % (docstring_lines[0], new_doc_lines)
+        return '\n'.join(docstring_lines)
+
+    def _validate_kwargs(self, **kwargs):
+        for required_kwarg in self._required_kwargs:
+            if required_kwarg not in kwargs:
+                raise ValueError('%s decorator requires parameter: %s' %
+                                 (self.__class__, required_kwarg))
+
+
+def resolve_key(obj, key):
+    """Resolve key given an object and key."""
+    if callable(key):
+        return key(obj)
+    elif hasattr(obj, 'metadata'):
+        return obj.metadata[key]
+    raise TypeError("Could not resolve key %r. Key must be callable or %s must"
+                    " have `metadata` attribute." % (key,
+                                                     obj.__class__.__name__))
+
+class classonlymethod(classmethod):
+    """Just like `classmethod`, but it can't be called on an instance."""
+
+    def __get__(self, obj, cls=None):
+        if obj is not None:
+            raise TypeError("Class-only method called on an instance. Use"
+                            " '%s.%s' instead."
+                            % (cls.__name__, self.__func__.__name__))
+        return super().__get__(obj, cls)
+
+class experimental(_state_decorator):
+    """ State decorator indicating experimental functionality.
+    Used to indicate that public functionality is considered experimental,
+    meaning that its API is subject to change or removal with little or
+    (rarely) no warning. Decorating functionality as experimental will update
+    its doc string to indicate the first version of scikit-bio when the
+    functionality was considered experimental.
+    Parameters
+    ----------
+    as_of : str
+        First release version where feature is considered to be experimental.
+    See Also
+    --------
+    stable
+    deprecated
+    Examples
+    --------
+    >>> @experimental(as_of='0.3.0')
+    ... def f_experimental():
+    ...     \"\"\" An example experimental function.
+    ...     \"\"\"
+    ...     pass
+    >>> help(f_experimental)
+    Help on function f_experimental in module skbio.util._decorator:
+    <BLANKLINE>
+    f_experimental()
+        An example experimental function.
+    <BLANKLINE>
+        State: Experimental as of 0.3.0.
+    <BLANKLINE>
+    """
+
+    _required_kwargs = ('as_of', )
+
+    def __init__(self, *args, **kwargs):
+        self._validate_kwargs(**kwargs)
+        self.as_of = kwargs['as_of']
+
+    def __call__(self, func):
+        state_desc = 'Experimental as of %s.' % self.as_of
+        func.__doc__ = self._update_docstring(func.__doc__, state_desc)
+        return func
+
+def find_duplicates(iterable):
+    """Find duplicate elements in an iterable.
+    Parameters
+    ----------
+    iterable : iterable
+        Iterable to be searched for duplicates (i.e., elements that are
+        repeated).
+    Returns
+    -------
+    set
+        Repeated elements in `iterable`.
+    """
+    # modified from qiita.qiita_db.util.find_repeated
+    # https://github.com/biocore/qiita
+    # see licenses/qiita.txt
+    seen, repeated = set(), set()
+    for e in iterable:
+        if e in seen:
+            repeated.add(e)
+        else:
+            seen.add(e)
+    return repeated
+
+def _pprint_strs(strs, max_chars=80, delimiter=', ', suffix='...',):
+    """Pretty-print an iterable of strings, truncating if necessary."""
+    # Adapted from http://stackoverflow.com/a/250373
+    joined_str = delimiter.join(repr(s) for s in strs)
+
+    if len(joined_str) > max_chars:
+        truncated = joined_str[:max_chars + 1].split(delimiter)[0:-1]
+        joined_str = delimiter.join(truncated)
+        if joined_str:
+            joined_str += delimiter
+        joined_str += suffix
+
+    return joined_str
+
+
+class SkbioObject(metaclass=abc.ABCMeta):
+    """Abstract base class defining core API common to all scikit-bio objects.
+    Public scikit-bio classes should subclass this class to ensure a common,
+    core API is present. All abstract methods and properties defined here must
+    be implemented in subclasses, otherwise they will not be instantiable.
+    """
+    @abc.abstractmethod
+    def __str__(self):
+        raise NotImplementedError
 
 class DissimilarityMatrixError(Exception):
     """General error for dissimilarity matrix validation failures."""
