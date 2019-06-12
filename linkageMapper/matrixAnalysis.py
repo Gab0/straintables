@@ -5,7 +5,7 @@ import pandas as pd
 import numpy as np
 from optparse import OptionParser
 
-import skbio.stats.distance as skdist
+from . import skdistance as skdist
 
 
 def matrixRankings(MATRIX):
