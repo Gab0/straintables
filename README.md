@@ -66,6 +66,14 @@ By looking at a pair of D. Matrixes at a time, both corresponding to locus that 
 
 1. from pipy: `pip install linkageMapper`
 
+### Setup issues:
+
+If the setup command shown above fails, there should be a problem with the build of some required python module.
+Take note of which module is failing, and create a issue ticket on this repository and/or check google if it has 
+some answer to the problem.
+
+This has never been tested on windows, but should work.
+For linux users, please check the file `Dockerfile` on this repo to see which linux packages are required for this to run, under the `apk add` command... package names might vary between distros.
 
 ### Fetch genomes and annotation files
 
