@@ -79,6 +79,28 @@ some answer to the problem.
 This has never been tested on windows, but should work.
 For linux users, please check the file `Dockerfile` on this repo to see which linux packages are required for this to run, under the `apk add` command... package names might vary between distros.
 
+
+## Required Software
+
+### ClustalW2
+
+The alignment step of `linkageMapper` requires [ClustalW2](http://www.clustal.org/clustal2/) installed on your
+system.
+
+### MeShClust [optional]
+
+The recombination analysis step of `linkageMapper` has [MeShCluSt](https://github.com/TulsaBioinformaticsToolsmith/MeShClust) as an optional dependency.
+
+Having it installed on the system will enable genome group clustering to be totally independend from the alignment software, as MeShCluSt does the clustering
+on top of unaligned `.fasta` files.
+
+### Aliview [optional]
+
+This is the program called by the `view alignment` buttons, and you should have
+it in order to quickly access them from the viewer.
+
+# Usage
+
 ### Fetch genomes and annotation files
 
 This step will define the organism under analysis, so it's adivised run this inside a new directory, having one dir for each organism.
@@ -117,31 +139,11 @@ The user can manually add desired genomes and annotations, as explained in the n
 * One multifasta file per strain.
 * They should be placed at the `genomes` folder.
 
-
-## Required Software
-
-### ClustalW2
-
-The alignment step of `linkageMapper` requires [ClustalW2](http://www.clustal.org/clustal2/) installed on your
-system.
-
-### MeShClust [optional]
-
-The recombination analysis step of `linkageMapper` has [MeShCluSt](https://github.com/TulsaBioinformaticsToolsmith/MeShClust) as an optional dependency.
-
-Having it installed on the system will enable genome group clustering to be totally independend from the alignment software, as MeShCluSt does the clustering
-on top of unaligned `.fasta` files.
-
-### Aliview [optional]
-
-This is the program called by the `view alignment` buttons, and you should have
-it in order to quickly access them from the viewer.
-
-# Usage
+## Analysis
 
 1. Put the wanted Locus names, ForwardPrimers and ReversePrimers on a `.csv` file inside the `Primer` folder. The primer sequences are optional, leave blank to trigger the automatic primer search. Look for the examples.
 
-2. `linkagePipeline.sh` is a bash script that organizes the workflow, calling main python scripts at `linkageMapper` module directory.
+2. `lmpline` is the pipeline script, it calls analysis components at proper order.
 
 3. Check the results at the result folder that is equal to the `Primer` file selected for the run. Result folders are down the `Alignments` folder.
 
