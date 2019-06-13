@@ -2,7 +2,7 @@ sudo: required
 services: docker
 language: generic
 env:
-  - DOCKER_FILE="Dockerfile.travis" PYTHON="python3"
+  - DOCKER_FILE="Dockerfile" PYTHON="python3"
 
 before_install:
   - docker build -t lmp -f "$DOCKER_FILE" .
