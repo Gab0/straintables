@@ -20,5 +20,5 @@ COPY . /app
 
 RUN pip install ./app
 #RUN pip install --no-binary :all: ./app
-RUN python lmpline --help
+RUN lmpline --help
 
