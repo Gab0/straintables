@@ -64,7 +64,11 @@ By looking at a pair of D. Matrixes at a time, both corresponding to locus that 
 
 ### Download and install this python module
 
-1. from pipy: `pip install linkageMapper`
+1. from pipy: 
+```
+pip install numpy scipy cython
+pip install linkageMapper
+```
 
 ### Setup issues:
 
