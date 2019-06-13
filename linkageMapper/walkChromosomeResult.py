@@ -277,16 +277,22 @@ class MatrixViewer():
         self.ModifyViewButtons = Gtk.HBox()
 
         self.btn_viewalignment = Gtk.Button(image=Gtk.Image(stock=Gtk.STOCK_MEDIA_PLAY))
-        self.btn_viewalignment.connect("clicked",
-                                       lambda d: self.ModifyPanelView("alignment"))
+        self.btn_viewalignment.connect(
+            "clicked",
+            lambda d: self.ModifyPanelView("alignment")
+        )
 
         self.btn_openfolder = Gtk.Button(image=Gtk.Image(stock=Gtk.STOCK_OPEN))
-        self.btn_openfolder.connect("clicked",
-                                    lambda d: self.ModifyPanelView("openfolder"))
+        self.btn_openfolder.connect(
+            "clicked",
+            lambda d: self.ModifyPanelView("openfolder")
+        )
 
         self.btn_outputimage = Gtk.Button()
-        self.btn_outputimage.connect("clicked",
-                                     lambda d: self.ModifyPanelView("outputimage"))
+        self.btn_outputimage.connect(
+            "clicked",
+            lambda d: self.ModifyPanelView("outputimage")
+        )
         self.btn_outputimage.add(export_icon)
 
         self.btn_ideogram = Gtk.Button(image=Gtk.Image(stock=Gtk.STOCK_CLOSE))
@@ -398,7 +404,6 @@ class MatrixViewer():
         # print(event)
         if event.inaxes:
             Axis = event.inaxes
-            #if event.button is 1:
             if self.zoomedPlot is None:
                 Axis._orig_position = Axis.get_position()
                 Axis.set_position([0, 0, 1, 1])
@@ -415,18 +420,12 @@ class MatrixViewer():
                     if otherAxis is not Axis:
                         otherAxis.set_visible(False)
 
-            #if event.button is 3:
-
             elif self.zoomedPlot is not None:
-                # JUST REDRAW... SLOWER BUT GUARANTEED (matplotlib is mystical);
+                # JUST REDRAW.. SLOWER BUT GUARANTEED
+                # (matplotlib is mystical);
                 # self.changeView(self.)
                 self.zoomedPlot = None
-                """
-                    self.zoomedPlot.set_position(self.zoomedPlot._orig_position)
-                    for Axis in event.canvas.figure.axes:
-                        Axis.set_visible(True)
-                    self.zoomedPlot = None
-                """
+
         else:
             print("OFF AXIS.;")
 
@@ -451,7 +450,6 @@ class MatrixViewer():
             ADD = self.folderpathselector
         elif target == "alignment":
             ADD = self.FigureBox
-
 
         if self.FigureBox.get_parent():
             REMOVE = self.FigureBox
@@ -488,12 +486,23 @@ class BuildImageMenu(Gtk.VBox):
             self.Information.set_text("Please select at least one region.")
 
         else:
+            # Read matrix normalization checkbox;
+            if self.chk_normalize.get_active():
+                MatrixParameters = {
+                    "pre_multiplier": 6,
+                    "normalizer": 2
+                }
+            else:
+                MatrixParameters = None
+
+            # Read selected regions;
             Regions = [x for x in range(len(states)) if states[x]]
-            print(Regions)
+
             self.matrix_viewer.changeView(
                 Regions,
                 self.matrix_viewer.batchRegionPlot,
-                reorganizeIndex=0
+                reorganizeIndex=0,
+                MatrixParameters=MatrixParameters
             )
             self.matrix_viewer.ModifyPanelView("alignment")
 
@@ -504,10 +513,20 @@ class BuildImageMenu(Gtk.VBox):
         hbox = Gtk.HBox()
 
         n = Gtk.Label("Reordered Matrixes")
-        w = Gtk.Button.new_with_label('IO')
 
         btn_Confirm = Gtk.Button.new_with_label("Export.")
         btn_Confirm.connect("clicked", self.makeCustomPlot)
+
+
+        # Setup normalize menu features;
+        self.chk_normalize = Gtk.CheckButton()
+        lbl_normalize = Gtk.Label("Normalize Matrix Values")
+
+        normalizer = Gtk.HBox()
+        normalizer.pack_start(self.chk_normalize, False, False, 0)
+        normalizer.pack_start(lbl_normalize, False, False, 0)
+
+        # Build selectable region list;
         loci_list = alnData.fetchOriginalLociList()
         loci_list_selector = Gtk.VBox()
 
@@ -526,12 +545,12 @@ class BuildImageMenu(Gtk.VBox):
             loci_list_selector.pack_start(lbox, False, False, 0)
 
         # hbox.pack_start(n, True, True, 0)
-        hbox.pack_start(w, False, False, 0)
         hbox.pack_start(btn_Confirm, False, False, 0)
         hbox.pack_start(loci_list_selector, True, True, 0)
 
         Layout.pack_start(hbox, True, True, 5)
         Layout.pack_start(self.Information, True, True, 5)
+        Layout.pack_start(normalizer, True, True, 5)
 
         return Layout
 
