@@ -1,13 +1,13 @@
 sudo: required
 services: docker
 language: generic
-env:
-  - DOCKER_FILE="Dockerfile" PYTHON="python3"
 jobs:
+  env:
+    - DOCKER_FILE="Dockerfile" PYTHON="python3"
   before_install:
-  - docker build -t lmp -f "$DOCKER_FILE" .
-  - docker run --volume "$(pwd):/app" --workdir "/app" --tty --detach lmp > container_id
-  - cat container_id
+    - docker build -t lmp -f "$DOCKER_FILE" .
+    - docker run --volume "$(pwd):/app" --workdir "/app" --tty --detach lmp > container_id
+    - cat container_id
 
   install:
     - docker exec "$(cat container_id)" pip3 install /app
