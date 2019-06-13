@@ -284,7 +284,7 @@ def strainToDatabase(species):
 
 def renameGenomeFiles(dirpath, organism):
     allGenomes = os.listdir(dirpath)
-
+    allGenomes = [g for g in allGenomes if g.endswith(".fna", ".fasta")]
     def orderByVersion(g):
         for version in range(10, 1, -1):
             if "v%i_" in g.lower():
