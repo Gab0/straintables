@@ -141,7 +141,8 @@ def singleLocusStatus(alnData, axis, locus_name):
 def createMatrixSubplot(fig, position,
                         name, matrix,
                         xlabels, ylabels,
-                        fontsize=9):
+                        fontsize=9,
+                        MatrixParameters=None):
     new_ax = fig.add_subplot(position)
 
     MatrixPlot.heatmapToAxis(
@@ -150,7 +151,8 @@ def createMatrixSubplot(fig, position,
         xlabels=xlabels,
         ylabels=ylabels,
         fontsize=fontsize,
-        MatrixName=name
+        MatrixName=name,
+        MatrixParameters=MatrixParameters
     )
 
     return new_ax
@@ -225,7 +227,8 @@ def makePlotCode(a, b, c):
 
 
 def plotRegionBatch(fig, alnData, regionIndexes,
-                    showLabelColors=True, reorganizeIndex=None):
+                    showLabelColors=True, reorganizeIndex=None,
+                    MatrixParameters=None):
     data = [
         alnData.MatchData["LocusName"].iloc[i]
         for i in regionIndexes
@@ -282,7 +285,8 @@ def plotRegionBatch(fig, alnData, regionIndexes,
             fig, PlotCode,
             data[m], Matrix,
             plotLabels, plotLabels,
-            fontsize=fontsize
+            fontsize=fontsize,
+            MatrixParameters=MatrixParameters
         )
 
         AllPlots.append(plot)
