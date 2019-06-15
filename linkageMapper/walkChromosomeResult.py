@@ -8,6 +8,7 @@ import subprocess
 from argparse import ArgumentParser
 
 import matplotlib.pyplot as plt
+import threading
 
 from . import graphic
 from . import walkChromosome
@@ -16,6 +17,7 @@ from matplotlib.backends.backend_gtk3agg import FigureCanvas
 from matplotlib.backends.backend_gtk3 import (
     NavigationToolbar2GTK3 as NavigationToolbar)
 
+import time
 
 import gi
 gi.require_version('Gtk', '3.0')
@@ -107,6 +109,7 @@ class MatrixViewer():
         self.swap = False
         self.alnData = None
         self.infoText = Gtk.Label.new("")
+        self.Size = None
 
         # SELECT DRAWING FUNCTION;
         self.drawPlot = walkChromosome.plotViewport.plotPwmIndex
@@ -127,8 +130,7 @@ class MatrixViewer():
         # LOAD DATA;
         self.loadNewFolder(inputDirectory)
 
-
-        #self.top_menu()
+        # self.top_menu()
         self.locus_navigator()
         Layout = self.build_interface()
 
@@ -139,18 +141,40 @@ class MatrixViewer():
         # HIDE THIS ANNOYING THING.
         self.toolbar.message.hide()
 
-        if self.alnData:
-            #self.figurecanvas.connect("draw", lambda x, y: self.navigate(0))
-            self.figurecanvas.connect("show", lambda x: self.navigate(0))
+        self.resizetimer = time.time()
 
+        self.Size = self.Window.get_size()
+        # self.figurecanvas.connect("draw", lambda x, y: self.navigate(0))
+        # self.figurecanvas.connect("show", firstshow)
+        self.Window.connect("check-resize", self.check_resize)
+
+        # Initialize image;
+        self.navigate(0)
         self.Window.show_all()
-
         # LAUNCH
         Gtk.main()
 
-        self.navigate(0)
+        # self.navigate(0)
         while Gtk.events_pending:
             Gtk.main_iteration()
+
+    def res(self):
+        time.sleep(0.3)
+        self.figure.tight_layout()
+
+    def check_resize(self, w):
+        Size = w.get_size()
+        print(Size)
+        if self.Size is not None:
+            if self.Size.height > 200 and self.Size.width > 200:
+                if Size != self.Size:
+                    print("Resized")
+                    d = threading.Thread(target=self.res)
+                    d.start()
+
+        else:
+            print("Not resized.")
+        self.Size = Size
 
     def top_menu(self):
         # INITIALIZE TOP MENU BAR;
