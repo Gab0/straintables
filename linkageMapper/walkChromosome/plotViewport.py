@@ -511,6 +511,6 @@ def plotPwmIndex(fig, alnData, regionIndexes, showLabelColors=True):
     plt.title("")
 
     plt.subplots_adjust(top=0.79, bottom=0.03, left=0.06, right=1.00)
-    plt.tight_layout()
+    fig.tight_layout()
 
     return fig
