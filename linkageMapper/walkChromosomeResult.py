@@ -159,14 +159,13 @@ class MatrixViewer():
             Gtk.main_iteration()
 
     def res(self):
-        time.sleep(0.3)
+        time.sleep(0.2)
         self.figure.tight_layout()
 
     def check_resize(self, w):
         Size = w.get_size()
-        print(Size)
         if self.Size is not None:
-            if self.Size.height > 200 and self.Size.width > 200:
+            if Size.height > 100 and Size.width > 100:
                 if Size != self.Size:
                     print("Resized")
                     d = threading.Thread(target=self.res)
