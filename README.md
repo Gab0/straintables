@@ -110,19 +110,19 @@ It will create and populate the folders `genomes` and `annotations`.
 
 ```
 To download defaults: Toxoplasma gondii genomes, strain ME49 annotations;
-$lmdownload
+$stdownload
 
 Same result as above, manually:
-$lmdownload --organism "Toxoplasma gondii" --strain ME49
+$stdownload --organism "Toxoplasma gondii" --strain ME49
 
 With lactobacillus plantarum, strain WCFS1 annotations:
-$lmdownload --organism "Lactobacillus plantarum" --strain WCFS1
+$stdownload --organism "Lactobacillus plantarum" --strain WCFS1
 
 Ten genomes of Saccharomyces cerevisiae:
-$lmdownload --organism "Saccharomyces cerevisiae" --max 10
+$stdownload --organism "Saccharomyces cerevisiae" --max 10
 ```
 
-Please note that although the script `lmdownload` contatins various methods to ensure the correct file names for downloaded genomes,
+Please note that although the script `stdownload` contatins various methods to ensure the correct file names for downloaded genomes,
 it's recommended to check the folder after the process.
 
 The user can manually add desired genomes and annotations, as explained in the next subsections:
@@ -151,9 +151,9 @@ The user can manually add desired genomes and annotations, as explained in the n
 #### Example 1: Automatic Locus Selection with Automatic Primer Search.
 
 ```
-$ lmprimer -i annotations -c X -o Primers/TEST.csv -p 0.01
-$ lmpline -p Primers/TEST.csv
-$ lmview analysisResults/TEST
+$ stprimer -i annotations -c X -o Primers/TEST.csv -p 0.01
+$ stpline -p Primers/TEST.csv
+$ stview analysisResults/TEST
 ```
 
 
@@ -174,7 +174,7 @@ TGME49_227830,,
 
 Then, execute:
 ```
-$lmpline -p Primers/chr_X.csv
+$stpline -p Primers/chr_X.csv
 ```
 
 * Then view similarity matrixes and phylogenetic trees on `pdf` files at `Alignments/chr_X` folder.
@@ -196,9 +196,9 @@ AP2X1,GCTCAAGCTGCTCCCCGGGC,TCGACGGAGGTGCTCCAACC
 # Executable Scripts
 
 ```
-lmdownload
-lmprimer
-lmpline
+stdownload [--help]
+stprimer [--help]
+stpline [--help]
 ```
 
 
@@ -223,7 +223,7 @@ lmpline
 
 Some python scripts on the main module are not called within linkagePipeline.sh. They are optional analysis tools and should be launched by the user.
 
-1. `lmview` The basic one. This will build a slide presentation of plots, each plot showing a pair of similarity matrixes.
+1. `stview` The basic one. This will build a slide presentation of plots, each plot showing a pair of similarity matrixes.
 The matrix show will start with the first locus against the second locus chosen, in the order of the Primer file, along with some extra information. Then, the second locus will be compared to the third and so it goes on.
 
 
