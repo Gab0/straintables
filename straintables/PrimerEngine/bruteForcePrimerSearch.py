@@ -6,7 +6,7 @@ import re
 from . import PrimerDock
 from Bio import SeqIO
 
-from linkageMapper.Database.StrainNames import fetchStrainName
+from straintables.Database.StrainNames import fetchStrainName
 
 """
 

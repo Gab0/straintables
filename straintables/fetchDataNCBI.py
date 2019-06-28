@@ -21,7 +21,7 @@ import ftplib
 import optparse
 import time
 
-from linkageMapper.Database import StrainNames
+from straintables.Database import StrainNames
 import socket
 # is this legal in the terms of the LAW?
 Entrez.email = 'researcher_%i@one-time-use.cn' % random.randrange(0, 1000)

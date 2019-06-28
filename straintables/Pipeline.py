@@ -5,12 +5,12 @@ import os
 import argparse
 import pandas as pd
 
-import linkageMapper
+import straintables
 import subprocess
 
 from Bio.Align.Applications import ClustalwCommandline
 
-from linkageMapper.logo import logo
+from straintables.logo import logo
 
 
 class Options():
@@ -28,7 +28,7 @@ def find_primers(primerFile, outputPath):
         "WantedLoci": ""
     }
 
-    return linkageMapper.primerFinder.Execute(Options(finderOptions))
+    return straintables.primerFinder.Execute(Options(finderOptions))
 
 
 @active_if(lambda: options.DoAlignment)
@@ -55,7 +55,7 @@ def draw_tree(filePrefix):
         "OutputFile": outfile
     })
 
-    linkageMapper.DrawGraphics.drawTree.Execute(treeOptions)
+    straintables.DrawGraphics.drawTree.Execute(treeOptions)
 
 
 def run_meshclust(filePrefix):
@@ -75,7 +75,7 @@ def detect_mutations(filePrefix):
         "PlotSubtitle": ""
     })
 
-    linkageMapper.detectMutations.Execute(mutationsOptions)
+    straintables.detectMutations.Execute(mutationsOptions)
 
 
 def matrix_analysis(WorkingDirectory):
@@ -84,8 +84,8 @@ def matrix_analysis(WorkingDirectory):
         "updateOnly": False
     })
 
-    linkageMapper.compareHeatmap.Execute(analysisOptions)
-    return linkageMapper.matrixAnalysis.Execute(analysisOptions)
+    straintables.compareHeatmap.Execute(analysisOptions)
+    return straintables.matrixAnalysis.Execute(analysisOptions)
 
 
 def parse_arguments():

@@ -121,7 +121,7 @@ class MatrixViewer():
         self.Window.connect("destroy", lambda x: Gtk.main_quit())
         #screen = Gdk.Screen()
         #self.Window.set_default_size(screen.get_width(), screen.get_height())
-        self.Window.set_title("linkageMapper - Walk Chromosome Result")
+        self.Window.set_title("straintables - Walk Chromosome Result")
 
         # Children structures;
         self.locusMap = walkChromosome.mapBar.LocusMapBar()
