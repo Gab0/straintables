@@ -1,8 +1,8 @@
-![Travis build](https://travis-ci.com/Gab0/linkageMapper.svg?branch=master)
-[![PyPI version](https://badge.fury.io/py/linkageMapper.svg)](https://badge.fury.io/py/linkageMapper)
+![Travis build](https://travis-ci.com/Gab0/straintables.svg?branch=master)
+[![PyPI version](https://badge.fury.io/py/straintables.svg)](https://badge.fury.io/py/straintables)
 # About
 
-linkageMapper is a tool that helps evaluate the difference among gene loci across an organism genomes, based on primer matching across the sequenced genome files.
+straintables is a tool that helps evaluate the difference among gene loci across an organism genomes, based on primer matching across the sequenced genome files.
 
 Those primers may be user-defined or found by the software, which run brute force searches on top of the gene sequence, after retrieving its boundaries from an annotation file.
 
@@ -19,7 +19,7 @@ This package is composed by a few independent python scripts. The analysis follo
 
 ### 1) Primer Docking: fetching Amplicons
 
-This step is carried by the module `linkageMapper.primerFinder`.
+This step is carried by the module `straintables.primerFinder`.
 
 For each designated loci, the app will try to find the complement and/or the original sequence
 of both primers on all genomes. If both primers are found in a genome, the sequence between those primers is extracted and it proceeds to the next genome.
@@ -51,10 +51,10 @@ After getting the loci sequence from all the genomes, the visualization of the d
 
 ### 3) Visualization
 
-Afther the pipeline executes the main scripts, the user can execute `linkageMapper/walkChromosomeResult.py` and load the folder in order to view the results.
+Afther the pipeline executes the main scripts, the user can execute `straintables/walkChromosomeResult.py` and load the folder in order to view the results.
 
 
-![](https://raw.githubusercontent.com/Gab0/linkageMapper/master/walkChr.jpg?raw=true)
+![](https://raw.githubusercontent.com/Gab0/straintables/master/walkChr.jpg?raw=true)
 
 More statistical analysis on the Dissimilarity Matrixes are carried, mostly using python's `skbio` module. The interpretation of analysis is under construction.
 
@@ -67,7 +67,7 @@ By looking at a pair of D. Matrixes at a time, both corresponding to locus that 
 1. from pipy: 
 ```
 pip install numpy scipy cython
-pip install linkageMapper
+pip install straintables
 ```
 
 ### Setup issues:
@@ -84,12 +84,12 @@ For linux users, please check the file `Dockerfile` on this repo to see which li
 
 ### ClustalW2
 
-The alignment step of `linkageMapper` requires [ClustalW2](http://www.clustal.org/clustal2/) installed on your
+The alignment step of `straintables` requires [ClustalW2](http://www.clustal.org/clustal2/) installed on your
 system.
 
 ### MeShClust [optional]
 
-The recombination analysis step of `linkageMapper` has [MeShCluSt](https://github.com/TulsaBioinformaticsToolsmith/MeShClust) as an optional dependency.
+The recombination analysis step of `straintables` has [MeShCluSt](https://github.com/TulsaBioinformaticsToolsmith/MeShClust) as an optional dependency.
 
 Having it installed on the system will enable genome group clustering to be totally independend from the alignment software, as MeShCluSt does the clustering
 on top of unaligned `.fasta` files.
