@@ -28,7 +28,7 @@ def heatmapToAxis(MATRIX, ax, xlabels=None,
     ax.matshow(MATRIX, cmap='binary')
 
     SIZE = len(MATRIX)
-
+    print(MATRIX)
     # MINOR TICKS -> GRID;
     DIV = SIZE // 3
     gridPoints = np.arange(0, SIZE, DIV)[1:-1] + 0.5
