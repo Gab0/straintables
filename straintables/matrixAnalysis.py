@@ -85,7 +85,9 @@ def Execute(options):
     arrayFilePaths = [os.path.join(options.InputDirectory, File)
                       for File in arrayFiles]
 
-    # LOAD HEATMAPS FOR LOCI THAT SUCCEEDED THE ALIGNMENT (SO .aln.npy FILE EXISTS);
+    # LOAD HEATMAPS FOR LOCI THAT SUCCEEDED THE ALIGNMENT;
+    # (SO .aln.npy FILE EXISTS);
+
     heatmaps = [
         np.load(filePath)
         for filePath in arrayFilePaths
@@ -95,7 +97,10 @@ def Execute(options):
     heatmapLabels = np.load(os.path.join(options.InputDirectory,
                                          "heatmap_labels.npy"))
 
-    Distances = [skdist.DistanceMatrix(h, heatmapLabels) for h in heatmaps]
+    Distances = [
+        skdist.DistanceMatrix(h, heatmapLabels)
+        for h in heatmaps
+    ]
 
     grouping = []
     for l in heatmapLabels:
