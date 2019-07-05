@@ -80,19 +80,19 @@ def buildVariationWindows(Alignment):
     InfoWindows = []
 
     for s in range(len(Alignment[0].seq)):
-        window = [dna.seq[s] for dna in Alignment]
-        if len(list(set(window))) > 1:
+        letter_set = [dna.seq[s] for dna in Alignment]
+        if len(list(set(letter_set))) > 1:
 
             # Special Cases: HUGE INSERTIONS
             # AT THE BEGINNING OR END OF ANY SEQUENCE;
             # TBD
-            print(window)
-            Windows.append(window)
-            InfoWindows.append([s] + window)
+            print(letter_set)
+            Windows.append(letter_set)
+            InfoWindows.append([s] + letter_set)
 
-            snp_variations = len(set(window))
+            snp_variations = len(set(letter_set))
             if snp_variations > 2:
-                print("TRI_SNP")
+                print("TRIALLELIC_SNP")
 
     return Windows, InfoWindows
 
@@ -142,7 +142,8 @@ def buildMatrixFromWindow(Alignment, _Windows):
         MATRIX = np.matrix(MATRIX)
 
     else:
-        MATRIX = np.matrix(np.ones((len(Alignment), len(Alignment))))
+        MATRIX = np.matrix(np.zeros((len(Alignment), len(Alignment))))
+        nb_snp = 0
 
     return MATRIX, nb_snp
 
@@ -195,7 +196,10 @@ def Execute(options):
     # transpose windows;
     _Windows = list(zip(*Windows))
 
-    sequenceNames, _Windows = sortAlignments(sequenceNames, _Windows)
+    # if _Windows is empty (no variation on group),
+    # do not reorder those sequenceNames.
+    if _Windows:
+        sequenceNames, _Windows = sortAlignments(sequenceNames, _Windows)
 
     MATRIX, nb_snp = buildMatrixFromWindow(Alignment, _Windows)
 
