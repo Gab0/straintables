@@ -284,7 +284,9 @@ def strainToDatabase(species):
 
 def renameGenomeFiles(dirpath, organism):
     allGenomes = os.listdir(dirpath)
-    allGenomes = [g for g in allGenomes if g.endswith(".fna", ".fasta")]
+    allGenomes = [g for g in allGenomes
+                  if any([g.endswith(extension) for extension in [".fna", ".fasta"]])]
+
     def orderByVersion(g):
         for version in range(10, 1, -1):
             if "v%i_" in g.lower():
@@ -339,6 +341,9 @@ def parse_options():
                       type=int,
                       default=20)
 
+    parser.add_option("--rename",
+                      dest="OnlyRename",
+                      help="Rename genome/annotations file and exit.")
     options, args = parser.parse_args()
 
     return options
