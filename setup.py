@@ -17,7 +17,7 @@ base_folder = os.path.dirname(os.path.realpath(__file__))
 requirements = list(open(os.path.join(base_folder, "requirements.txt")).readlines())
 setup(
     name='straintables',
-    version='0.90',
+    version='0.92',
     description='Genomic similarities per region',
     author='Gabriel Araujo',
     author_email='gabriel_scf@hotmail.com',
@@ -27,7 +27,7 @@ setup(
     install_requires=requirements,
     packages=[
         'straintables',
-        'straintables.walkChromosome',
+        'straintables.Viewer',
         'straintables.PrimerEngine',
         'straintables.DrawGraphics',
         'straintables.Database',
