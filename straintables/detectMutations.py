@@ -11,7 +11,7 @@ import re
 import os
 
 from . import DrawGraphics
-from . import walkChromosome
+from . import Viewer
 import optparse
 
 
@@ -20,7 +20,7 @@ def createPdfHeatmap(MATRIX, sequenceNames, filename=None, subtitle=None, Matrix
     fig = plt.figure()
     ax = fig.add_subplot(111)
 
-    walkChromosome.MatrixPlot.heatmapToAxis(MATRIX, ax, xlabels=sequenceNames, ylabels=sequenceNames, MatrixParameters=MatrixParameters)
+    Viewer.MatrixPlot.heatmapToAxis(MATRIX, ax, xlabels=sequenceNames, ylabels=sequenceNames, MatrixParameters=MatrixParameters)
 
     # ax.grid(which='minor', color='r', linestyle='-', linewidth=2)
 
