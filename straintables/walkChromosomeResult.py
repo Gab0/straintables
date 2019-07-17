@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 import threading
 
 from . import graphic
-from . import walkChromosome
+from . import Viewer
 
 from matplotlib.backends.backend_gtk3agg import FigureCanvas
 from matplotlib.backends.backend_gtk3 import (
@@ -112,9 +112,9 @@ class MatrixViewer():
         self.Size = None
 
         # SELECT DRAWING FUNCTION;
-        self.drawPlot = walkChromosome.plotViewport.plotPwmIndex
-        self.batchRegionPlot = walkChromosome.plotViewport.plotRegionBatch
-        self.plotIdeogram = walkChromosome.ideogram.plotIdeogram
+        self.drawPlot = Viewer.plotViewport.plotPwmIndex
+        self.batchRegionPlot = Viewer.plotViewport.plotRegionBatch
+        self.plotIdeogram = Viewer.ideogram.plotIdeogram
 
         # INITIALIZE GTK WINDOW;
         self.Window = Gtk.Window()
@@ -124,7 +124,7 @@ class MatrixViewer():
         self.Window.set_title("straintables - Walk Chromosome Result")
 
         # Children structures;
-        self.locusMap = walkChromosome.mapBar.LocusMapBar()
+        self.locusMap = Viewer.mapBar.LocusMapBar()
         self.locusNavigator = locusNamesSelectionMenu(self)
 
         # LOAD DATA;
@@ -339,7 +339,7 @@ class MatrixViewer():
 
     def loadNewFolder(self, inputDirectory):
         if inputDirectory:
-            self.alnData = walkChromosome.alignmentData.AlignmentData(inputDirectory)
+            self.alnData = Viewer.alignmentData.AlignmentData(inputDirectory)
             self.infoText.set_text(self.alnData.inputDirectory)
             self.locusNavigator.Update()
             self.locusMap.loadData(self.alnData)
@@ -412,15 +412,15 @@ class MatrixViewer():
             self.figurecanvas.flush_events()
 
             LocusIndexes = self.alnData.getPWMRegionIndexes(self.index)
-            LocusNames = [
+            self.LocusNames = [
                 self.alnData.MatchData["LocusName"][name]
                 for name in LocusIndexes
             ]
 
-            ls_tooltip = "View Alignment For %s" % LocusNames[0]
+            ls_tooltip = "View Alignment For %s" % self.LocusNames[0]
             self.openSequenceLeft.set_tooltip_text(ls_tooltip)
 
-            rs_tooltip = "View Alignment For %s" % LocusNames[1]
+            rs_tooltip = "View Alignment For %s" % self.LocusNames[1]
             self.openSequenceRight.set_tooltip_text(rs_tooltip)
 
     def onclickCanvas(self, event):
@@ -453,8 +453,7 @@ class MatrixViewer():
             print("OFF AXIS.;")
 
     def launchAlignViewer(self, side):
-        LocusIndexes = self.alnData.getPWMRegionIndexes(self.index)
-        LocusName = self.alnData.MatchData["LocusName"][LocusIndexes[side]]
+        LocusName = self.LocusNames[side]
 
         alignmentFilePath = os.path.join(self.inputDirectory, "LOCI_%s.aln" % LocusName)
         command = ["aliview", alignmentFilePath]
@@ -502,6 +501,14 @@ class BuildImageMenu(Gtk.VBox):
             for c in self.Checkboxes
         ]
 
+        guide = [
+            c.get_active()
+            for c in self.GuideCheckboxes
+        ]
+
+        ActiveGuide = guide.index(True)
+        ActiveGuide = ActiveGuide if ActiveGuide > -1 else 0
+
         if sum(states) > 6:
             self.Information.set_text("Maximum region count is six.")
 
@@ -510,21 +517,20 @@ class BuildImageMenu(Gtk.VBox):
 
         else:
             # Read matrix normalization checkbox;
-            if self.chk_normalize.get_active():
-                MatrixParameters = {
-                    "pre_multiplier": 6,
-                    "normalizer": 2
-                }
-            else:
-                MatrixParameters = None
+            MatrixParameters = {
+                "pre_multiplier": 6,
+                "normalizer": 2
+            }
+
+            MatrixParameters["Normalize"] = self.chk_normalize.get_active()
+            MatrixParameters["showNumbers"] = self.chk_showvalues.get_active()
 
             # Read selected regions;
             Regions = [x for x in range(len(states)) if states[x]]
-
             self.matrix_viewer.changeView(
                 Regions,
                 self.matrix_viewer.batchRegionPlot,
-                reorganizeIndex=0,
+                reorganizeIndex=ActiveGuide,
                 MatrixParameters=MatrixParameters
             )
             self.matrix_viewer.ModifyPanelView("alignment")
@@ -542,12 +548,21 @@ class BuildImageMenu(Gtk.VBox):
 
 
         # Setup normalize menu features;
-        self.chk_normalize = Gtk.CheckButton()
-        lbl_normalize = Gtk.Label("Normalize Matrix Values")
+        def newToggleOption(Label):
+            checkbox = Gtk.CheckButton()
+            label = Gtk.Label(Label)
 
-        normalizer = Gtk.HBox()
-        normalizer.pack_start(self.chk_normalize, False, False, 0)
-        normalizer.pack_start(lbl_normalize, False, False, 0)
+            container = Gtk.HBox()
+            for piece in [checkbox, label]:
+                container.pack_start(piece, False, False, 0)
+
+            return checkbox, container
+
+
+        # Setup shown values features;
+        self.chk_normalize, normalizer = newToggleOption("Normalize Matrix Values")
+        self.chk_showvalues, showvalues = newToggleOption("Show Matrix Values")
+
 
         # Build selectable region list;
         loci_list = alnData.fetchOriginalLociList()
@@ -556,16 +571,22 @@ class BuildImageMenu(Gtk.VBox):
         self.Information = Gtk.Label()
 
         self.Checkboxes = []
+        self.GuideCheckboxes = []
+        GuideGroup = None
         for locus in loci_list:
-            L = Gtk.Label(locus)
+            L = Gtk.Label(locus + " " * (20 - len(locus)))
             C = Gtk.CheckButton()
+            G = Gtk.RadioButton(group=GuideGroup)
 
             self.Checkboxes.append(C)
+            self.GuideCheckboxes.append(G)
+            GuideGroup = self.GuideCheckboxes[0]
 
-            lbox = Gtk.HBox()
-            lbox.pack_start(C, False, False, 0)
-            lbox.pack_start(L, False, False, 0)
-            loci_list_selector.pack_start(lbox, False, False, 0)
+            locusbox = Gtk.HBox()
+            for Item in [G, L, C]:
+                locusbox.pack_start(Item, False, False, 0)
+
+            loci_list_selector.pack_start(locusbox, False, False, 0)
 
         # hbox.pack_start(n, True, True, 0)
         hbox.pack_start(btn_Confirm, False, False, 0)
@@ -574,7 +595,7 @@ class BuildImageMenu(Gtk.VBox):
         Layout.pack_start(hbox, True, True, 5)
         Layout.pack_start(self.Information, True, True, 5)
         Layout.pack_start(normalizer, True, True, 5)
-
+        Layout.pack_start(showvalues, True, True, 5)
         return Layout
 
 
