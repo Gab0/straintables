@@ -18,11 +18,13 @@ def loadGenesFromScaffoldAnnotation(Scaffold):
 
         NAME = None
         hasName = False
+
         if COND1:
             NAME = feature.qualifiers["gene"][0]
         elif COND2:
             NAME = feature.qualifiers["locus_tag"][0]
 
+        # NAME or COND1?
         if NAME:
             genes.append(Gene(NAME, hasName))
 
