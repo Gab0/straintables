@@ -7,7 +7,7 @@ from setuptools import setup, find_packages
 entry_points = {
     'console_scripts': [
         "stpline=straintables.Pipeline:main",
-        "stview=straintables.walkChromosomeResult:main",
+        "stview=straintables.MatrixViewer:main",
         "stdownload=straintables.fetchDataNCBI:main",
         "stprimer=straintables.initializePrimerFile:main"
         ]
