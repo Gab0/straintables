@@ -28,7 +28,7 @@ def heatmapToAxis(MATRIX, ax, xlabels=None,
     if MatrixParameters is None:
         MatrixParameters = {
             "Normalize": False,
-            "showNumbers": True
+            "showNumbers": False
         }
 
     if MatrixParameters["Normalize"]:
@@ -61,17 +61,23 @@ def heatmapToAxis(MATRIX, ax, xlabels=None,
     if ylabels is not None:
         ax.set_yticklabels(ylabels, fontProperties)
 
+    # Get approximate size for each cell.
+    pos = ax.get_position()
+    d = pos.height / MATRIX.shape[0]
+
     if MatrixName:
         ax.set_xlabel(MatrixName, fontProperties)
 
     if MatrixParameters["showNumbers"]:
         valueFontProperties = fontProperties
-        valueFontProperties['fontsize'] = 2 * np.sqrt(fontProperties['fontsize'])
+
+        valueFontProperties['fontsize'] = d * 430
+        #2 * np.sqrt(fontProperties['fontsize'])
         Mean = np.mean(MATRIX)
         for i in range(MATRIX.shape[0]):
             for j in range(MATRIX.shape[1]):
                 value = MATRIX[i, j]
-                svalue = "%.1f" % value
+                svalue = ("%.2f" % value)[1:]
 
                 # -- invert number colors for legibility
                 if value > Mean / 2:
@@ -79,6 +85,6 @@ def heatmapToAxis(MATRIX, ax, xlabels=None,
                 else:
                     color = 255
 
-                ax.text(i, j,
+                ax.text(j, i,
                         svalue, valueFontProperties,
                         color=ColorMap(color), va='center', ha='center')
