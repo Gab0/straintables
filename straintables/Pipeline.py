@@ -120,8 +120,6 @@ def main():
         AnalysisCode = os.path.basename(AnalysisCode)
 
         WorkingDirectoryBase = "analysisResults"
-        if not os.path.isdir(WorkingDirectoryBase):
-            os.mkdir(WorkingDirectoryBase)
         WorkingDirectory = os.path.join(WorkingDirectoryBase,
                                         AnalysisCode)
 
