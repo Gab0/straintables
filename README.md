@@ -13,7 +13,8 @@ Further clustering is done, based on the DMs.
 
 The viewer interface then shows how the genomes are different at those regions in a simple, almost educative way.
 
-This package is composed by a few independent python scripts. The analysis follows a linear path that can be executed with the help of a pipeline script.
+This package is composed by few independent python scripts which are installed as system commands, they are listed at the botom of this readme.
+The analysis follows a linear path that can be executed with the help of a pipeline script, `stpline`.
 
 ## Inside The Pipeline
 
@@ -42,7 +43,7 @@ After getting the loci sequence from all the genomes, the visualization of the d
 1. The multifasta file containing sequence for one loci among all genomes is passed through ClustalW2
 2. The the SNPs are detected and scored.
 3. One Dissimilarity Matrix is created, showing which genome groups have similar locus.
-4. Dissimilarity Matrixes can be viewed individually as `.pdf` files, `.npy` python files, or at the main visualization tool `walkChromosomeResult.py`.
+4. Dissimilarity Matrixes can be viewed individually as `.pdf` files, `.npy` python files, or grouped at the visualization tool `stview`.
 
 #### 2b) MeshClust Clustering
 
@@ -51,7 +52,7 @@ After getting the loci sequence from all the genomes, the visualization of the d
 
 ### 3) Visualization
 
-Afther the pipeline executes the main scripts, the user can execute `straintables/walkChromosomeResult.py` and load the folder in order to view the results.
+Afther the pipeline executes the docking and evaluation scripts, the user can execute `stview <result_directory_path>` in order to view the results.
 
 
 ![](https://raw.githubusercontent.com/Gab0/straintables/master/walkChr.jpg?raw=true)
