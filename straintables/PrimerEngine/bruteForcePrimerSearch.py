@@ -58,11 +58,12 @@ class bruteForceSearcher():
         genome = list(SeqIO.parse(matchingGenomeFilePath, format="fasta"))
         return genome
 
-    def retrieveGeneLocation(self, geneName):
+    def retrieveGeneLocation(self, geneName, wantedFeatureType="CDS"):
+        assert(wantedFeatureType in ["gene", "mRNA", "CDS"])
+
         for g, FeatureGroup in enumerate(self.genomeFeatures):
-            #print(FeatureGroup)
             for feature in FeatureGroup.features:
-                if feature.type == "gene":
+                if feature.type == wantedFeatureType:
                     MATCH = False
                     if "gene" in feature.qualifiers.keys():
                         if geneName in feature.qualifiers['gene']:
@@ -72,6 +73,7 @@ class bruteForceSearcher():
                             MATCH = True
                     if MATCH:
                         return FeatureGroup.description, feature.location
+
         print("Warning: Gene %s not found." % geneName)
         #exit(1)
 
