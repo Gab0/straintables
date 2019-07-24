@@ -200,6 +200,7 @@ AP2X1,GCTCAAGCTGCTCCCCGGGC,TCGACGGAGGTGCTCCAACC
 stdownload [--help]
 stprimer [--help]
 stpline [--help]
+stview [--help]
 ```
 
 
