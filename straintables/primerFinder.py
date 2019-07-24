@@ -9,8 +9,7 @@ from Bio import Seq, SeqIO
 
 from optparse import OptionParser
 
-
-from . import PrimerEngine
+from . import PrimerEngine, FileTypes, Definitions
 from .Database import annotationManager
 
 
@@ -56,8 +55,8 @@ def loadPrimerList(filePath):
     for i in range(len(fileColumns)):
         if "Unnamed" in fileColumns[i]:
             fileColumns[i] = np.nan
-    if fileColumns != expectedColumns:
 
+    if fileColumns != expectedColumns:
         newFirstRowData = dict([(expected, fileColumns[e])
                                 for e, expected
                                 in enumerate(expectedColumns)])
@@ -85,7 +84,7 @@ def Execute(options):
         print("FATAL: No primer file specified.")
         exit(1)
 
-    PrimerTypes = ["ForwardPrimer", "ReversePrimer"]
+    PrimerTypes = Definitions.PrimerTypes
 
     # -- LOAD GENOME FEATURES;
     featureFolderPath = "annotations"
@@ -244,17 +243,8 @@ def Execute(options):
         outputFilePath = os.path.join(options.outputPath,
                                       "MatchedRegions.csv")
 
-        data = pd.DataFrame(matchedPrimerSequences,
-                            columns=[
-                                "LocusName",
-                                *PrimerTypes,
-                                "RebootCount",
-                                "AlignmentHealth",
-                                "MeanLength",
-                                "StdLength"
-                            ])
-
-        data.to_csv(outputFilePath, index=False)
+        MatchedPrimers = FileTypes.MatchedPrimers(matchedPrimerSequences)
+        MatchedPrimers.write(outputFilePath)
 
         # Primer Maps on Guide Genome:
         PrimerData = []
