@@ -1,5 +1,15 @@
 #!/bin/python
 
+"""
+
+straintables' main pipeline script;
+
+ruffus functionality is not active yet,
+so its function decorations are decorative.
+
+"""
+
+
 from ruffus import *
 import os
 import argparse
@@ -20,12 +30,13 @@ class Options():
 
 @active_if(lambda: options.DoAmplicon)
 @subdivide(lambda: options.PrimerFile, formatter(), "*.fasta")
-def find_primers(primerFile, outputPath):
+def find_primers(options, outputPath):
 
     finderOptions = {
-        "primerFile": primerFile,
+        "primerFile": options.PrimerFile,
         "outputPath": outputPath,
-        "WantedLoci": ""
+        "WantedLoci": "",
+        "wantedFeatureType": options.wantedFeatureType
     }
 
     return straintables.primerFinder.Execute(Options(finderOptions))
@@ -93,6 +104,8 @@ def parse_arguments():
 
     parser.add_argument("-p", dest="PrimerFile")
 
+    parser.add_argument("-t", dest="wantedFeatureType", default="gene")
+
     parser.add_argument("--noamplicon", dest="DoAmplicon",
                         action="store_false", default=True)
 
@@ -102,7 +115,7 @@ def parse_arguments():
     parser.add_argument("--alnmode", dest="AlignmentMode",
                         default="clustal")
 
-    parser.add_argument("--dir", dest="WorkingDirectory")
+    parser.add_argument("-d", "--dir", dest="WorkingDirectory")
     options = parser.parse_args()
 
     return options
@@ -137,7 +150,10 @@ def main():
         exit(1)
 
     if not os.path.isdir(WorkingDirectory):
-        Path = os.path.split(WorkingDirectory)
+        Path = [
+            step for step in os.path.split(WorkingDirectory)
+            if step
+        ]
         for d, Directory in enumerate(Path):
             subDirectoryPath = os.path.join(*Path[:d+1])
             print(subDirectoryPath)
@@ -154,7 +170,7 @@ def main():
     # RUN NORMALLY;
     if not ruffusMode:
         if options.DoAmplicon:
-            result = find_primers(options.PrimerFile, WorkingDirectory)
+            result = find_primers(options, WorkingDirectory)
             if not result:
                 print("Failure to find primers.")
                 exit(1)
