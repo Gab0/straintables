@@ -70,6 +70,8 @@ By looking at a pair of D. Matrixes at a time, both corresponding to locus that 
 ```
 pip install numpy scipy cython pygobject --user
 pip install straintables --user
+
+!! Executable scripts are now at ~/.local/bin by default.
 ```
 
 ### Setup issues:
