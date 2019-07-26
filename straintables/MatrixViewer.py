@@ -311,6 +311,7 @@ class MatrixViewer():
             "clicked",
             lambda d: self.ModifyPanelView("openfolder")
         )
+        self.btn_openfolder.set_tooltip_text("Load result directory.")
 
         self.btn_outputimage = Gtk.Button()
         self.btn_outputimage.connect(
@@ -318,10 +319,12 @@ class MatrixViewer():
             lambda d: self.ModifyPanelView("outputimage")
         )
         self.btn_outputimage.add(export_icon)
+        self.btn_outputimage.set_tooltip_text("Build output image.")
 
         self.btn_ideogram = Gtk.Button(image=Gtk.Image(stock=Gtk.STOCK_CLOSE))
         self.btn_ideogram.connect("clicked",
                                   self.showIdeogram)
+        self.btn_ideogram.set_tooltip_text("Show chromosome ideogram.")
 
         for WIDGET in [self.btn_viewalignment,
                        self.btn_openfolder,
@@ -385,7 +388,12 @@ class MatrixViewer():
             self.changeView(loci, self.drawPlot)
 
     def showIdeogram(self, d):
-        self.changeView([], self.plotIdeogram)
+        regions = []
+        for i, C in enumerate(self.outputimagemenu.Checkboxes):
+            if C.get_state():
+                regions.append(i)
+
+        self.changeView(regions, self.plotIdeogram, AnnotationPath=None)
 
     def changeView(self, regions, plotMethod, **kwargs):
         self.figure.clf()
@@ -540,7 +548,6 @@ class BuildImageMenu(Gtk.VBox):
         Gtk.VBox.__init__(self)
 
         Layout = Gtk.VBox()
-        hbox = Gtk.HBox()
 
         n = Gtk.Label("Reordered Matrixes")
 
@@ -567,15 +574,28 @@ class BuildImageMenu(Gtk.VBox):
 
         # Build selectable region list;
         loci_list = alnData.fetchOriginalLociList()
-        loci_list_selector = Gtk.VBox()
+
+        loci_list_selector = Gtk.Grid()
 
         self.Information = Gtk.Label()
 
         self.Checkboxes = []
         self.GuideCheckboxes = []
         GuideGroup = None
-        for locus in loci_list:
-            L = Gtk.Label(locus + " " * (20 - len(locus)))
+
+        header_components = [
+            "Reference",
+            "   Region Name  ",
+            "Show"
+        ]
+
+        for H, hc in enumerate(header_components):
+            component = Gtk.Label(hc)
+            #component.set_hexpand(True)
+            loci_list_selector.attach(component, H, 0, 1, 1)
+
+        for l, locus in enumerate(loci_list):
+            L = Gtk.Label(locus)
             C = Gtk.CheckButton()
             G = Gtk.RadioButton(group=GuideGroup)
 
@@ -583,20 +603,30 @@ class BuildImageMenu(Gtk.VBox):
             self.GuideCheckboxes.append(G)
             GuideGroup = self.GuideCheckboxes[0]
 
-            locusbox = Gtk.HBox()
-            for Item in [G, L, C]:
-                locusbox.pack_start(Item, False, False, 0)
+            for I, Item in enumerate([G, L, C]):
+                #Item.set_hexpand(True)
+                Item.set_halign(Gtk.Align.CENTER)
+                loci_list_selector.attach(Item, I, l + 1, 1, 1)
 
-            loci_list_selector.pack_start(locusbox, False, False, 0)
+        # -- Build Layout;
+        RegionSelector = Gtk.HBox()
+        RegionSelector.pack_start(btn_Confirm, False, False, 0)
 
-        # hbox.pack_start(n, True, True, 0)
-        hbox.pack_start(btn_Confirm, False, False, 0)
-        hbox.pack_start(loci_list_selector, True, True, 0)
+        Scroll = Gtk.ScrolledWindow()
+        Scroll.add_with_viewport(loci_list_selector)
+        RegionSelector.pack_start(Scroll, True, True, 0)
 
-        Layout.pack_start(hbox, True, True, 5)
-        Layout.pack_start(self.Information, True, True, 5)
-        Layout.pack_start(normalizer, True, True, 5)
-        Layout.pack_start(showvalues, True, True, 5)
+        Layout.pack_start(RegionSelector, True, True, 5)
+        Layout.pack_start(self.Information, False, False, 10)
+
+        Options = Gtk.VBox()
+        for opt in [normalizer, showvalues]:
+            Options.pack_start(opt, False, False, 2)
+
+        Options.set_valign(Gtk.Align.CENTER)
+
+        Layout.pack_start(Options, False, False, 10)
+
         return Layout
 
 
