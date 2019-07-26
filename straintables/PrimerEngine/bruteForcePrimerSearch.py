@@ -17,12 +17,18 @@ returns: (Name of chromosome, position of sequence inside chromosome)
 
 
 class bruteForceSearcher():
-    def __init__(self, genomeFeatures, genomeFilePaths):
+    def __init__(self, genomeFeatures, genomeFilePaths, wantedFeatureType="CDS"):
+
+        assert(wantedFeatureType in ["gene", "mRNA", "CDS"])
+
         self.genomeFeatures = genomeFeatures
         self.matchedGenome = self.locateMatchingGenome(genomeFilePaths)
+        self.wantedFeatureType = wantedFeatureType
+
         if self.matchedGenome is None:
             print()
-            print("Warning: automatic primer search disabled. No matching genome found!")
+            print("Warning: automatic primer search disabled.")
+            print("\tNo matching genome found!")
             print()
             return None
 
@@ -59,7 +65,6 @@ class bruteForceSearcher():
         return genome
 
     def retrieveGeneLocation(self, geneName, wantedFeatureType="CDS"):
-        assert(wantedFeatureType in ["gene", "mRNA", "CDS"])
 
         for g, FeatureGroup in enumerate(self.genomeFeatures):
             for feature in FeatureGroup.features:
@@ -94,7 +99,7 @@ class bruteForceSearcher():
     def fetchGeneSequence(self, geneName, outputFilePath):
 
         # FETCH PRIMER METHODS. TO BE INTEGRATED;
-        geneLocation = self.retrieveGeneLocation(geneName)
+        geneLocation = self.retrieveGeneLocation(geneName, self.wantedFeatureType)
 
         if geneLocation is None:
             print("Aborting brute force primer search: Gene name not found.")
@@ -134,7 +139,9 @@ class bruteForceSearcher():
 
         if not os.path.isfile(geneSequenceFilePath):
             # Fetch gene sequence;
-            self.fetchGeneSequence(locus_name, geneSequenceFilePath)
+            self.fetchGeneSequence(locus_name,
+                                   geneSequenceFilePath)
+
 
         if os.path.isfile(geneSequenceFilePath):
             geneSequenceRaw = open(geneSequenceFilePath).read()
@@ -142,6 +149,7 @@ class bruteForceSearcher():
             print("Primer source not found.")
             return None
 
+        # replace with SeqIO methods
         geneSequence = geneSequenceRaw.split("\n")
         if ">" in geneSequence[0]:
             geneSequence = geneSequence[1:]
