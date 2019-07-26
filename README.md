@@ -65,10 +65,11 @@ By looking at a pair of D. Matrixes at a time, both corresponding to locus that 
 
 ### Download and install this python module
 
+`straintables` requires Python3.6+
 1. from pipy: 
 ```
-pip install numpy scipy cython
-pip install straintables
+pip install numpy scipy cython pygobject --user
+pip install straintables --user
 ```
 
 ### Setup issues:
