@@ -169,6 +169,7 @@ def plotIdeogram(fig, alnData,
                  AnnotationPath=None):
 
     if not AnnotationPath:
+        print("Undeclared annotation path.")
         return
 
     HighlightGenes = alnData.fetchOriginalLociList()
