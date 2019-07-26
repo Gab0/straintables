@@ -7,9 +7,9 @@ from collections import OrderedDict
 
 from Bio import Seq, SeqIO
 
-from optparse import OptionParser
+import argparse
 
-from . import PrimerEngine, FileTypes, Definitions
+from . import PrimerEngine, OutputFile, Definitions
 from .Database import annotationManager
 
 
@@ -84,7 +84,7 @@ def Execute(options):
         print("FATAL: No primer file specified.")
         exit(1)
 
-    PrimerTypes = Definitions.PrimerTypes
+    print("\nSearching for %s feature types.\n" % options.wantedFeatureType)
 
     # -- LOAD GENOME FEATURES;
     featureFolderPath = "annotations"
@@ -107,23 +107,6 @@ def Execute(options):
     if not genomeFeaturesSet:
         print("Fatal: No features found.")
 
-    """
-    # FETCH GENOME NAMES;
-    genomeFeaturesChromosomes =\
-        [
-            chromosome.features[0].qualifiers['chromosome'][0].upper()
-            for chromosome in genomeFeatures
-            if 'chromosome' in chromosome.features[0].qualifiers.keys()
-        ]
-
-    genomeFeaturesChromosomes = [
-        chrName
-        for chrName in genomeFeaturesChromosomes
-        if chrName is not "UNKNOWN"
-    ]
-
-    # print(genomeFeaturesChromosomes)
-    """
 
     # -- LOAD USER DEFINED PRIMERS;
     lociPrimerList = loadPrimerList(options.primerFile)
@@ -162,7 +145,8 @@ def Execute(options):
     bruteForceSearcher =\
         PrimerEngine.bruteForcePrimerSearch.bruteForceSearcher(
             genomeFeatures,
-            genomeFilePaths
+            genomeFilePaths,
+            options.wantedFeatureType
         )
 
     if not bruteForceSearcher.matchedGenome:
@@ -240,11 +224,9 @@ def Execute(options):
         # SHOW AMPLICON DATABASE;
 
         # BUILD MATCHED PRIMER DATABASE;
-        outputFilePath = os.path.join(options.outputPath,
-                                      "MatchedRegions.csv")
 
-        MatchedPrimers = FileTypes.MatchedPrimers(matchedPrimerSequences)
-        MatchedPrimers.write(outputFilePath)
+        MatchedPrimers = OutputFile.MatchedPrimers(matchedPrimerSequences)
+        MatchedPrimers.write(options.outputPath)
 
         # Primer Maps on Guide Genome:
         PrimerData = []
@@ -270,32 +252,36 @@ def Execute(options):
     return matchedPrimerSequences
 
 
+def parse_arguments():
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument("-p", "--plot",
+                        dest="PlotArea",
+                        action="store_true", default=False)
+
+    parser.add_argument("-l",
+                        dest="WantedLoci",
+                        default="")
+
+    parser.add_argument("-i",
+                        dest="primerFile")
+
+    parser.add_argument("-o",
+                        dest="outputPath")
+
+    parser.add_argument("-r",
+                        "--locusref",
+                        dest="LocusReference")
+
+    parser.add_argument("-w",
+                        "--rewrite",
+                        dest="RewriteFasta")
+
+    parser.add_argument("-t", dest="wantedFeatureType", default="gene")
+
+    options = parser.parse_args()
+    return options
+
+
 if __name__ == "__main__":
-
-    parser = OptionParser()
-
-    parser.add_option("-p", "--plot",
-                      dest="PlotArea",
-                      action="store_true", default=False)
-
-    parser.add_option("-l",
-                      dest="WantedLoci",
-                      default="")
-
-    parser.add_option("-i",
-                      dest="primerFile")
-
-    parser.add_option("-o",
-                      dest="outputPath")
-
-    parser.add_option("-r",
-                      "--locusref",
-                      dest="LocusReference")
-
-    parser.add_option("-w",
-                      "--rewrite",
-                      dest="RewriteFasta")
-
-    options, args = parser.parse_args()
-
-    Execute(options)
+    Execute(parse_arguments())
