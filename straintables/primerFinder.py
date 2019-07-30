@@ -75,12 +75,12 @@ def loadPrimerList(filePath):
 
 def Execute(options):
     # LOAD CLONAL TYPE LOCUS INFORMATION (Su et al.);
-    RFLPInfoDirectory = os.path.dirname(options.primerFile)
+    RFLPInfoDirectory = os.path.dirname(options.PrimerFile)
     RFLPReference = None
     RFLPReference = PrimerEngine.RFLPMarker.RFLPReference(RFLPInfoDirectory)
 
     # CHECK DECLARATION OF PRIMER FILE;
-    if not options.primerFile:
+    if not options.PrimerFile:
         print("FATAL: No primer file specified.")
         exit(1)
 
@@ -95,21 +95,24 @@ def Execute(options):
             if not File.startswith(".")
         ]
 
+        # Uneeded?
+        # - yes
+        """
         genomeFeaturesSet = [
             list(SeqIO.parse(File, "genbank"))
             for File in genomeFeatureFiles if File.endswith(".gbff")
         ]
-
+        """
     else:
-        genomeFeaturesSet = []
+        genomeFeatureFiles = []
 
     # CHECK GENOME FEATURES FILE EXISTENCE;
-    if not genomeFeaturesSet:
-        print("Fatal: No features found.")
-
+    if not genomeFeatureFiles:
+        print("Fatal: No genbank features file found.")
+        exit(1)
 
     # -- LOAD USER DEFINED PRIMERS;
-    lociPrimerList = loadPrimerList(options.primerFile)
+    lociPrimerList = loadPrimerList(options.PrimerFile)
 
     # LOAD GENOMES;
     genomeDirectory = "genomes"
@@ -137,10 +140,12 @@ def Execute(options):
         exit(1)
 
     if len(genomes) < 4:
-        print("Fatal: need at least 4 genomes to proper execute the analysis, got only %i." % len(genomes))
+        print("Fatal: need at least 4 genomes to proper execute the analysis,")
+        print("\tgot only %i." % len(genomes))
         exit(1)
+
     # APPLY GENOME FEATURES TO BRUTE FORCE MODULE;
-    genomeFeatures = annotationManager.loadAnnotation("annotations")
+    annotationFilePath, genomeFeatures = annotationManager.loadAnnotation("annotations")
 
     bruteForceSearcher =\
         PrimerEngine.bruteForcePrimerSearch.bruteForceSearcher(
@@ -170,7 +175,7 @@ def Execute(options):
         # ASSIGN OUTPUT FASTA FILE NAME AND CHECK IF EXISTS;
         outputFastaName = "LOCI_%s.fasta" % locus_name
 
-        outputFastaPath = os.path.join(options.outputPath, outputFastaName)
+        outputFastaPath = os.path.join(options.WorkingDirectory, outputFastaName)
         print("Fasta file: %s" % outputFastaPath)
         if os.path.isfile(outputFastaPath):
             print("Skipping locus %s. Already exists..." % locus_name)
@@ -191,6 +196,7 @@ def Execute(options):
                 locus_info,
                 genomes,
                 overallProgress,
+                rebootTolerance=options.rebootTolerance,
                 bruteForceSearcher=bruteForceSearcher
             )
 
@@ -226,7 +232,7 @@ def Execute(options):
         # BUILD MATCHED PRIMER DATABASE;
 
         MatchedPrimers = OutputFile.MatchedPrimers(matchedPrimerSequences)
-        MatchedPrimers.write(options.outputPath)
+        MatchedPrimers.write(options.WorkingDirectory)
 
         # Primer Maps on Guide Genome:
         PrimerData = []
@@ -238,9 +244,18 @@ def Execute(options):
                 PrimerData.append(row)
                 allPrimers.append(Primer)
 
-        outputFilePath = os.path.join(options.outputPath, "PrimerData.csv")
+        outputFilePath = os.path.join(options.WorkingDirectory, "PrimerData.csv")
         data = pd.DataFrame(PrimerData)
         data.to_csv(outputFilePath, index=False)
+
+        # BUILD INFORMATION FILE;
+        information = OutputFile.AnalysisInformation()
+        information.content = {
+            "annotation": os.path.realpath(annotationFilePath),
+            "feature_type": options.wantedFeatureType,
+            "reboot_tolerance": options.rebootTolerance
+        }
+        information.write(options.WorkingDirectory)
 
     else:
         print("No regions found, nothing to do.")
@@ -252,10 +267,9 @@ def Execute(options):
     return matchedPrimerSequences
 
 
-def parse_arguments():
-    parser = argparse.ArgumentParser()
+def parse_arguments(parser):
 
-    parser.add_argument("-p", "--plot",
+    parser.add_argument("--plot",
                         dest="PlotArea",
                         action="store_true", default=False)
 
@@ -263,8 +277,8 @@ def parse_arguments():
                         dest="WantedLoci",
                         default="")
 
-    parser.add_argument("-i",
-                        dest="primerFile")
+    parser.add_argument("-p",
+                        dest="PrimerFile")
 
     parser.add_argument("-o",
                         dest="outputPath")
@@ -277,11 +291,21 @@ def parse_arguments():
                         "--rewrite",
                         dest="RewriteFasta")
 
-    parser.add_argument("-t", dest="wantedFeatureType", default="gene")
+    parser.add_argument("-t",
+                        dest="wantedFeatureType",
+                        default="gene")
 
-    options = parser.parse_args()
-    return options
+    parser.add_argument("-m",
+                        dest="rebootTolerance",
+                        type=int,
+                        default=20)
+
+    parser.add_argument("-d", "--dir", dest="WorkingDirectory")
+    return parser
 
 
 if __name__ == "__main__":
-    Execute(parse_arguments())
+
+    parser = argparse.ArgumentParser()
+    options = parse_arguments().parse_args()
+    Execute(options)
