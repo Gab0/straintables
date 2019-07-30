@@ -53,6 +53,7 @@ class bruteForceSearcher():
                 matchingGenomeFilePath = genomePath
                 matchingGenomeDescriptor = GenomeDescriptor
                 matchingStrain = strain
+
         if matchingGenomeFilePath is None:
             print("No genome matching annotation!")
             return None
@@ -110,21 +111,20 @@ class bruteForceSearcher():
 
         # print(AnnotationDescription)
 
-        SEQ = self.locateAndFetchSequence(location,
-                                          chr_descriptor
-                                          )
+        regionSequence = self.locateAndFetchSequence(location,
+                                                     chr_descriptor
+        )
 
-        if not SEQ:
+        if not regionSequence:
             print("\n")
             print("Error: Failure on feching brute force sequence.")
             print("genomePath: %s" % self.matchedGenome)
             print("chromosome descripor: %s" % chr_descriptor)
             print("location: %s" % location)
+            return
+        else:
+            return regionSequence
 
-        # Save sequence;
-        outputFile = open(outputFilePath, 'w')
-        outputFile.write(str(SEQ))
-        outputFile.close()
 
     def launchBruteForcePrimerSearch(self, locus_name, chromosomes, Reverse):
 
@@ -139,9 +139,14 @@ class bruteForceSearcher():
 
         if not os.path.isfile(geneSequenceFilePath):
             # Fetch gene sequence;
-            self.fetchGeneSequence(locus_name,
-                                   geneSequenceFilePath)
+            regionSequence = self.fetchGeneSequence(locus_name,
+                                                    geneSequenceFilePath)
 
+            if regionSequence:
+                # Save sequence;
+                outputFile = open(geneSequenceFilePath, 'w')
+                outputFile.write(str(regionSequence))
+                outputFile.close()
 
         if os.path.isfile(geneSequenceFilePath):
             geneSequenceRaw = open(geneSequenceFilePath).read()
