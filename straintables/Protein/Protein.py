@@ -13,6 +13,7 @@ import argparse
 import os
 import subprocess
 import re
+import types
 
 
 def parseDndFile(filepath, region_name):
@@ -46,10 +47,6 @@ class ReadFrameController():
         assert(not len(seq) % 3)
         return seq
 
-    @classmethod
-    def fromTuple(t):
-        return ReadFrameController(t[0], t[1])
-
 
 def runForWindow(protein, sequence, Window, Reverse):
     region_name = protein.id
@@ -61,7 +58,8 @@ def runForWindow(protein, sequence, Window, Reverse):
     try:
         PROT = DNA.translate()
     except Data.CodonTable.TranslationError:
-        print("ERROR........")
+        print("TRANSLATION ERROR.")
+        exit(1)
 
     StrainName = sequence.id
     DNA.id = buildOutputName(region_name, Reverse, Window)
@@ -150,14 +148,6 @@ def processAllTranslationWindows(protein, sequence):
     return BestAlignment
 
 
-def parse_arguments():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("-r", dest="RegionName")
-    parser.add_argument("-a", dest="RunDirectory", type="bool")
-    options = parser.parse_args()
-    return options
-
-
 def AnalyzeRegion(options):
 
     ProteinSequences = []
@@ -241,13 +231,22 @@ def runDirectory():
         region_name = re.findall("_([\w\d]+).fasta", f)[0]
         opt = type('', (), {})()
         opt.RegionName = region_name
-        successPercentage = main(opt)
+        successPercentage = AnalyzeRegion(opt)
         if successPercentage < 100:
             with open("log", 'a') as f:
                 f.write("%s with %.2f%%\n" % (region_name, successPercentage))
 
 
-def main(options):
+def parse_arguments():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-r", dest="RegionName")
+    parser.add_argument("-a", dest="RunDirectory", action="store_true")
+    options = parser.parse_args()
+    return options
+
+
+def main():
+    options = parse_arguments()
     if options.RunDirectory:
         runDirectory()
     else:
@@ -255,4 +254,4 @@ def main(options):
 
 
 if __name__ == "__main__":
-    main(parse_arguments())
+    main()
