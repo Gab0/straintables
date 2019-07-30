@@ -39,7 +39,7 @@ def find_primers(options, outputPath):
         "wantedFeatureType": options.wantedFeatureType
     }
 
-    return straintables.primerFinder.Execute(Options(finderOptions))
+    return straintables.primerFinder.Execute(options)
 
 
 @active_if(lambda: options.DoAlignment)
@@ -102,9 +102,8 @@ def matrix_analysis(WorkingDirectory):
 def parse_arguments():
     parser = argparse.ArgumentParser()
 
-    parser.add_argument("-p", dest="PrimerFile")
+    #parser.add_argument("-p", dest="PrimerFile")
 
-    parser.add_argument("-t", dest="wantedFeatureType", default="gene")
 
     parser.add_argument("--noamplicon", dest="DoAmplicon",
                         action="store_false", default=True)
@@ -115,7 +114,16 @@ def parse_arguments():
     parser.add_argument("--alnmode", dest="AlignmentMode",
                         default="clustal")
 
+    """
     parser.add_argument("-d", "--dir", dest="WorkingDirectory")
+
+    parser.add_argument("-t", dest="wantedFeatureType", default="gene")
+    parser.add_argument("-m",
+                        dest="rebootTolerance",
+                        type=int,
+                        default=20)
+    """
+    parser = straintables.primerFinder.parse_arguments(parser)
     options = parser.parse_args()
 
     return options
