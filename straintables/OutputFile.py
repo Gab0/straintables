@@ -2,6 +2,7 @@
 
 import pandas as pd
 import os
+import json
 
 from . import Definitions
 
@@ -25,3 +26,15 @@ class MatchedPrimers(SimpleDataFrame):
         "StdLength"
     ]
     filename = "MatchedRegions.csv"
+
+
+class AnalysisInformation():
+    filename = "Information.json"
+    fields = [
+        "?"
+    ]
+
+    def write(self, dirpath):
+        filepath = os.path.join(dirpath, self.filename)
+        with open(filepath, 'w') as f:
+            json.dump(self.content, f, indent=2)
