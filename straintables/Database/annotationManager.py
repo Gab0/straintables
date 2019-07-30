@@ -112,9 +112,14 @@ def loadAnnotation(annotationFolder, identifier=None, Verbose=False):
         for aS in annotationScaffolds:
             print(len(aS.features))
 
-    annotationContents = sorted(annotationContents, key=sortAnnotations, reverse=True)
+    annotationSet = zip(annotationFiles, annotationContents)
+    annotationContents = sorted(annotationSet,
+                                key=lambda x: sortAnnotations(x[1]),
+                                reverse=True
+    )
+    chosenAnnotation = annotationContents[0]
 
-    return annotationContents[0]
+    return chosenAnnotation
 
 
 
