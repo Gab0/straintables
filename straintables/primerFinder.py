@@ -206,6 +206,7 @@ def Execute(options):
                            LocusAmpliconSet, RFLPReference=RFLPReference)
 
             primerPair = {P.label: P.sequence for P in MatchedPrimers}
+            primerPair["LocusName"] = locus_name
 
             primerPair["AlignmentHealth"] = score
 
@@ -213,7 +214,7 @@ def Execute(options):
 
             primerPair["MeanLength"] = np.mean(RegionLengths)
             primerPair["StdLength"] = np.std(RegionLengths)
-            primerPair["chromosome"] = chr_identifier
+            primerPair["Chromosome"] = chr_identifier
 
             # Append region data;
             matchedPrimerSequences.append(primerPair)
@@ -236,9 +237,9 @@ def Execute(options):
 
         for Locus in AllLociPrimerSet.keys():
             for Primer in AllLociPrimerSet[Locus]:
-                row = Primer[0].to_dict(Locus)
+                row = Primer.to_dict(Locus)
 
-                del row["chromosome"]
+                del row["Chromosome"]
                 PrimerData.append(row)
                 allPrimers.append(Primer)
 
