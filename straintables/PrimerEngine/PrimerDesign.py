@@ -34,14 +34,15 @@ class BruteForcePrimerSearcher():
             print()
             return None
 
-    def locateMatchingGenome(self, genomeFilePaths, Verbose=True):
+    def locateMatchingGenome(self, genomeFilePaths, Verbose=False):
         AnnotationDescriptor = self.genomeFeatures[0].description
-        if Verbose:
-            print("\nSearching a genome that matches the annotation:")
-            print(AnnotationDescriptor)
 
         matchingGenomeFilePath = None
         annotationStrain = fetchStrainName(AnnotationDescriptor)
+
+        print("\nSearching a genome that matches the annotation... (strain: %s)" % annotationStrain)
+        if Verbose:
+            print(AnnotationDescriptor)
 
         # -- SEARCH BY ANNOTATION INFORMATION;
         for genomePath in genomeFilePaths:
@@ -121,7 +122,7 @@ class BruteForcePrimerSearcher():
             print("\n")
             print("Error: Failure on feching brute force sequence.")
             print("genomePath: %s" % self.matchedGenome)
-            print("chromosome descripor: %s" % chr_descriptor)
+            print("chromosome descriptor: %s" % chr_descriptor)
             print("location: %s" % location)
             return
         else:
@@ -212,13 +213,13 @@ class BruteForcePrimerSearcher():
                     continue
                 if matches:
                     if chr_identifier is None:
-                        chr_identifier = _chr.description
+                        chr_identifier = _chr.name
                     if Verbose:
                         print(matches[0][0].upper())
                         print(sequenceVariationName)
                     foundPrimers.append(matches[0])
                     if len(foundPrimers) > maximumPrimerCount:
-                        return foundPrimers
+                        return foundPrimers, chr_identifier
             if (s <= (len(gene_sequence) // 5)) == Reverse:
                 break
 
