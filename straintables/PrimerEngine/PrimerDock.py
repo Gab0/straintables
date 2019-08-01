@@ -92,34 +92,35 @@ def searchPrimerPairOnGenome(locusName, primerPair, genome):
             # might be unnecessary
             matchedPrimers[PrimerType] = sorted(matchedPrimers[PrimerType],
                                                 key=lambda x: x.chr_length,
-                                                reverse=True)[:1]
+                                                reverse=True)
 
             # PRIMER LEAK IS UNAVOIDABLE;
-            if len(matchedPrimers[PrimerType]) > 1:
-                matchSuccess[PT] = False
+            # !! This len is always 1 at this point (read above);
+            #if len(matchedPrimers[PrimerType]) > 1:
+            #    matchSuccess[PT] = False
         print()
 
     print("\n\n")
 
     # RETRIEVE INTERPRIMER SEQUENCES;
-    matchCount = sum([len(matchedPrimers[PrimerType])
-                      for PrimerType in PrimerTypes])
 
-    # TWO MATCHES... IDEAL SCENARIO;
-    if matchCount == 2:
-        Primers = [matchedPrimers[PrimerTypes[i]][0] for i in range(2)]
-        # if anything goes wrong while building the amplicon, the match fails.
-        # Amplicon may rase errors deliberately
-        # when match result is not optimal.
-        try:
-            amplicon = GeneticEntities.Amplicon(genome, Primers[0], Primers[1])
-        except ValueError:
-            return "", [False, False]
+    # MATCHES ON THE SAME CHROMOSOME.. IDEAL SCENARIO;
+    mp = (matchedPrimers[PrimerTypes[0]], matchedPrimers[PrimerTypes[1]])
+    if all(mp):
+        mp = [p[0] for p in mp]
+        if mp[0].chr_length == mp[1].chr_length:
 
-        mp = (matchedPrimers[PrimerTypes[0]], matchedPrimers[PrimerTypes[1]])
-        return amplicon.Sequence, mp
-    else:
-        return "", matchSuccess
+            # if anything goes wrong while building the amplicon, the match fails.
+            # Amplicon may rase errors deliberately
+            # when match result is not optimal.
+            try:
+                amplicon = GeneticEntities.Amplicon(genome, *mp)
+            except ValueError:
+                return "", [False, False]
+
+            return amplicon.Sequence, mp
+
+    return "", matchSuccess
 
 
 def matchPrimerOnGenome(genome, PrimerSequence,
@@ -225,6 +226,11 @@ def matchLocusOnGenomes(locus_name,
             AmpliconSequence, MatchedPrimers =\
                 searchPrimerPairOnGenome(locus_name, primerPair, Genome)
 
+
+            # GET CHR NAME ONLY FOR THE FIRST GENOME;
+            if Genome.name == genomes[0].name:
+                if MatchedPrimers[0]:
+                    chr_identifier = MatchedPrimers[0].chr_name
             # print(matchSuccess)
 
         # FAILURE ON MATCHING A PRIMER?
@@ -251,7 +257,7 @@ def matchLocusOnGenomes(locus_name,
                     # MANAGE PRIMERS ON QUEUE;
                     if not testablePrimers[PrimerType]:
                         if bruteForceSearcher:
-                            newPrimers, chr_identifier =\
+                            newPrimers, _chr_identifier =\
                                 bruteForceSearcher.launchBruteForcePrimerSearch(locus_name, Genome, PT)
                             if not newPrimers:
                                 print("Warning: No bruteforce primers found...")
