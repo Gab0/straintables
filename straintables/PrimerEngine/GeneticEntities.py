@@ -69,7 +69,6 @@ class Amplicon():
             print("FAILURE: Building amplicon with markers at different chromosomes?")
             raise ValueError
 
-
         chromosome_index = chromosome_indexes[0]
         chromosome = genome[chromosome_index]
 
