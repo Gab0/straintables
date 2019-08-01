@@ -147,7 +147,10 @@ def Execute(options):
         PWM = skdist.pwmantel(Distances, permutations=0)
 
         PWM_Index_Indices = [(x[0], x[1]) for x in PWM.index]
-        PWM_Index_Labels = [(arrayFiles[x[0]], arrayFiles[x[1]]) for x in PWM.index]
+        PWM_Index_Labels = [
+            (arrayFiles[x[0]], arrayFiles[x[1]])
+            for x in PWM.index
+        ]
         PWM.index = pd.MultiIndex.from_tuples(PWM_Index_Labels)
 
     # INITIALIZE RESULT LISTS;
@@ -156,9 +159,6 @@ def Execute(options):
     MantelsP = []
     RankingDiff = []
     Recombinations = []
-
-
-
 
     # ITERATE pwm_indices;
     for IFA, IFB in PWM_Index_Indices:
@@ -204,8 +204,9 @@ def Execute(options):
     # WRITE OUTPUT PWM FILE;
     PWM.to_csv(pwmPath)
 
+    outputColumns = ["Locus"] + list(allResults[0].keys())[:-1]
     outputData = pd.DataFrame(allResults,
-                              columns=["Locus"] + list(allResults[0].keys())[:-1])
+                              columns=outputColumns)
 
     outputPath = os.path.join(options.InputDirectory, "HeatmapAnalysis.csv")
     outputData.to_csv(outputPath, index=False)
