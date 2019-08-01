@@ -5,6 +5,8 @@ import re
 import pandas as pd
 import numpy as np
 
+from . import OutputFile
+
 
 class AlignmentData():
     def __init__(self, inputDirectory):
@@ -91,7 +93,7 @@ class AlignmentData():
 
         print("Failure to find array %s" % f)
         exit(1)
-        
+
     def fetchOriginalLociList(self):
         return list(self.AlignmentData["LocusName"])
 
@@ -99,7 +101,6 @@ class AlignmentData():
         for t in self.dataKeys:
             print(self.PWMData[t])
         allLoci = [list(self.PWMData[d]) for d in self.dataKeys]
-        print(allLoci)
         allLoci = [j for s in allLoci for j in s]
 
         return list(set(allLoci))
@@ -122,7 +123,8 @@ class AlignmentData():
         ]
         Results = []
         for Name in Names:
-            Results += list(self.MatchData.index[self.MatchData["LocusName"] == Name])
+            D = self.MatchData.index[self.MatchData["LocusName"] == Name]
+            Results += list(D)
 
         return Results[0]
 
