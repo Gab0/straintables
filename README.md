@@ -69,9 +69,16 @@ By looking at a pair of D. Matrixes at a time, both corresponding to locus that 
 1. from pipy: 
 ```
 pip install numpy scipy cython pygobject --user
+
+!! We run pip twice because the modules installed on the first step may have installation issues
+!! If they fail to install, check the pip message log, it contains info for missing required system packages.
+
+
 pip install straintables --user
 
-!! Executable scripts are now at ~/.local/bin by default.
+!! Executable scripts are now at ~/.local/bin by default,
+!! symlink them to your $PATH, add this folder to your $PATH,
+!! or run pip without "--user" and with admin privileges, which is not recommended.
 ```
 
 ### Setup issues:
