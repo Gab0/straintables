@@ -56,7 +56,7 @@ class AlignmentData():
 
             print("Allowed: %s" % self.allowedIndexes)
 
-    def findPWMDataRow(self, a, b):
+    def findPWMDataRow(self, a_name, b_name):
         def setLength(w):
             return len(list(set(w)))
 
@@ -64,9 +64,13 @@ class AlignmentData():
             d = self.PWMData.iloc[k]
             names = [d[x] for x in self.dataKeys]
 
-            if a in names and b in names and setLength(names) == setLength([a, b]):
-                print(d)
-                return d
+            fullname = "".join(names)
+            if a_name != b_name:
+                if a_name in fullname:
+                    if b_name in fullname:
+                        if setLength(names) == setLength([a_name, b_name]):
+                            print(d)
+                            return d
 
         return None
 
