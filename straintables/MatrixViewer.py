@@ -11,8 +11,8 @@ import matplotlib.pyplot as plt
 import threading
 
 
-from . import Viewer
-from . import OutputFile
+from . import Viewer, OutputFile, alignmentData
+
 from matplotlib.backends.backend_gtk3agg import FigureCanvas
 from matplotlib.backends.backend_gtk3 import (
     NavigationToolbar2GTK3 as NavigationToolbar)
@@ -350,7 +350,7 @@ class MatrixViewer():
 
     def loadNewFolder(self, inputDirectory):
         if inputDirectory:
-            self.alnData = Viewer.alignmentData.AlignmentData(inputDirectory)
+            self.alnData = alignmentData.AlignmentData(inputDirectory)
             self.infoText.set_text(self.alnData.inputDirectory)
             self.locusNavigator.Update()
             self.locusMap.loadData(self.alnData)
