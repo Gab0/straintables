@@ -7,16 +7,27 @@ import json
 from . import Definitions
 
 
+class OutputFile():
+    def __init__(self, dirpath):
+        self.dirpath = dirpath
+        self.filepath = self.get_filepath()
+
+    def get_filepath(self):
+        return os.path.join(self.dirpath, self.filename)
+
+    def check(self):
+        return os.path.isfile(self.get_filepath())
+
+
 class SimpleDataFrame():
-    def __init__(self, data):
+    def add(self, data):
         self.content = pd.DataFrame(data, columns=self.columns)
 
-    def write(self, dirpath):
-        filepath = os.path.join(dirpath, self.filename)
-        self.content.to_csv(filepath, index=False)
+    def write(self):
+        self.content.to_csv(self.filepath, index=False)
 
 
-class MatchedPrimers(SimpleDataFrame):
+class MatchedPrimers(OutputFile, SimpleDataFrame):
     columns = [
         "LocusName",
         *Definitions.PrimerTypes,
@@ -28,13 +39,20 @@ class MatchedPrimers(SimpleDataFrame):
     filename = "MatchedRegions.csv"
 
 
-class AnalysisInformation():
+class PrimerData(OutputFile, SimpleDataFrame):
+    filename = "PrimerData.csv"
+
+
+class AnalysisInformation(OutputFile):
     filename = "Information.json"
     fields = [
         "?"
     ]
 
-    def write(self, dirpath):
-        filepath = os.path.join(dirpath, self.filename)
-        with open(filepath, 'w') as f:
+    def write(self):
+        with open(self.filepath, 'w') as f:
             json.dump(self.content, f, indent=2)
+
+    def read(self):
+        with open(self.filepath) as f:
+            self.content = json.load(f)
