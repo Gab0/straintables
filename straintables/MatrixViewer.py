@@ -10,9 +10,9 @@ from argparse import ArgumentParser
 import matplotlib.pyplot as plt
 import threading
 
-from . import graphic
-from . import Viewer
 
+from . import Viewer
+from . import OutputFile
 from matplotlib.backends.backend_gtk3agg import FigureCanvas
 from matplotlib.backends.backend_gtk3 import (
     NavigationToolbar2GTK3 as NavigationToolbar)
@@ -112,7 +112,7 @@ class MatrixViewer():
         self.Size = None
 
         # SELECT DRAWING FUNCTION;
-        self.drawPlot = Viewer.plotViewport.plotPwmIndex
+        self.drawPlot = Viewer.plotViewport.MainDualRegionPlot
         self.batchRegionPlot = Viewer.plotViewport.plotRegionBatch
         self.plotIdeogram = Viewer.ideogram.plotIdeogram
 
@@ -204,9 +204,9 @@ class MatrixViewer():
 
     def locus_navigator(self):
         # PREPARE BUTTON ICON IMAGE;
-        dna_icon_left = loadImage(graphic.dna_icon)
-        dna_icon_right = loadImage(graphic.dna_icon)
-        swap_icon = loadImage(graphic.swap)
+        dna_icon_left = loadImage(Viewer.button_icons.dna_icon)
+        dna_icon_right = loadImage(Viewer.button_icons.dna_icon)
+        swap_icon = loadImage(Viewer.button_icons.swap)
         # INITIALIZE LOCUS NAVIGATION BUTTONS;
         self.openSequenceLeft = Gtk.Button()
         self.openSequenceLeft.connect("clicked",
@@ -247,11 +247,16 @@ class MatrixViewer():
         self.MainPanel = Gtk.HBox()
 
         self.FigureBox = Gtk.VBox()
-        self.FigureBox.pack_start(self.locusMap, expand=False, fill=False, padding=0)
-        self.FigureBox.pack_start(self.figurecanvas, expand=True, fill=True, padding=0)
+        self.FigureBox.pack_start(self.locusMap,
+                                  expand=False, fill=False, padding=0)
+        self.FigureBox.pack_start(self.figurecanvas,
+                                  expand=True, fill=True, padding=0)
 
-        self.MainPanel.pack_start(self.FigureBox, expand=True, fill=True, padding=0)
-        vbox.pack_start(self.MainPanel, expand=True, fill=True, padding=0)
+        self.MainPanel.pack_start(self.FigureBox,
+                                  expand=True, fill=True, padding=0)
+
+        vbox.pack_start(self.MainPanel,
+                        expand=True, fill=True, padding=0)
 
         # SHOW LOCUS NAVIGATION TOOLBAR;
         buttonBox = Gtk.Grid()
@@ -284,7 +289,8 @@ class MatrixViewer():
         self.btn_toggleColor.set_active(True)
         self.btn_toggleColor.connect("clicked", self.toggleColor)
 
-        export_icon = loadImage(graphic.export)
+        export_icon = loadImage(Viewer.button_icons.export)
+        chr_icon = loadImage(Viewer.button_icons.chr_icon)
 
         self.loadAlignment = Gtk.Button(image=Gtk.Image(stock=Gtk.STOCK_DND_MULTIPLE))
         self.loadAlignment.connect("clicked", self.selectFolderPath)
@@ -321,7 +327,8 @@ class MatrixViewer():
         self.btn_outputimage.add(export_icon)
         self.btn_outputimage.set_tooltip_text("Build output image.")
 
-        self.btn_ideogram = Gtk.Button(image=Gtk.Image(stock=Gtk.STOCK_CLOSE))
+        self.btn_ideogram = Gtk.Button()
+        self.btn_ideogram.add(chr_icon)
         self.btn_ideogram.connect("clicked",
                                   self.showIdeogram)
         self.btn_ideogram.set_tooltip_text("Show chromosome ideogram.")
@@ -393,7 +400,12 @@ class MatrixViewer():
             if C.get_state():
                 regions.append(i)
 
-        self.changeView(regions, self.plotIdeogram, AnnotationPath=None)
+        InformationFile = OutputFile.AnalysisInformation(self.inputDirectory)
+
+        if InformationFile.check():
+            InformationFile.read()
+            AnnotationPath = InformationFile.content["annotation"]
+            self.changeView(regions, self.plotIdeogram, AnnotationPath=AnnotationPath)
 
     def changeView(self, regions, plotMethod, **kwargs):
         self.figure.clf()
@@ -591,7 +603,6 @@ class BuildImageMenu(Gtk.VBox):
 
         for H, hc in enumerate(header_components):
             component = Gtk.Label(hc)
-            #component.set_hexpand(True)
             loci_list_selector.attach(component, H, 0, 1, 1)
 
         for l, locus in enumerate(loci_list):
@@ -604,7 +615,6 @@ class BuildImageMenu(Gtk.VBox):
             GuideGroup = self.GuideCheckboxes[0]
 
             for I, Item in enumerate([G, L, C]):
-                #Item.set_hexpand(True)
                 Item.set_halign(Gtk.Align.CENTER)
                 loci_list_selector.attach(Item, I, l + 1, 1, 1)
 
