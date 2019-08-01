@@ -187,11 +187,11 @@ def matchLocusOnGenomes(locus_name,
     primerTrash = initPrimerQueuer()
     testablePrimers = initPrimerQueuer()
 
-
     # load primer pair data from user-made Primer file;
     primerPair = dict(locus_info)
 
     RebootCount = 0
+    chr_identifier = None
 
     # ITERATE GENOMES UNTIL SUCCESS;
     for Genome in itertools.cycle(genomes):
@@ -251,7 +251,7 @@ def matchLocusOnGenomes(locus_name,
                     # MANAGE PRIMERS ON QUEUE;
                     if not testablePrimers[PrimerType]:
                         if bruteForceSearcher:
-                            newPrimers =\
+                            newPrimers, chr_identifier =\
                                 bruteForceSearcher.launchBruteForcePrimerSearch(locus_name, Genome, PT)
                             if not newPrimers:
                                 print("Warning: No bruteforce primers found...")
@@ -306,7 +306,7 @@ def matchLocusOnGenomes(locus_name,
             primerPair["RebootCount"] = RebootCount
 
             # exit loop...
-            return LocusAmpliconSet, MatchedPrimers, primerPair
+            return LocusAmpliconSet, MatchedPrimers, chr_identifier
 
         # IF IT FAILS ENOUGH, SKIP LOCUS;
         elif RebootCount > rebootTolerance:
