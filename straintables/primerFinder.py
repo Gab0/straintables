@@ -237,7 +237,7 @@ def Execute(options):
                 allPrimers.append(Primer)
 
         # -- SAVE PRIMER DATA FILE;
-        fPrimerData = OutputFile.PrimerData(options.WorkingDictory)
+        fPrimerData = OutputFile.PrimerData(options.WorkingDirectory)
         fPrimerData.content = pd.DataFrame(PrimerData)
         fPrimerData.write()
 
