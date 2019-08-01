@@ -9,7 +9,7 @@ from Bio import Seq, SeqIO
 
 import argparse
 
-from . import PrimerEngine, OutputFile, Definitions
+from . import PrimerEngine, OutputFile
 from .Database import annotationManager
 
 
@@ -24,7 +24,7 @@ def writeFastaFile(outputPath,
         try:
             if RFLPReference:
                 REF = options.LocusReference
-                referenceLocus = REF if REF else options.LocusName
+                # referenceLocus = REF if REF else options.LocusName
 
                 GenotypeNumber = RFLPReference.getGenotypeNumber(Name)
                 RFLPLocus = RFLPReference.getRFLPLocus(
@@ -84,7 +84,8 @@ def Execute(options):
         print("FATAL: No primer file specified.")
         exit(1)
 
-    print("\nSearching for %s feature types.\n" % options.wantedFeatureType)
+    print("\nFeature type for primer creation is %s.\n" %
+          options.wantedFeatureType)
 
     # -- LOAD GENOME FEATURES;
     featureFolderPath = "annotations"
@@ -95,14 +96,6 @@ def Execute(options):
             if not File.startswith(".")
         ]
 
-        # Uneeded?
-        # - yes
-        """
-        genomeFeaturesSet = [
-            list(SeqIO.parse(File, "genbank"))
-            for File in genomeFeatureFiles if File.endswith(".gbff")
-        ]
-        """
     else:
         genomeFeatureFiles = []
 
@@ -145,7 +138,8 @@ def Execute(options):
         exit(1)
 
     # APPLY GENOME FEATURES TO BRUTE FORCE MODULE;
-    annotationFilePath, genomeFeatures = annotationManager.loadAnnotation("annotations")
+    annotationFilePath, genomeFeatures =\
+        annotationManager.loadAnnotation("annotations")
 
     bruteForceSearcher =\
         PrimerEngine.bruteForcePrimerSearch.bruteForceSearcher(
@@ -160,9 +154,6 @@ def Execute(options):
     # -- SETUP OUTPUT DATA STRUCTURES;
     AllLociPrimerSet = OrderedDict()
 
-    # after this number of tries,
-    # we give up on matching primers for the locus.
-    RebootLocusTolerance = 13
     matchedPrimerSequences = []
 
     print("\n")
@@ -175,7 +166,8 @@ def Execute(options):
         # ASSIGN OUTPUT FASTA FILE NAME AND CHECK IF EXISTS;
         outputFastaName = "LOCI_%s.fasta" % locus_name
 
-        outputFastaPath = os.path.join(options.WorkingDirectory, outputFastaName)
+        outputFastaPath = os.path.join(options.WorkingDirectory,
+                                       outputFastaName)
         print("Fasta file: %s" % outputFastaPath)
         if os.path.isfile(outputFastaPath):
             print("Skipping locus %s. Already exists..." % locus_name)
@@ -190,7 +182,7 @@ def Execute(options):
 
         overallProgress = (i + 1, lociPrimerList.shape[0])
 
-        (LocusAmpliconSet, matchSuccess, primerPair) =\
+        (LocusAmpliconSet, MatchedPrimers, primerPair) =\
             PrimerEngine.PrimerDock.matchLocusOnGenomes(
                 locus_name,
                 locus_info,
@@ -221,7 +213,7 @@ def Execute(options):
 
             # Append region data;
             matchedPrimerSequences.append(primerPair)
-            AllLociPrimerSet[locus_name] = matchSuccess
+            AllLociPrimerSet[locus_name] = MatchedPrimers
             # print("Bad Amplicon set for %s! Ignoring...." % locus_name)
         else:
             print("WARNING: PrimerDock failure.")
@@ -230,32 +222,33 @@ def Execute(options):
         # SHOW AMPLICON DATABASE;
 
         # BUILD MATCHED PRIMER DATABASE;
-
-        MatchedPrimers = OutputFile.MatchedPrimers(matchedPrimerSequences)
-        MatchedPrimers.write(options.WorkingDirectory)
+        MatchedPrimers = OutputFile.MatchedPrimers(options.WorkingDirectory)
+        MatchedPrimers.add(matchedPrimerSequences)
+        MatchedPrimers.write()
 
         # Primer Maps on Guide Genome:
         PrimerData = []
         allPrimers = []
+
         for Locus in AllLociPrimerSet.keys():
             for Primer in AllLociPrimerSet[Locus]:
                 row = Primer[0].to_dict(Locus)
-                del row["Chromosome"]
                 PrimerData.append(row)
                 allPrimers.append(Primer)
 
-        outputFilePath = os.path.join(options.WorkingDirectory, "PrimerData.csv")
-        data = pd.DataFrame(PrimerData)
-        data.to_csv(outputFilePath, index=False)
+        # -- SAVE PRIMER DATA FILE;
+        fPrimerData = OutputFile.PrimerData(options.WorkingDictory)
+        fPrimerData.content = pd.DataFrame(PrimerData)
+        fPrimerData.write()
 
         # BUILD INFORMATION FILE;
-        information = OutputFile.AnalysisInformation()
+        information = OutputFile.AnalysisInformation(options.WorkingDirectory)
         information.content = {
             "annotation": os.path.realpath(annotationFilePath),
             "feature_type": options.wantedFeatureType,
             "reboot_tolerance": options.rebootTolerance
         }
-        information.write(options.WorkingDirectory)
+        information.write()
 
     else:
         print("No regions found, nothing to do.")
