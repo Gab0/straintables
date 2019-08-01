@@ -6,7 +6,7 @@ from Bio.Align.Applications import ClustalwCommandline
 
 from Bio import Align
 
-import straintables.PrimerEngine.bruteForcePrimerSearch as bfps
+import straintables.PrimerEngine.PrimerDesign as bfps
 
 import copy
 import argparse
@@ -168,7 +168,7 @@ def AnalyzeRegion(options):
     GenomePaths = [os.path.join(ResourceBasePath, "genomes/ME49.fna")]
 
     GenomeFeatures = list(SeqIO.parse(AnnotationPath, format="genbank"))
-    source = bfps.bruteForceSearcher(GenomeFeatures, GenomePaths)
+    source = bfps.BruteForcePrimerSearcher(GenomeFeatures, GenomePaths)
 
     # protein = SeqIO.parse(p_name, format="fasta")
     # protein = list(protein)[0]
