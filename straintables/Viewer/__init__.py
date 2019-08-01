@@ -1,4 +1,4 @@
 from . import matrixOperations, dissimilarityCluster
-from . import plotViewport, alignmentData
+from . import plotViewport
 from . import mapBar, ideogram, MatrixPlot
 from . import button_icons
