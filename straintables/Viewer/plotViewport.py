@@ -315,18 +315,20 @@ def plotRegionBatch(fig, alnData, regionIndexes,
 def MainDualRegionPlot(fig, alnData, regionIndexes, showLabelColors=True):
 
     # EXTRACR LOCUS NAMES;
-    data = [alnData.MatchData["LocusName"].iloc[i] for i in regionIndexes]
-    a_name, b_name = data
-    names = data
+    region_names = [
+        alnData.MatchData["LocusName"].iloc[i]
+        for i in regionIndexes
+    ]
+    a_name, b_name = region_names
 
-    currentPWMData = alnData.findPWMDataRow(*data)
+    currentPWMData = alnData.findPWMDataRow(*region_names)
 
     try:
-        data = [
-            alnData.PrimerData[
-                alnData.PrimerData.Locus == name
+        MatchData = [
+            alnData.MatchData[
+                alnData.MatchData.LocusName == name
             ].iloc[0]
-            for name in names
+            for name in region_names
         ]
     except IndexError:
         print("Failure on %s" % a_name)
@@ -334,7 +336,7 @@ def MainDualRegionPlot(fig, alnData, regionIndexes, showLabelColors=True):
     # LOAD MATRIX DATA;
     [ma, mb] = [
         np.load(alnData.buildArrayPath(name))
-        for name in names
+        for name in region_names
     ]
 
     # Crop label lengths;
@@ -389,7 +391,7 @@ def MainDualRegionPlot(fig, alnData, regionIndexes, showLabelColors=True):
     # ADDITIONAL INFORMATION FIGURE;
     if currentPWMData is not None:
         ax_information = fig.add_subplot(232)
-        RegionInfoAxis(ax_information, currentPWMData, data, a_name, b_name)
+        RegionInfoAxis(ax_information, currentPWMData, MatchData, a_name, b_name)
 
     # COLORIZE MATRIX LABELS BY MESHCLUSTER;
     if showLabelColors:
@@ -433,12 +435,15 @@ def plotRecombinationPanel(ax, baseIndex):
 
 def RegionInfoAxis(ax, currentPWMData, data, a_name, b_name):
 
-    distance = abs(data[0].PositionStart - data[1].PositionStart)
-    INF_SYMBOL = chr(8734)
-    distance = INF_SYMBOL
+    if data[0]["Chromosome"] == data[1]["Chromosome"]:
+        distance = abs(data[0].PositionStart - data[1].PositionStart)
+        distance = "{:,}".format(distance)
+    else:
+        INF_SYMBOL = chr(8734)
+        distance = INF_SYMBOL
 
     Message = [
-        "Distance = {:,} bp".format(distance),
+        "Distance = %s bp" % distance,
         "%s vs %s" % (a_name, b_name),
         "Mantel=%.4f     p=%.4f" % (currentPWMData["mantel"],
                                     currentPWMData["mantel_p"]),
