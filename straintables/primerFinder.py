@@ -142,7 +142,7 @@ def Execute(options):
         annotationManager.loadAnnotation("annotations")
 
     bruteForceSearcher =\
-        PrimerEngine.bruteForcePrimerSearch.bruteForceSearcher(
+        PrimerEngine.PrimerDesign.BruteForcePrimerSearcher(
             genomeFeatures,
             genomeFilePaths,
             options.wantedFeatureType
@@ -169,6 +169,7 @@ def Execute(options):
         outputFastaPath = os.path.join(options.WorkingDirectory,
                                        outputFastaName)
         print("Fasta file: %s" % outputFastaPath)
+
         if os.path.isfile(outputFastaPath):
             print("Skipping locus %s. Already exists..." % locus_name)
             continue
@@ -182,7 +183,7 @@ def Execute(options):
 
         overallProgress = (i + 1, lociPrimerList.shape[0])
 
-        (LocusAmpliconSet, MatchedPrimers, primerPair) =\
+        (LocusAmpliconSet, MatchedPrimers, chr_identifier) =\
             PrimerEngine.PrimerDock.matchLocusOnGenomes(
                 locus_name,
                 locus_info,
@@ -204,12 +205,15 @@ def Execute(options):
             writeFastaFile(outputFastaPath, locus_name,
                            LocusAmpliconSet, RFLPReference=RFLPReference)
 
+            primerPair = {P.label: P.sequence for P in MatchedPrimers}
+
             primerPair["AlignmentHealth"] = score
 
             RegionLengths = [len(r) for r in LocusAmpliconSet]
 
             primerPair["MeanLength"] = np.mean(RegionLengths)
             primerPair["StdLength"] = np.std(RegionLengths)
+            primerPair["chromosome"] = chr_identifier
 
             # Append region data;
             matchedPrimerSequences.append(primerPair)
@@ -222,9 +226,9 @@ def Execute(options):
         # SHOW AMPLICON DATABASE;
 
         # BUILD MATCHED PRIMER DATABASE;
-        MatchedPrimers = OutputFile.MatchedPrimers(options.WorkingDirectory)
-        MatchedPrimers.add(matchedPrimerSequences)
-        MatchedPrimers.write()
+        MatchedRegions = OutputFile.MatchedRegions(options.WorkingDirectory)
+        MatchedRegions.add(matchedPrimerSequences)
+        MatchedRegions.write()
 
         # Primer Maps on Guide Genome:
         PrimerData = []
@@ -233,6 +237,8 @@ def Execute(options):
         for Locus in AllLociPrimerSet.keys():
             for Primer in AllLociPrimerSet[Locus]:
                 row = Primer[0].to_dict(Locus)
+
+                del row["chromosome"]
                 PrimerData.append(row)
                 allPrimers.append(Primer)
 
