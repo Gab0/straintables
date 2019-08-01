@@ -181,11 +181,11 @@ def matchLocusOnGenomes(locus_name,
                         bruteForceSearcher=None):
     LocusAmpliconSet = {}
 
-    def initPrimerHolder():
+    def initPrimerQueuer():
         return {k: [] for k in locus_info.keys()}
 
-    primerTrash = initPrimerHolder()
-    testablePrimers = initPrimerHolder()
+    primerTrash = initPrimerQueuer()
+    testablePrimers = initPrimerQueuer()
 
 
     # load primer pair data from user-made Primer file;
@@ -217,19 +217,19 @@ def matchLocusOnGenomes(locus_name,
         print("\n")
 
         # fix this later..
-        matchSuccess = primerIntegrity
+        MatchedPrimers = primerIntegrity
 
         if all(primerIntegrity):
             print("Searching sequence for locus %s" % locus_name)
 
-            AmpliconSequence, matchSuccess =\
+            AmpliconSequence, MatchedPrimers =\
                 searchPrimerPairOnGenome(locus_name, primerPair, Genome)
 
             # print(matchSuccess)
 
         # FAILURE ON MATCHING A PRIMER?
-        if not all(matchSuccess):
-            for PT, match in enumerate(matchSuccess):
+        if not all(MatchedPrimers):
+            for PT, match in enumerate(MatchedPrimers):
                 PrimerType = PrimerTypes[PT]
                 if not match:
                     print("Resetting %s!" % PrimerType)
@@ -248,7 +248,7 @@ def matchLocusOnGenomes(locus_name,
                     print("Searching new primer on gene sequence...")
                     # print(bruteForceSearcher.matchedGenome)
 
-                    # MANAGE PRIMERS ON HOLSTER;
+                    # MANAGE PRIMERS ON QUEUE;
                     if not testablePrimers[PrimerType]:
                         if bruteForceSearcher:
                             newPrimers =\
@@ -271,6 +271,7 @@ def matchLocusOnGenomes(locus_name,
             # Final sucess check.
             Sucess = True
             print("Found amplicon of length %i" % len(AmpliconSequence))
+
             if len(AmpliconSequence) <= 100:
                 # AMPLICON IS TOO SHORT;
                 print("Resetting due to short amplicon.")
@@ -305,7 +306,7 @@ def matchLocusOnGenomes(locus_name,
             primerPair["RebootCount"] = RebootCount
 
             # exit loop...
-            return LocusAmpliconSet, matchSuccess, primerPair
+            return LocusAmpliconSet, MatchedPrimers, primerPair
 
         # IF IT FAILS ENOUGH, SKIP LOCUS;
         elif RebootCount > rebootTolerance:
