@@ -54,7 +54,10 @@ def loadAnnotation(annotationFolder, identifier=None, Verbose=False):
     annotationFiles = sorted([File
                               for File in annotationFiles
                               if File.endswith(".gbff")])
-
+    annotationFilePaths = [
+        os.path.join(annotationFolder, annotationFile)
+        for annotationFile in annotationFiles
+    ]
     if not annotationFiles:
         print("Annotation file not found! Check your annotation folder.")
         exit(1)
@@ -68,8 +71,7 @@ def loadAnnotation(annotationFolder, identifier=None, Verbose=False):
         return len(genes)
 
     annotationContents = []
-    for annotationFile in annotationFiles:
-        annotationFilePath = os.path.join(annotationFolder, annotationFile)
+    for annotationFilePath in annotationFilePaths:
         annotationScaffolds = list(SeqIO.parse(annotationFilePath, "genbank"))
 
         #print(identifier)
@@ -112,7 +114,7 @@ def loadAnnotation(annotationFolder, identifier=None, Verbose=False):
         for aS in annotationScaffolds:
             print(len(aS.features))
 
-    annotationSet = zip(annotationFiles, annotationContents)
+    annotationSet = zip(annotationFilePaths, annotationContents)
     annotationContents = sorted(annotationSet,
                                 key=lambda x: sortAnnotations(x[1]),
                                 reverse=True
