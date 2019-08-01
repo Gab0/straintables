@@ -27,7 +27,7 @@ class SimpleDataFrame():
         self.content.to_csv(self.filepath, index=False)
 
 
-class MatchedPrimers(OutputFile, SimpleDataFrame):
+class MatchedRegions(OutputFile, SimpleDataFrame):
     columns = [
         "LocusName",
         *Definitions.PrimerTypes,
