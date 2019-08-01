@@ -312,20 +312,14 @@ def plotRegionBatch(fig, alnData, regionIndexes,
     return fig
 
 
-def plotPwmIndex(fig, alnData, regionIndexes, showLabelColors=True):
-
-    currentPWMData = alnData.findPWMDataRow(*regionIndexes)
-
-    # walk loci by loci mode.
+def MainDualRegionPlot(fig, alnData, regionIndexes, showLabelColors=True):
 
     # EXTRACR LOCUS NAMES;
-    a = regionIndexes[0]
-    b = regionIndexes[1]
-
     data = [alnData.MatchData["LocusName"].iloc[i] for i in regionIndexes]
     a_name, b_name = data
     names = data
-    print(a_name)
+
+    currentPWMData = alnData.findPWMDataRow(*data)
 
     try:
         data = [
@@ -358,10 +352,6 @@ def plotPwmIndex(fig, alnData, regionIndexes, showLabelColors=True):
 
     LeftCluster = Labels.clusterize(clusterOutputData[0])
     RightCluster = Labels.clusterize(clusterOutputData[1])
-
-    print(LeftCluster)
-    print(Labels.base)
-    print(clusterOutputData)
 
     # REORDERED MATRIXES;
     # plot;
@@ -396,6 +386,11 @@ def plotPwmIndex(fig, alnData, regionIndexes, showLabelColors=True):
     top_axis1.yaxis.tick_right()
     bottom_axis1.yaxis.tick_right()
 
+    # ADDITIONAL INFORMATION FIGURE;
+    if currentPWMData is not None:
+        ax_information = fig.add_subplot(232)
+        RegionInfoAxis(ax_information, currentPWMData, data, a_name, b_name)
+
     # COLORIZE MATRIX LABELS BY MESHCLUSTER;
     if showLabelColors:
         colorizeSubplot(top_axis1, reorderList(LeftCluster, matrix_order))
@@ -406,109 +401,7 @@ def plotPwmIndex(fig, alnData, regionIndexes, showLabelColors=True):
 
     # BUILD SHOWN INFO;
     if currentPWMData is not None:
-        color_green = (0.1, 0.8, 0.1)
-        color_red = (0.8, 0.1, 0.1)
-
-        distance = abs(data[0].PositionStart - data[1].PositionStart)
-
-        # INF_SYMBOL = chr(8734)
-        Title = [
-            "Distance = {:,} bp".format(distance),
-            "%s vs %s" % (a_name, b_name),
-            "Mantel=%.4f     p=%.4f" % (currentPWMData["mantel"],
-                                        currentPWMData["mantel_p"]),
-            "DIFF=%i" % currentPWMData["matrix_ranking_diff"],
-            " "
-        ]
-
-        Title = "\n".join(Title)
-
-        # ADDITIONAL INFORMATION FIGURE;
-        ax_information = fig.add_subplot(235)
-
-        ax_information.text(
-            -0.2,
-            0.6,
-            s=Title,
-            clip_on=False
-        )
-
-        ax_information.axis("off")
-
-        # ALIGNMENT HEALTH INFORMATION FIGURE;
-        if False and "AlignmentHealth" in alnData.MatchData.keys():
-            ax_ha = fig.add_subplot(234)
-            ax_hb = fig.add_subplot(236)
-
-            singleLocusStatus(alnData, ax_ha, a_name)
-            singleLocusStatus(alnData, ax_hb, b_name)
-
-            # Additional info on secondary axis DEPRECATED;
-            if False:
-                RecombinationMessage = "True" \
-                    if currentPWMData["recombination"] else "False"
-
-                Message = "Recombination? %s" % RecombinationMessage
-                ax_hb.text(0.8, 1, s=Message)
-
-        # RECOMBINATION FIGURE;
-        # PWM[RECOMBINATION] IS DEPRECATED.
-        # if currentPWMData["recombination"]:
-        try:
-            Recombination = dissimilarityCluster.checkRecombination(
-                clusterOutputData,
-                Labels.get_ordered(matrix_order),
-                Threshold=0.4)
-        except Exception as e:
-            print(clusterOutputData)
-            Recombination = [False]
-            print("WARNING: Recombination failure!")
-            print(e)
-            raise
-
-        def plotRecombinationPanel(ax, baseIndex):
-            x_values = np.linspace(0, 10, 100)
-
-            pre = 0.7
-            div = 2
-            mul = 2.1
-
-            plot_53 = [baseIndex + np.sin(pre + mul * x) / div
-                       for x in x_values]
-
-            plot_35 = [baseIndex - np.sin(pre + mul * x) / div
-                       for x in x_values]
-
-            ax.plot(x_values, plot_53, color=color_red)
-            ax.plot(x_values, plot_35, color=color_green)
-
-        if any(Recombination):
-            a = []
-            b = []
-            for x in range(-50, 50, 1):
-                y = x ** 2 + 2 * x + 2
-                a.append(x)
-                b.append(y)
-
-            ax_recombination = fig.add_subplot(232)
-            dm = list(range(len(Labels.base)))
-
-            # Reverse recombination array,
-            # because matrix plot indexes
-            # and normal plot indexes are reversed.
-
-            for r, rec in enumerate(reversed(Recombination)):
-                if rec:
-                    plotRecombinationPanel(ax_recombination, r)
-
-            ax_recombination.scatter([0 for x in dm], dm, color=color_green)
-            ax_recombination.scatter([10 for x in dm], dm, color=color_red)
-
-            b = np.array(b)
-            # d = 500
-            # ax_symbol.plot(b - d, a, color='gray')
-            # ax_symbol.plot(-b + d, a, color='brown')
-            ax_recombination.axis("off")
+        pass
 
     plt.title("")
 
@@ -516,3 +409,111 @@ def plotPwmIndex(fig, alnData, regionIndexes, showLabelColors=True):
     fig.tight_layout()
 
     return fig
+
+
+def plotRecombinationPanel(ax, baseIndex):
+
+    color_green = (0.1, 0.8, 0.1)
+    color_red = (0.8, 0.1, 0.1)
+    x_values = np.linspace(0, 10, 100)
+
+    pre = 0.7
+    div = 2
+    mul = 2.1
+
+    plot_53 = [baseIndex + np.sin(pre + mul * x) / div
+               for x in x_values]
+
+    plot_35 = [baseIndex - np.sin(pre + mul * x) / div
+               for x in x_values]
+
+    ax.plot(x_values, plot_53, color=color_red)
+    ax.plot(x_values, plot_35, color=color_green)
+
+
+def RegionInfoAxis(ax, currentPWMData, data, a_name, b_name):
+
+    distance = abs(data[0].PositionStart - data[1].PositionStart)
+    INF_SYMBOL = chr(8734)
+    distance = INF_SYMBOL
+
+    Message = [
+        "Distance = {:,} bp".format(distance),
+        "%s vs %s" % (a_name, b_name),
+        "Mantel=%.4f     p=%.4f" % (currentPWMData["mantel"],
+                                    currentPWMData["mantel_p"]),
+        "DIFF=%i" % currentPWMData["matrix_ranking_diff"],
+        " "
+    ]
+
+    Message = "\n".join(Message)
+
+    ax.text(
+        0.2,
+        0.6,
+        s=Message,
+        clip_on=False
+    )
+
+    ax.axis("off")
+
+
+def AlignmentHealthAxis(ax_ha, ax_hb, alnData, currentPWMData, a_name, b_name):
+    # ALIGNMENT HEALTH INFORMATION FIGURE;
+    if "AlignmentHealth" in alnData.MatchData.keys():
+
+        singleLocusStatus(alnData, ax_ha, a_name)
+        singleLocusStatus(alnData, ax_hb, b_name)
+
+        # Additional info on secondary axis DEPRECATED;
+        if False:
+            RecombinationMessage = "True" \
+                if currentPWMData["recombination"] else "False"
+
+            Message = "Recombination? %s" % RecombinationMessage
+            ax_hb.text(0.8, 1, s=Message)
+
+
+def RecombinationAxis(fig):
+    # RECOMBINATION FIGURE;
+    # PWM[RECOMBINATION] IS DEPRECATED.
+    # if currentPWMData["recombination"]:
+    try:
+        Recombination = dissimilarityCluster.checkRecombination(
+            clusterOutputData,
+            Labels.get_ordered(matrix_order),
+            Threshold=0.4)
+    except Exception as e:
+        print(clusterOutputData)
+        Recombination = [False]
+        print("WARNING: Recombination failure!")
+        print(e)
+        raise
+
+    if any(Recombination):
+        a = []
+        b = []
+        for x in range(-50, 50, 1):
+            y = x ** 2 + 2 * x + 2
+            a.append(x)
+            b.append(y)
+
+        ax_recombination = fig.add_subplot(232)
+        dm = list(range(len(Labels.base)))
+
+        # Reverse recombination array,
+        # because matrix plot indexes
+        # and normal plot indexes are reversed.
+
+        for r, rec in enumerate(reversed(Recombination)):
+            if rec:
+                plotRecombinationPanel(ax_recombination, r)
+
+        ax_recombination.scatter([0 for x in dm], dm, color=color_green)
+        ax_recombination.scatter([10 for x in dm], dm, color=color_red)
+
+        b = np.array(b)
+        # d = 500
+        # ax_symbol.plot(b - d, a, color='gray')
+        # ax_symbol.plot(-b + d, a, color='brown')
+        ax_recombination.axis("off")
