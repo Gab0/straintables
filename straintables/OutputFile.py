@@ -34,7 +34,8 @@ class MatchedRegions(OutputFile, SimpleDataFrame):
         "RebootCount",
         "AlignmentHealth",
         "MeanLength",
-        "StdLength"
+        "StdLength",
+        "Chromosome"
     ]
     filename = "MatchedRegions.csv"
 
