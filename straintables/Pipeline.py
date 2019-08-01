@@ -14,7 +14,7 @@ from ruffus import *
 import os
 import argparse
 import pandas as pd
-
+import shutil
 import straintables
 import subprocess
 
@@ -145,17 +145,11 @@ def main():
                                         AnalysisCode)
 
     # -- TEST CLUSTALW2 SETUP;
-    try:
-        # this is giving problems.. maybe ask on Biopython issues.
-        if False:
-            test_clustal = ClustalwCommandline("clustalw2")
-            stdout, stderr = test_clustal()
-            print(stdout)
-            print(stderr)
-    except Exception as e:
-        print(e)
+    # this is giving problems.. maybe ask on Biopython issues.
+    if not shutil.which("clustalw2"):
         print("Clustalw2 not found! Aborting...")
         exit(1)
+
 
     if not os.path.isdir(WorkingDirectory):
         Path = [
