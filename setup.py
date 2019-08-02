@@ -18,7 +18,7 @@ base_folder = os.path.dirname(os.path.realpath(__file__))
 requirements = list(open(os.path.join(base_folder, "requirements.txt")).readlines())
 setup(
     name='straintables',
-    version='0.94',
+    version='0.95',
     description='Genomic similarities per region',
     author='Gabriel Araujo',
     author_email='gabriel_scf@hotmail.com',
