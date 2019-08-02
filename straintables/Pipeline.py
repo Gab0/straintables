@@ -150,7 +150,6 @@ def main():
         print("Clustalw2 not found! Aborting...")
         exit(1)
 
-
     if not os.path.isdir(WorkingDirectory):
         Path = [
             step for step in os.path.split(WorkingDirectory)
@@ -162,7 +161,13 @@ def main():
             if not os.path.isdir(subDirectoryPath):
                 print("Creating directory %s." % subDirectoryPath)
                 os.mkdir(subDirectoryPath)
-
+    """
+    bad idea...
+    else:
+        print("Selected Working directory already exists.\n" +
+              "This pipeline needs a non existing directory to avoid file conflicts.")
+        exit(1)
+    """
     # SHOW BEAUTIFUL ASCII ART;
     print(logo)
 
