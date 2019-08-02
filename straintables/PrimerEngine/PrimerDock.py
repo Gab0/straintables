@@ -229,7 +229,7 @@ def matchLocusOnGenomes(locus_name,
 
             # GET CHR NAME ONLY FOR THE FIRST GENOME;
             if Genome.name == genomes[0].name:
-                if MatchedPrimers[0]:
+                if type(MatchedPrimers[0]) == GeneticEntities.primerMatch:
                     chr_identifier = MatchedPrimers[0].chr_name
             # print(matchSuccess)
 
