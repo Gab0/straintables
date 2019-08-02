@@ -154,7 +154,7 @@ class BruteForcePrimerSearcher():
             geneSequenceRaw = open(geneSequenceFilePath).read()
         else:
             print("Primer source not found.")
-            return None
+            return None, None
 
         # replace with SeqIO methods
         geneSequence = geneSequenceRaw.split("\n")
