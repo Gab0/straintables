@@ -7,6 +7,8 @@ from Bio.Align.Applications import ClustalwCommandline
 from Bio import Align
 
 import straintables.PrimerEngine.PrimerDesign as bfps
+from straintables import OutputFile
+from straintables.Database import genomeManager
 
 import copy
 import argparse
@@ -23,9 +25,9 @@ def parseDndFile(filepath, region_name):
     return float(d)
 
 
-def buildOutputName(Name, is_reverse, window):
+def buildOutputName(GenomeName, RegionName, is_reverse, window):
     rev = "reverse_" if is_reverse else ""
-    return "%s_%s%i" % (Name, rev, window)
+    return "%s_%s_%s%i" % (GenomeName, RegionName, rev, window)
 
 
 class ReadFrameController():
@@ -48,7 +50,7 @@ class ReadFrameController():
         return seq
 
 
-def runForWindow(protein, sequence, Window, Reverse):
+def runForWindow(options, protein, sequence, Window, Reverse):
     region_name = protein.id
     DNA = sequence
 
@@ -62,10 +64,11 @@ def runForWindow(protein, sequence, Window, Reverse):
         exit(1)
 
     StrainName = sequence.id
-    DNA.id = buildOutputName(region_name, Reverse, Window)
+    ID = buildOutputName(StrainName, region_name, Reverse, Window)
+    DNA.id = ID
     DNA.description = ""
 
-    PROT.id = buildOutputName(region_name, Reverse, Window)
+    PROT.id = ID
     PROT.description = ""
 
     # ProteinSequences.append(PROT)
@@ -85,7 +88,7 @@ def runForWindow(protein, sequence, Window, Reverse):
 
         s = d.score
 
-    OutDirectory = "out_%s" % region_name
+    OutDirectory = os.path.join(options.WorkingDirectory, "out_%s" % region_name)
     if not os.path.isdir(OutDirectory):
         os.mkdir(OutDirectory)
 
@@ -115,6 +118,7 @@ def runForWindow(protein, sequence, Window, Reverse):
 
         dndfile = os.path.join(OutDirectory, TestFilePrefix + ".dnd")
         dndscore = parseDndFile(dndfile, region_name)
+
         if dndscore > 0.3:
             os.remove(TestFilePath)
         os.remove(dndfile)
@@ -133,105 +137,85 @@ def runForWindow(protein, sequence, Window, Reverse):
         res = alan.communicate()
         print(res[0])
 
-    return dndscore
+    return PROT, dndscore
 
 
-def processAllTranslationWindows(protein, sequence):
+def processAllTranslationWindows(options, protein, sequence):
     AlignmentScores = []
     for Reverse in range(2):
         for Window in range(3):
             WindowDescriptor = (Window, Reverse)
-            dndscore = runForWindow(protein, sequence, Window, Reverse)
-            AlignmentScores.append((WindowDescriptor, dndscore))
+            WindowSequence, dndscore = runForWindow(options, protein, sequence, Window, Reverse)
+            AlignmentScores.append((WindowDescriptor, WindowSequence, dndscore))
 
-    BestAlignment = sorted(AlignmentScores, key=lambda v: v[1])[0]
+    BestAlignment = sorted(AlignmentScores, key=lambda v: v[2])[0]
     return BestAlignment
 
 
-def AnalyzeRegion(options):
-
-    ProteinSequences = []
-    DnaSequences = []
+def AnalyzeRegion(options, RegionSequenceSource):
 
     region_name = options.RegionName
 
+    if not region_name:
+        print("Region name undefined.")
+        exit(1)
+
     # p_name = "%s_prot.fasta" % region_name
-    s_name = "LOCI_%s.fasta" % region_name
+    RegionSequencesFilename = "LOCI_%s.fasta" % region_name
+    RegionSequencesFilepath = os.path.join(options.WorkingDirectory,
+                                           RegionSequencesFilename)
 
-    if not os.path.isfile(s_name):
-        print("Sequence file %s not found." % s_name)
+    if not os.path.isfile(RegionSequencesFilepath):
+        print("Region sequences file not found at %s." % RegionSequencesFilepath)
 
-    ResourceBasePath = "/home/gabs/linkage_analysis/toxoplasma"
-
-    AnnotationPath = os.path.join(ResourceBasePath,
-                                  "annotations/GCA_000006565.2_TGA4_genomic.gbff")
-    GenomePaths = [os.path.join(ResourceBasePath, "genomes/ME49.fna")]
-
-    GenomeFeatures = list(SeqIO.parse(AnnotationPath, format="genbank"))
-    source = bfps.BruteForcePrimerSearcher(GenomeFeatures, GenomePaths)
-
-    # protein = SeqIO.parse(p_name, format="fasta")
-    # protein = list(protein)[0]
-
-    source_seq = source.fetchGeneSequence(region_name, s_name)
+    source_seq = RegionSequenceSource.fetchGeneSequence(region_name)
 
     protein = SeqIO.SeqRecord(source_seq.translate())
 
     protein.id = region_name
     protein.description = ""
 
-    sequences = SeqIO.parse(s_name, format="fasta")
-    RecommendedWindow = None
+    sequences = SeqIO.parse(RegionSequencesFilepath, format="fasta")
     SuccessSequences = 0
     TotalSequences = 0
+
+    AllRegionSequences = []
     for sequence in sequences:
         TotalSequences += 1
-        if RecommendedWindow is None:
-            RecommendedWindow, score = processAllTranslationWindows(protein, sequence)
-            print(RecommendedWindow)
-            RecommendedWindow = None
-            if score < 0.15:
-                SuccessSequences += 1
+        (RecommendedWindow, WindowSequence, score) =\
+            processAllTranslationWindows(options, protein, sequence)
+        AllRegionSequences.append(WindowSequence)
 
-        else:
-            runForWindow(sequence, *RecommendedWindow)
+        print(RecommendedWindow)
+        RecommendedWindow = None
+        if score < 0.15:
+            SuccessSequences += 1
 
-        if False:
-            op_base = "OutputProteins_%s" % sequence.id
-            os_base = "OutputSequences_%s" % sequence.id
+    OutputProteinFilePath = os.path.join(options.WorkingDirectory,
+                                     "Protein_%s.fasta" % region_name)
 
-            OutputProteins = op_base + ".fasta"
-            OutputProteinsAlignment = op_base + ".aln"
+    with open(OutputProteinFilePath, 'w') as f:
+        SeqIO.write(AllRegionSequences, f, format="fasta")
+    cmd = ClustalwCommandline("clustalw2",
+                              infile=OutputProteinFilePath
+    )
 
-            OutputSequences = os_base + ".fasta"
-            OutputSequencesAlignment = os_base + ".aln"
-
-            with open(OutputProteins, 'w') as f:
-                SeqIO.write(ProteinSequences, f, format="fasta")
-            with open(OutputSequences, 'w') as f:
-                SeqIO.write(DnaSequences, f, format="fasta")
-
-        if False:
-            ClustalwCommandline("clustalw2",
-                                infile=OutputProteins,
-                                outfile=OutputProteinsAlignment)()
-            ClustalwCommandline("clustalw2",
-                                infile=OutputSequences,
-                                outfile=OutputSequencesAlignment)()
+    cmd.seqnos = "ON"
+    cmd()
 
     successPercentage = SuccessSequences / TotalSequences * 100
     print("Rate for %s: %.2f%%" % (region_name, successPercentage))
     return successPercentage
 
 
-def runDirectory():
+def runDirectory(RegionSequenceSource):
     files = [f for f in os.listdir() if f.endswith(".fasta")]
 
     for f in files:
         region_name = re.findall("_([\w\d]+).fasta", f)[0]
         opt = type('', (), {})()
         opt.RegionName = region_name
-        successPercentage = AnalyzeRegion(opt)
+        successPercentage = AnalyzeRegion(opt, RegionSequenceSource)
         if successPercentage < 100:
             with open("log", 'a') as f:
                 f.write("%s with %.2f%%\n" % (region_name, successPercentage))
@@ -241,16 +225,32 @@ def parse_arguments():
     parser = argparse.ArgumentParser()
     parser.add_argument("-r", dest="RegionName")
     parser.add_argument("-a", dest="RunDirectory", action="store_true")
+    parser.add_argument("-d", dest="WorkingDirectory")
     options = parser.parse_args()
     return options
 
 
+def Execute(options):
+    InformationFile = OutputFile.AnalysisInformation(options.WorkingDirectory)
+    InformationFile.read()
+
+    AnnotationPath = InformationFile.content["annotation"]
+
+    GenomeFilePaths = genomeManager.readGenomeFolder()
+
+    GenomeFeatures = list(SeqIO.parse(AnnotationPath, format="genbank"))
+
+    RegionSequenceSource = bfps.BruteForcePrimerSearcher(GenomeFeatures, GenomeFilePaths)
+
+    if options.RunDirectory:
+        runDirectory(RegionSequenceSource)
+    else:
+        AnalyzeRegion(options, RegionSequenceSource)
+
+
 def main():
     options = parse_arguments()
-    if options.RunDirectory:
-        runDirectory()
-    else:
-        AnalyzeRegion(options)
+    Execute(options)
 
 
 if __name__ == "__main__":
