@@ -100,7 +100,7 @@ class BruteForcePrimerSearcher():
                         Sequence = Sequence.reverse_complement()
                     return Sequence
 
-    def fetchGeneSequence(self, geneName, outputFilePath):
+    def fetchGeneSequence(self, geneName):
 
         # FETCH PRIMER METHODS. TO BE INTEGRATED;
         geneLocation = self.retrieveGeneLocation(geneName, self.wantedFeatureType)
@@ -141,8 +141,7 @@ class BruteForcePrimerSearcher():
 
         if not os.path.isfile(geneSequenceFilePath):
             # Fetch gene sequence;
-            regionSequence = self.fetchGeneSequence(locus_name,
-                                                    geneSequenceFilePath)
+            regionSequence = self.fetchGeneSequence(locus_name)
 
             if regionSequence:
                 # Save sequence;
