@@ -9,8 +9,8 @@ from Bio import Seq, SeqIO
 
 import argparse
 
-from . import PrimerEngine, OutputFile
-from .Database import annotationManager
+from . import PrimerEngine, InputFile, OutputFile
+from .Database import annotationManager, genomeManager
 
 
 def writeFastaFile(outputPath,
@@ -46,33 +46,6 @@ def writeFastaFile(outputPath,
         SeqIO.write(fastaSequences, output_handle, "fasta")
 
 
-# LOAD USER DEFINED PRIMER DATA, with or without header;
-def loadPrimerList(filePath):
-    lociPrimerList = pd.read_csv(filePath)
-    expectedColumns = ["LocusName", "ForwardPrimer", "ReversePrimer"]
-
-    fileColumns = list(lociPrimerList.columns)
-    for i in range(len(fileColumns)):
-        if "Unnamed" in fileColumns[i]:
-            fileColumns[i] = np.nan
-
-    if fileColumns != expectedColumns:
-        newFirstRowData = dict([(expected, fileColumns[e])
-                                for e, expected
-                                in enumerate(expectedColumns)])
-
-        newFirstRow = pd.DataFrame([newFirstRowData],
-                                   columns=expectedColumns)
-
-        lociPrimerList.columns = expectedColumns
-
-        lociPrimerList = pd.concat([newFirstRow, lociPrimerList],
-                                   axis=0,
-                                   ignore_index=True).reset_index(drop=True)
-
-    return lociPrimerList
-
-
 def Execute(options):
     # LOAD CLONAL TYPE LOCUS INFORMATION (Su et al.);
     RFLPInfoDirectory = os.path.dirname(options.PrimerFile)
@@ -105,28 +78,20 @@ def Execute(options):
         exit(1)
 
     # -- LOAD USER DEFINED PRIMERS;
-    lociPrimerList = loadPrimerList(options.PrimerFile)
+    lociPrimerList = InputFile.loadPrimerList(options.PrimerFile)
 
     # LOAD GENOMES;
-    genomeDirectory = "genomes"
-    if os.path.isdir(genomeDirectory):
-        genomes = os.listdir(genomeDirectory)
-        genomeFilePaths = [os.path.join(genomeDirectory, genomeFile)
-                           for genomeFile in genomes
-                           if genomeFile.endswith(('.fna', '.fasta'))]
+    genomeFilePaths = genomeManager.readGenomeFolder()
+    genomes = [PrimerEngine.GeneticEntities.Genome(genomeFilePath)
+               for genomeFilePath in genomeFilePaths]
 
-        genomes = [PrimerEngine.GeneticEntities.Genome(genomeFilePath)
-                   for genomeFilePath in genomeFilePaths]
+    print("Loaded %i genomes." % len(genomes))
 
-        print("Loaded %i genomes." % len(genomes))
-
-        maxGenomes = 25
-        if len(genomes) > maxGenomes:
-            print("Discarding genomes, max is %i!" % maxGenomes)
+    maxGenomes = 25
+    if len(genomes) > maxGenomes:
+        print("Discarding genomes, max is %i!" % maxGenomes)
 
         genomes = genomes[:maxGenomes]
-    else:
-        genomes = []
 
     if not genomes:
         print("Fatal: No genomes found!")
@@ -136,6 +101,7 @@ def Execute(options):
         print("Fatal: need at least 4 genomes to proper execute the analysis,")
         print("\tgot only %i." % len(genomes))
         exit(1)
+
 
     # APPLY GENOME FEATURES TO BRUTE FORCE MODULE;
     annotationFilePath, genomeFeatures =\
