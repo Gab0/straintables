@@ -27,6 +27,16 @@ class SimpleDataFrame():
         self.content.to_csv(self.filepath, index=False)
 
 
+class JsonFile():
+    def write(self):
+        with open(self.filepath, 'w') as f:
+            json.dump(self.content, f, indent=2)
+
+    def read(self):
+        with open(self.filepath) as f:
+            self.content = json.load(f)
+
+
 class MatchedRegions(OutputFile, SimpleDataFrame):
     columns = [
         "LocusName",
@@ -44,16 +54,12 @@ class PrimerData(OutputFile, SimpleDataFrame):
     filename = "PrimerData.csv"
 
 
-class AnalysisInformation(OutputFile):
+class AnalysisInformation(OutputFile, JsonFile):
     filename = "Information.json"
     fields = [
         "?"
     ]
 
-    def write(self):
-        with open(self.filepath, 'w') as f:
-            json.dump(self.content, f, indent=2)
 
-    def read(self):
-        with open(self.filepath) as f:
-            self.content = json.load(f)
+class DockFailureReport(OutputFile, JsonFile):
+    filename = "DockFailureReport.json"
