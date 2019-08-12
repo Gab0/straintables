@@ -36,7 +36,8 @@ def find_primers(options, outputPath):
         "primerFile": options.PrimerFile,
         "outputPath": outputPath,
         "WantedLoci": "",
-        "wantedFeatureType": options.wantedFeatureType
+        "wantedFeatureType": options.wantedFeatureType,
+        "WorkingDirectory": outputPath
     }
 
     return straintables.primerFinder.Execute(options)
@@ -157,7 +158,6 @@ def main():
         ]
         for d, Directory in enumerate(Path):
             subDirectoryPath = os.path.join(*Path[:d+1])
-            print(subDirectoryPath)
             if not os.path.isdir(subDirectoryPath):
                 print("Creating directory %s." % subDirectoryPath)
                 os.mkdir(subDirectoryPath)
