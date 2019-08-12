@@ -10,20 +10,13 @@ from .Database import annotationManager
 def Execute(options):
     print("\nSelecting annotation scaffold...\n")
 
-    selectedAnnotation = annotationManager.loadAnnotation(
-        options.inputAnnotationFolder,
-        identifier=options.inputAnnotationName
+    selectedAnnotationName, selectedAnnotationContents =\
+        annotationManager.loadAnnotation(
+            options.inputAnnotationFolder,
+            identifier=options.inputAnnotationName
     )
 
-    selectedScaffold = selectedAnnotation[0]
-
-    """
-    if not options.inputAnnotationName:
-        print("No chromosome selected. Available Chromosomes:")
-        availableChromosomes = [c for c in selectedScaffold if "Unknown" not in c]
-        print("\n".join(availableChromosomes))
-        return
-    """
+    selectedScaffold = selectedAnnotationContents[0]
 
     if not selectedScaffold:
         print("Chromosome %s not found." % options.inputAnnotationName)
