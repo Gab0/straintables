@@ -132,8 +132,8 @@ def Execute(options):
         # ASSIGN OUTPUT FASTA FILE NAME AND CHECK IF EXISTS;
         outputFastaName = "LOCI_%s.fasta" % locus_name
 
-        outputFastaPath = os.path.join(options.WorkingDirectory,
-                                       outputFastaName)
+        outputFastaPath = os.path.join(options.WorkingDirectory, outputFastaName)
+
         print("Fasta file: %s" % outputFastaPath)
 
         if os.path.isfile(outputFastaPath):
