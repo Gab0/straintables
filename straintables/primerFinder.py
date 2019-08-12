@@ -15,27 +15,10 @@ from .Database import annotationManager, genomeManager
 
 def writeFastaFile(outputPath,
                    locusName,
-                   locusSequences,
-                   RFLPReference=None):
+                   locusSequences):
     fastaSequences = []
 
     for genome in locusSequences.keys():
-        Name = genome + ".fasta"
-        try:
-            if RFLPReference:
-                REF = options.LocusReference
-                # referenceLocus = REF if REF else options.LocusName
-
-                GenotypeNumber = RFLPReference.getGenotypeNumber(Name)
-                RFLPLocus = RFLPReference.getRFLPLocus(
-                    GenotypeNumber, REF)
-                Name += "___%s" % RFLPLocus
-                print("Loci data found for %s" % Name)
-
-        except Exception as e:
-            pass
-            # print("RFLP marker reference failure.")
-
         sequence = SeqIO.SeqRecord(Seq.Seq(locusSequences[genome]),
                                    id=genome,
                                    name=genome,
@@ -47,10 +30,6 @@ def writeFastaFile(outputPath,
 
 
 def Execute(options):
-    # LOAD CLONAL TYPE LOCUS INFORMATION (Su et al.);
-    RFLPInfoDirectory = os.path.dirname(options.PrimerFile)
-    RFLPReference = None
-    RFLPReference = PrimerEngine.RFLPMarker.RFLPReference(RFLPInfoDirectory)
 
     # CHECK DECLARATION OF PRIMER FILE;
     if not options.PrimerFile:
@@ -169,7 +148,7 @@ def Execute(options):
             print()
             # record amplicon and primer data;
             writeFastaFile(outputFastaPath, locus_name,
-                           LocusAmpliconSet, RFLPReference=RFLPReference)
+                           LocusAmpliconSet)
 
             primerPair = {P.label: P.sequence for P in MatchedPrimers}
             primerPair["LocusName"] = locus_name
