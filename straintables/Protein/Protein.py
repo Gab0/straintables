@@ -74,70 +74,41 @@ def runForWindow(options, protein, sequence, Window, Reverse):
     # ProteinSequences.append(PROT)
     # DnaSequences.append(DNA)
 
-    if False:
-        # -- SETUP ALIGNER AND ITS SCORES;
-        Aligner = Align.PairwiseAligner()
-
-        Aligner.mode = "global"
-        Aligner.open_gap_score = -1000
-        Aligner.extend_gap_score = -1
-        Aligner.match_score = 100
-        # Aligner.gap_score = -100
-
-        d = Aligner.align(PROT, protein)
-
-        s = d.score
+    TestFilePrefix = "TEST_%s_%s" % (PROT.id, StrainName)
 
     OutDirectory = os.path.join(options.WorkingDirectory, "out_%s" % region_name)
     if not os.path.isdir(OutDirectory):
         os.mkdir(OutDirectory)
 
+    SequencesAsStrings = [str(Sequence.seq) for Sequence in [PROT, protein]]
+
+    alignscore = MakeTestAlignment(SequencesAsStrings)
+    dndscore = MakeTestClustalAlignment(SequencesAsStrings,
+                                        TestFilePrefix,
+                                        region_name,
+                                        OutDirectory)
+
     if region_name == sequence.id:
         print("check %s" % sequence.id)
         exit()
 
-    TestFilePrefix = "TEST_%s_%s" % (PROT.id, StrainName)
-    TestFile = TestFilePrefix + ".fasta"
+    if len(PROT.seq) > len(protein.seq):
+        print("WARNING: protein fragment length is bigger than reference protein length!")
 
-    TestFilePath = os.path.join(OutDirectory, TestFile)
+    print("%s: %s / %s" % (TestFilePrefix, dndscore, alignscore))
 
-    if True:
-        ALIGN = [PROT, protein]
-        if len(PROT) > len(protein):
-            print("WARNING: protein fragment length is bigger than reference protein length!")
+    return PROT, dndscore, alignscore
 
-        SeqIO.write(ALIGN, open(TestFilePath, 'w'), format="fasta")
 
-        Outfile = os.path.join(OutDirectory, TestFile + ".aln")
-        cmd = ClustalwCommandline("clustalw2",
-                                  infile=TestFilePath,
-                                  outfile=Outfile)
+# NOT USED;
+def ShowAlignment(TestFile):
+    alan = subprocess.Popen(["alan", TestFile + ".aln"],
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.PIPE,
+                            shell=True)
 
-        cmd.seqnos = "ON"
-        cmd()
-
-        dndfile = os.path.join(OutDirectory, TestFilePrefix + ".dnd")
-        dndscore = parseDndFile(dndfile, region_name)
-
-        if dndscore > 0.3:
-            os.remove(TestFilePath)
-        os.remove(dndfile)
-
-        # x = AlignIO.read(Outfile, format='clustal')
-        # print(str(x))
-
-    print("%s: %s" % (TestFile, dndscore))
-
-    if False:
-        alan = subprocess.Popen(["alan", TestFile + ".aln"],
-                                stdout=subprocess.PIPE,
-                                stderr=subprocess.PIPE,
-                                shell=True)
-
-        res = alan.communicate()
-        print(res[0])
-
-    return PROT, dndscore
+    res = alan.communicate()
+    print(res[0])
 
 
 def processAllTranslationWindows(options, protein, sequence):
@@ -145,11 +116,56 @@ def processAllTranslationWindows(options, protein, sequence):
     for Reverse in range(2):
         for Window in range(3):
             WindowDescriptor = (Window, Reverse)
-            WindowSequence, dndscore = runForWindow(options, protein, sequence, Window, Reverse)
+            (WindowSequence, dndscore, alignscore) = runForWindow(options,
+                                                                  protein,
+                                                                  sequence,
+                                                                  Window,
+                                                                  Reverse)
             AlignmentScores.append((WindowDescriptor, WindowSequence, dndscore))
 
     BestAlignment = sorted(AlignmentScores, key=lambda v: v[2])[0]
     return BestAlignment
+
+
+def MakeTestAlignment(Sequences):
+
+    # -- SETUP ALIGNER AND ITS SCORES;
+    Aligner = Align.PairwiseAligner()
+
+    Aligner.mode = "global"
+    Aligner.open_gap_score = -1000
+    Aligner.extend_gap_score = -1
+    Aligner.match_score = 100
+    # Aligner.gap_score = -100
+
+    d = Aligner.align(*Sequences)
+
+    return d.score
+
+
+def MakeTestClustalAlignment(Sequences, TestFilePrefix, region_name, OutDirectory):
+
+    TestFile = TestFilePrefix + ".fasta"
+    TestFilePath = os.path.join(OutDirectory, TestFile)
+    SeqIO.write(Sequences, open(TestFilePath, 'w'), format="fasta")
+
+    Outfile = os.path.join(OutDirectory, TestFile + ".aln")
+    cmd = ClustalwCommandline("clustalw2",
+                              infile=TestFilePath,
+                              outfile=Outfile)
+
+    cmd.seqnos = "ON"
+    cmd()
+
+    dndfile = os.path.join(OutDirectory, TestFilePrefix + ".dnd")
+    dndscore = parseDndFile(dndfile, region_name)
+
+    if dndscore > 0.3:
+        os.remove(TestFilePath)
+    os.remove(dndfile)
+
+    # x = AlignIO.read(Outfile, format='clustal')
+    # print(str(x))
 
 
 def AnalyzeRegion(options, RegionSequenceSource):
@@ -170,6 +186,9 @@ def AnalyzeRegion(options, RegionSequenceSource):
 
     source_seq = RegionSequenceSource.fetchGeneSequence(region_name)
 
+    if source_seq is None:
+        return 0
+
     protein = SeqIO.SeqRecord(source_seq.translate())
 
     protein.id = region_name
@@ -180,25 +199,32 @@ def AnalyzeRegion(options, RegionSequenceSource):
     TotalSequences = 0
 
     AllRegionSequences = []
+
     for sequence in sequences:
         TotalSequences += 1
         (RecommendedWindow, WindowSequence, score) =\
             processAllTranslationWindows(options, protein, sequence)
         AllRegionSequences.append(WindowSequence)
 
-        print(RecommendedWindow)
+        print("Correct Window: %s" % RecommendedWindow)
         RecommendedWindow = None
         if score < 0.15:
             SuccessSequences += 1
 
     OutputProteinFilePath = os.path.join(options.WorkingDirectory,
-                                     "Protein_%s.fasta" % region_name)
+                                         "Protein_%s.fasta" % region_name)
 
     with open(OutputProteinFilePath, 'w') as f:
         SeqIO.write(AllRegionSequences, f, format="fasta")
     cmd = ClustalwCommandline("clustalw2",
                               infile=OutputProteinFilePath
     )
+
+    OutputProteinReferenceFilePath = os.path.join(options.WorkingDirectory,
+                                                  "Protein_ref_%s.fasta" % region_name)
+
+    with open(OutputProteinReferenceFilePath, 'w') as f:
+        SeqIO.write(protein, f, format="fasta")
 
     cmd.seqnos = "ON"
     cmd()
@@ -208,13 +234,20 @@ def AnalyzeRegion(options, RegionSequenceSource):
     return successPercentage
 
 
-def runDirectory(RegionSequenceSource):
-    files = [f for f in os.listdir() if f.endswith(".fasta")]
+def runDirectory(options, RegionSequenceSource):
+    WantedFileQuery = "LOCI_([\w\d]+).fasta"
+    files = [
+        f for f in os.listdir(options.WorkingDirectory)
+        if re.findall(WantedFileQuery, f)
+    ]
 
     for f in files:
-        region_name = re.findall("_([\w\d]+).fasta", f)[0]
-        opt = type('', (), {})()
+        region_name = re.findall(WantedFileQuery, f)[0]
+
+        opt = types.SimpleNamespace()
+
         opt.RegionName = region_name
+        opt.WorkingDirectory = options.WorkingDirectory
         successPercentage = AnalyzeRegion(opt, RegionSequenceSource)
         if successPercentage < 100:
             with open("log", 'a') as f:
@@ -225,7 +258,7 @@ def parse_arguments():
     parser = argparse.ArgumentParser()
     parser.add_argument("-r", dest="RegionName")
     parser.add_argument("-a", dest="RunDirectory", action="store_true")
-    parser.add_argument("-d", dest="WorkingDirectory")
+    parser.add_argument("-d", dest="WorkingDirectory", default=".")
     options = parser.parse_args()
     return options
 
@@ -243,7 +276,7 @@ def Execute(options):
     RegionSequenceSource = bfps.BruteForcePrimerSearcher(GenomeFeatures, GenomeFilePaths)
 
     if options.RunDirectory:
-        runDirectory(RegionSequenceSource)
+        runDirectory(options, RegionSequenceSource)
     else:
         AnalyzeRegion(options, RegionSequenceSource)
 
