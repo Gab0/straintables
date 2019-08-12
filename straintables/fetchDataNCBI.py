@@ -226,10 +226,14 @@ def downloadAssembly(ID,
                   ' '.join(wantedFileTypes))
             return 0
 
-        print("\nRemote files: " + "=" * 10)
+        # -- Show list of remote files for accession;
+        maxLength = max([len(f) for f in remoteFiles])
+        print()
+        Header = "Remote files: "
+        Header += "=" * (maxLength - len(Header))
         print('\n'.join(remoteFiles))
         print()
-        print("=" * 22)
+        print("=" * maxLength)
         print()
 
     DownloadSuccess = False
