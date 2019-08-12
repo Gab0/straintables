@@ -4,13 +4,9 @@
 
 straintables' main pipeline script;
 
-ruffus functionality is not active yet,
-so its function decorations are decorative.
 
 """
 
-
-from ruffus import *
 import os
 import argparse
 import pandas as pd
@@ -28,22 +24,11 @@ class Options():
         self.__dict__.update(options)
 
 
-@active_if(lambda: options.DoAmplicon)
-@subdivide(lambda: options.PrimerFile, formatter(), "*.fasta")
-def find_primers(options, outputPath):
-
-    finderOptions = {
-        "primerFile": options.PrimerFile,
-        "outputPath": outputPath,
-        "WantedLoci": "",
-        "wantedFeatureType": options.wantedFeatureType,
-        "WorkingDirectory": outputPath
-    }
+def find_primers(options):
 
     return straintables.primerFinder.Execute(options)
 
 
-@active_if(lambda: options.DoAlignment)
 def run_alignment(filePrefix):
     infile = filePrefix + ".fasta"
     outfile = filePrefix + ".aln"
@@ -103,9 +88,6 @@ def matrix_analysis(WorkingDirectory):
 def parse_arguments():
     parser = argparse.ArgumentParser()
 
-    #parser.add_argument("-p", dest="PrimerFile")
-
-
     parser.add_argument("--noamplicon", dest="DoAmplicon",
                         action="store_false", default=True)
 
@@ -115,15 +97,6 @@ def parse_arguments():
     parser.add_argument("--alnmode", dest="AlignmentMode",
                         default="clustal")
 
-    """
-    parser.add_argument("-d", "--dir", dest="WorkingDirectory")
-
-    parser.add_argument("-t", dest="wantedFeatureType", default="gene")
-    parser.add_argument("-m",
-                        dest="rebootTolerance",
-                        type=int,
-                        default=20)
-    """
     parser = straintables.primerFinder.parse_arguments(parser)
     options = parser.parse_args()
 
@@ -134,16 +107,13 @@ def main():
     options = parse_arguments()
 
     # -- SELECT WORKING DIRECTORY;
-    if options.WorkingDirectory:
-        WorkingDirectory = options.WorkingDirectory
-
-    else:
+    if not options.WorkingDirectory:
         AnalysisCode = os.path.splitext(options.PrimerFile)[0]
         AnalysisCode = os.path.basename(AnalysisCode)
 
         WorkingDirectoryBase = "analysisResults"
-        WorkingDirectory = os.path.join(WorkingDirectoryBase,
-                                        AnalysisCode)
+        options.WorkingDirectory = os.path.join(WorkingDirectoryBase,
+                                                AnalysisCode)
 
     # -- TEST CLUSTALW2 SETUP;
     # this is giving problems.. maybe ask on Biopython issues.
@@ -151,9 +121,9 @@ def main():
         print("Clustalw2 not found! Aborting...")
         exit(1)
 
-    if not os.path.isdir(WorkingDirectory):
+    if not os.path.isdir(options.WorkingDirectory):
         Path = [
-            step for step in os.path.split(WorkingDirectory)
+            step for step in os.path.split(options.WorkingDirectory)
             if step
         ]
         for d, Directory in enumerate(Path):
@@ -171,40 +141,33 @@ def main():
     # SHOW BEAUTIFUL ASCII ART;
     print(logo)
 
-    # pipeline using ruffus is wip;
-    ruffusMode = False
-
-    # RUN NORMALLY;
-    if not ruffusMode:
-        if options.DoAmplicon:
-            result = find_primers(options, WorkingDirectory)
-            if not result:
-                print("Failure to find primers.")
-                exit(1)
-
-        AllowedAlignModes = ["clustal"]
-        if options.AlignmentMode not in AllowedAlignModes:
-            print("Unknown alignment mode %s." % (options.AlignmentMode))
+    # -- RUN PIPELINE;
+    if options.DoAmplicon:
+        result = find_primers(options)
+        if not result:
+            print("Failure to find primers.")
             exit(1)
 
-        MatchedPrimersPath = os.path.join(WorkingDirectory, "MatchedRegions.csv")
-        SucessfulLoci = pd.read_csv(MatchedPrimersPath)["LocusName"]
+    AllowedAlignModes = ["clustal"]
+    if options.AlignmentMode not in AllowedAlignModes:
+        print("Unknown alignment mode %s." % (options.AlignmentMode))
+        exit(1)
 
-        if options.DoAlignment:
-            for locusName in SucessfulLoci:
-                filePrefix = os.path.join(WorkingDirectory, "LOCI_" + locusName)
-                print("Running alignment for %s..." % locusName)
-                run_alignment(filePrefix)
-                # draw_tree(filePrefix)
-                detect_mutations(filePrefix)
-                run_meshclust(filePrefix)
+    MatchedPrimersPath = os.path.join(options.WorkingDirectory, "MatchedRegions.csv")
+    SucessfulLoci = pd.read_csv(MatchedPrimersPath)["LocusName"]
 
-        if matrix_analysis(WorkingDirectory):
-            print("Analysis sucesfull.")
+    if options.DoAlignment:
+        for locusName in SucessfulLoci:
+            filePrefix = os.path.join(options.WorkingDirectory, "LOCI_" + locusName)
+            print("Running alignment for %s..." % locusName)
+            run_alignment(filePrefix)
+            # draw_tree(filePrefix)
+            detect_mutations(filePrefix)
+            run_meshclust(filePrefix)
 
-    # RUN BY RUFFUS;
-    else:
-        pipeline_run()
+    if matrix_analysis(options.WorkingDirectory):
+        print("Analysis sucesfull.")
+
 
 
 if __name__ == "__main__":
