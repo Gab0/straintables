@@ -194,6 +194,8 @@ def matchLocusOnGenomes(locus_name,
     RebootCount = 0
     chr_identifier = None
 
+    FailingGenomes = [Genome.name for Genome in genomes]
+
     # ITERATE GENOMES UNTIL SUCCESS;
     for Genome in itertools.cycle(genomes):
         # print("Genome: %s --\n" % genome)
@@ -205,6 +207,7 @@ def matchLocusOnGenomes(locus_name,
             locus_name,
             Genome.name
         )
+
         M = ">>> Locus %i of %i | run number %i ->  Searching %s on %s"
         print(M % HEADER_INFO)
 
@@ -231,9 +234,8 @@ def matchLocusOnGenomes(locus_name,
             if Genome.name == genomes[0].name:
                 if type(MatchedPrimers[0]) == GeneticEntities.primerMatch:
                     chr_identifier = MatchedPrimers[0].chr_name
-            # print(matchSuccess)
 
-        # FAILURE ON MATCHING A PRIMER?
+        # FAILED TO MATCH A PRIMER?
         if not all(MatchedPrimers):
             for PT, match in enumerate(MatchedPrimers):
                 PrimerType = PrimerTypes[PT]
@@ -264,8 +266,9 @@ def matchLocusOnGenomes(locus_name,
 
                             testablePrimers[PrimerType] = newPrimers
                         else:
-                            print("Brute force primer finder is disabled.")
-                            return None, None, None
+                            FailureReason = "Brute force primer finder is disabled."
+                            print(FailureReason)
+                            return RegionMatchFailure(FailureReason)
 
                     while testablePrimers[PrimerType]:
                         print("Fetching new primer from reserve...")
@@ -289,6 +292,8 @@ def matchLocusOnGenomes(locus_name,
 
             if Sucess:
                 LocusAmpliconSet[Genome.name] = AmpliconSequence
+                if Genome.name in FailingGenomes:
+                    FailingGenomes.remove(Genome.name)
             else:
                 print("Resetting all primers, amplicon too short.")
                 for s in range(2):
@@ -312,8 +317,22 @@ def matchLocusOnGenomes(locus_name,
             primerPair["RebootCount"] = RebootCount
 
             # exit loop...
-            return LocusAmpliconSet, MatchedPrimers, chr_identifier
+            return RegionMatchSuccess(LocusAmpliconSet, MatchedPrimers, chr_identifier)
 
         # IF IT FAILS ENOUGH, SKIP LOCUS;
         elif RebootCount > rebootTolerance:
-            return None, None, None
+            FailureReason = "Too many reboots."
+            return RegionMatchFailure(FailureReason, FailedGenomes=FailingGenomes)
+
+
+class RegionMatchFailure():
+    def __init__(self, reason, FailedGenomes=None):
+        self.reason = reason
+        self.FailedGenomes = FailedGenomes
+
+
+class RegionMatchSuccess():
+    def __init__(self, LocusAmpliconSet=None, MatchedPrimers=None, chr_identifier=None):
+        self.LocusAmpliconSet = LocusAmpliconSet
+        self.MatchedPrimers = MatchedPrimers
+        self.chr_identifier = chr_identifier
