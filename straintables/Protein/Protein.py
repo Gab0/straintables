@@ -80,10 +80,10 @@ def runForWindow(options, protein, sequence, Window, Reverse):
     if not os.path.isdir(OutDirectory):
         os.mkdir(OutDirectory)
 
-    SequencesAsStrings = [str(Sequence.seq) for Sequence in [PROT, protein]]
+    Sequences = [PROT, protein]
 
-    alignscore = MakeTestAlignment(SequencesAsStrings)
-    dndscore = MakeTestClustalAlignment(SequencesAsStrings,
+    alignscore = MakeTestAlignment(Sequences)
+    dndscore = MakeTestClustalAlignment(Sequences,
                                         TestFilePrefix,
                                         region_name,
                                         OutDirectory)
@@ -129,6 +129,7 @@ def processAllTranslationWindows(options, protein, sequence):
 
 def MakeTestAlignment(Sequences):
 
+    SequencesAsStrings = [str(Sequence.seq) for Sequence in Sequences]
     # -- SETUP ALIGNER AND ITS SCORES;
     Aligner = Align.PairwiseAligner()
 
@@ -138,18 +139,18 @@ def MakeTestAlignment(Sequences):
     Aligner.match_score = 100
     # Aligner.gap_score = -100
 
-    d = Aligner.align(*Sequences)
+    d = Aligner.align(*SequencesAsStrings)
 
     return d.score
 
 
-def MakeTestClustalAlignment(Sequences, TestFilePrefix, region_name, OutDirectory):
+def MakeTestClustalAlignment(Sequences, TestFilePrefix, region_name, OutputDirectory):
 
     TestFile = TestFilePrefix + ".fasta"
-    TestFilePath = os.path.join(OutDirectory, TestFile)
+    TestFilePath = os.path.join(OutputDirectory, TestFile)
     SeqIO.write(Sequences, open(TestFilePath, 'w'), format="fasta")
 
-    Outfile = os.path.join(OutDirectory, TestFile + ".aln")
+    Outfile = os.path.join(OutputDirectory, TestFile + ".aln")
     cmd = ClustalwCommandline("clustalw2",
                               infile=TestFilePath,
                               outfile=Outfile)
@@ -157,7 +158,7 @@ def MakeTestClustalAlignment(Sequences, TestFilePrefix, region_name, OutDirector
     cmd.seqnos = "ON"
     cmd()
 
-    dndfile = os.path.join(OutDirectory, TestFilePrefix + ".dnd")
+    dndfile = os.path.join(OutputDirectory, TestFilePrefix + ".dnd")
     dndscore = parseDndFile(dndfile, region_name)
 
     if dndscore > 0.3:
@@ -166,6 +167,8 @@ def MakeTestClustalAlignment(Sequences, TestFilePrefix, region_name, OutDirector
 
     # x = AlignIO.read(Outfile, format='clustal')
     # print(str(x))
+
+    return dndscore
 
 
 def AnalyzeRegion(options, RegionSequenceSource):
@@ -206,7 +209,7 @@ def AnalyzeRegion(options, RegionSequenceSource):
             processAllTranslationWindows(options, protein, sequence)
         AllRegionSequences.append(WindowSequence)
 
-        print("Correct Window: %s" % RecommendedWindow)
+        print("Correct Window: %i %i" % RecommendedWindow)
         RecommendedWindow = None
         if score < 0.15:
             SuccessSequences += 1
