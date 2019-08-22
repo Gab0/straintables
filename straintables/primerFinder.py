@@ -36,8 +36,9 @@ def Execute(options):
         print("FATAL: No primer file specified.")
         exit(1)
 
-    print("\nFeature type for primer creation is %s.\n" %
+    print("\nAnnotation feature type for automatic primer search is |%s|." %
           options.wantedFeatureType)
+    print("\t (allowed options: CDS, gene, mRNA)")
 
     # -- LOAD GENOME FEATURES;
     featureFolderPath = "annotations"
@@ -103,6 +104,8 @@ def Execute(options):
 
     print("\n")
 
+    GenomeFailureReport = OutputFile.DockFailureReport(options.WorkingDirectory)
+
     # ITERATE LOCI;
     for i in range(lociPrimerList.shape[0]):
         locus_info = lociPrimerList.iloc[i]
@@ -128,7 +131,7 @@ def Execute(options):
 
         overallProgress = (i + 1, lociPrimerList.shape[0])
 
-        (LocusAmpliconSet, MatchedPrimers, chr_identifier) =\
+        RegionMatchResult =\
             PrimerEngine.PrimerDock.matchLocusOnGenomes(
                 locus_name,
                 locus_info,
@@ -138,32 +141,39 @@ def Execute(options):
                 bruteForceSearcher=bruteForceSearcher
             )
 
+        if type(RegionMatchResult) == PrimerEngine.PrimerDock.RegionMatchFailure:
+            GenomeFailureReport.content[locus_name] = RegionMatchResult.FailedGenomes
+            continue
+
         # -- Additional region statistics;
-        if LocusAmpliconSet is not None:
+        if RegionMatchResult.LocusAmpliconSet is not None:
             # AlignmentHealth.
             score = PrimerEngine.ampliconSanity.evaluateSetOfAmplicons(
-                LocusAmpliconSet)
+                RegionMatchResult.LocusAmpliconSet)
 
             print("\tAlignment Health = %.2f%%" % score)
             print()
             # record amplicon and primer data;
             writeFastaFile(outputFastaPath, locus_name,
-                           LocusAmpliconSet)
+                           RegionMatchResult.LocusAmpliconSet)
 
-            primerPair = {P.label: P.sequence for P in MatchedPrimers}
+            primerPair = {P.label: P.sequence for P in RegionMatchResult.MatchedPrimers}
             primerPair["LocusName"] = locus_name
 
             primerPair["AlignmentHealth"] = score
 
-            RegionLengths = [len(r) for r in LocusAmpliconSet]
+            RegionLengths = [
+                len(r)
+                for r in RegionMatchResult.LocusAmpliconSet
+            ]
 
             primerPair["MeanLength"] = np.mean(RegionLengths)
             primerPair["StdLength"] = np.std(RegionLengths)
-            primerPair["Chromosome"] = chr_identifier
+            primerPair["Chromosome"] = RegionMatchResult.chr_identifier
 
             # Append region data;
             matchedPrimerSequences.append(primerPair)
-            AllLociPrimerSet[locus_name] = MatchedPrimers
+            AllLociPrimerSet[locus_name] = RegionMatchResult.MatchedPrimers
             # print("Bad Amplicon set for %s! Ignoring...." % locus_name)
         else:
             print("WARNING: PrimerDock failure.")
@@ -202,6 +212,9 @@ def Execute(options):
         }
         information.write()
 
+        # -- WRITE GENOME FAILURE REPORT IF ANY REGION FAILED;
+        if GenomeFailureReport.content:
+            GenomeFailureReport.write()
     else:
         print("No regions found, nothing to do.")
 
