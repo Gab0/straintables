@@ -7,6 +7,7 @@ import json
 from . import Definitions
 
 
+# -- BASE CLASS FOR ALL TYPES OF OUTPUT FILES;
 class OutputFile():
     def __init__(self, dirpath):
         self.dirpath = dirpath
@@ -19,7 +20,8 @@ class OutputFile():
         return os.path.isfile(self.get_filepath())
 
 
-class SimpleDataFrame():
+# -- TYPES OF OUTPUT FILES;
+class SimpleDataFrame(OutputFile):
     def add(self, data):
         self.content = pd.DataFrame(data, columns=self.columns)
 
@@ -27,7 +29,9 @@ class SimpleDataFrame():
         self.content.to_csv(self.filepath, index=False)
 
 
-class JsonFile():
+class JsonFile(OutputFile):
+    content = {}
+
     def write(self):
         with open(self.filepath, 'w') as f:
             json.dump(self.content, f, indent=2)
@@ -37,7 +41,8 @@ class JsonFile():
             self.content = json.load(f)
 
 
-class MatchedRegions(OutputFile, SimpleDataFrame):
+# -- OUTPUT FILE FLAVORS;
+class MatchedRegions(SimpleDataFrame):
     columns = [
         "LocusName",
         *Definitions.PrimerTypes,
@@ -50,16 +55,16 @@ class MatchedRegions(OutputFile, SimpleDataFrame):
     filename = "MatchedRegions.csv"
 
 
-class PrimerData(OutputFile, SimpleDataFrame):
+class PrimerData(SimpleDataFrame):
     filename = "PrimerData.csv"
 
 
-class AnalysisInformation(OutputFile, JsonFile):
+class AnalysisInformation(JsonFile):
     filename = "Information.json"
     fields = [
         "?"
     ]
 
 
-class DockFailureReport(OutputFile, JsonFile):
+class DockFailureReport(JsonFile):
     filename = "DockFailureReport.json"
