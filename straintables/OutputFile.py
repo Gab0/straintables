@@ -28,6 +28,8 @@ class SimpleDataFrame(OutputFile):
     def write(self):
         self.content.to_csv(self.filepath, index=False)
 
+    def read(self):
+        self.content = pd.read_csv(self.filepath)
 
 class JsonFile(OutputFile):
     content = {}
