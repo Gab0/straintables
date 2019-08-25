@@ -102,7 +102,7 @@ class primerMatch():
 
     def to_dict(self, locusName):
         row = OrderedDict()
-        row["Locus"] = locusName
+        row["RegionName"] = locusName
         row["Sequence"] = self.sequence
         row["Chromosome"] = self.chr_name
 

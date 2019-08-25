@@ -5,7 +5,7 @@ import pandas as pd
 import numpy as np
 from optparse import OptionParser
 
-from . import skdistance as skdist
+from straintables import skdistance as skdist
 
 
 def matrixRankings(MATRIX):
@@ -71,18 +71,18 @@ def checkRecombination(ma, mb, Verbose=False):
 
 def Execute(options):
     # CHECK INPUT ARGUMENTS;
-    if not options.InputDirectory:
+    if not options.WorkingDirectory:
         print("FATAL: No input directory.")
         exit(1)
 
     # LOAD RESULT FILES;
-    matchedLociData = pd.read_csv(os.path.join(options.InputDirectory,
+    matchedLociData = pd.read_csv(os.path.join(options.WorkingDirectory,
                                                "MatchedRegions.csv"))
     matchedLoci = matchedLociData["LocusName"]
 
     arrayFiles = ["LOCI_%s.aln.npy" % Locus for Locus in matchedLoci]
 
-    arrayFilePaths = [os.path.join(options.InputDirectory, File)
+    arrayFilePaths = [os.path.join(options.WorkingDirectory, File)
                       for File in arrayFiles]
 
     # LOAD HEATMAPS FOR LOCI THAT SUCCEEDED THE ALIGNMENT;
@@ -94,7 +94,7 @@ def Execute(options):
         if os.path.isfile(filePath)
     ]
 
-    heatmapLabels = np.load(os.path.join(options.InputDirectory,
+    heatmapLabels = np.load(os.path.join(options.WorkingDirectory,
                                          "heatmap_labels.npy"))
 
     Distances = [
@@ -126,7 +126,7 @@ def Execute(options):
         print("\n")
 
     # LOAD OR BUILD NEW PWM ANALYSIS DATA FRAME;
-    pwmPath = os.path.join(options.InputDirectory, "PWMAnalysis.csv")
+    pwmPath = os.path.join(options.WorkingDirectory, "PWMAnalysis.csv")
 
     PWM = None
     if options.updateOnly:
@@ -208,7 +208,7 @@ def Execute(options):
     outputData = pd.DataFrame(allResults,
                               columns=outputColumns)
 
-    outputPath = os.path.join(options.InputDirectory, "HeatmapAnalysis.csv")
+    outputPath = os.path.join(options.WorkingDirectory, "HeatmapAnalysis.csv")
     outputData.to_csv(outputPath, index=False)
 
     print("Wrote %s analysis file." % outputPath)
@@ -218,7 +218,7 @@ def Execute(options):
 
 if __name__ == "__main__":
     parser = OptionParser()
-    parser.add_option("-d", dest="InputDirectory")
+    parser.add_option("-d", "--dir", dest="WorkingDirectory")
     parser.add_option("--update", dest='updateOnly', action='store_true')
 
     options, args = parser.parse_args()

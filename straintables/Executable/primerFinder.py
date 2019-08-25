@@ -9,8 +9,8 @@ from Bio import Seq, SeqIO
 
 import argparse
 
-from . import PrimerEngine, InputFile, OutputFile
-from .Database import annotationManager, genomeManager
+from straintables import PrimerEngine, InputFile, OutputFile
+from straintables.Database import annotationManager, genomeManager
 
 
 def writeFastaFile(outputPath,
@@ -170,6 +170,7 @@ def Execute(options):
             primerPair["MeanLength"] = np.mean(RegionLengths)
             primerPair["StdLength"] = np.std(RegionLengths)
             primerPair["Chromosome"] = RegionMatchResult.chr_identifier
+            primerPair["StartPosition"] = RegionMatchResult.MatchedPrimers[0].position.start()
 
             # Append region data;
             matchedPrimerSequences.append(primerPair)

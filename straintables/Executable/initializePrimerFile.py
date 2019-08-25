@@ -4,7 +4,7 @@ import pandas as pd
 
 from optparse import OptionParser
 
-from .Database import annotationManager
+from straintables.Database import annotationManager
 
 
 def Execute(options):

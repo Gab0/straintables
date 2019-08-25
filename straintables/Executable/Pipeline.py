@@ -18,6 +18,9 @@ from Bio.Align.Applications import ClustalwCommandline
 
 from straintables.logo import logo
 
+from straintables.Executable import primerFinder, detectMutations,\
+    compareHeatmap, matrixAnalysis
+
 
 class Options():
     def __init__(self, options):
@@ -26,7 +29,7 @@ class Options():
 
 def find_primers(options):
 
-    return straintables.primerFinder.Execute(options)
+    return primerFinder.Execute(options)
 
 
 def run_alignment(filePrefix):
@@ -72,17 +75,17 @@ def detect_mutations(filePrefix):
         "PlotSubtitle": ""
     })
 
-    straintables.detectMutations.Execute(mutationsOptions)
+    detectMutations.Execute(mutationsOptions)
 
 
 def matrix_analysis(WorkingDirectory):
     analysisOptions = Options({
-        "InputDirectory": WorkingDirectory,
+        "WorkingDirectory": WorkingDirectory,
         "updateOnly": False
     })
 
-    straintables.compareHeatmap.Execute(analysisOptions)
-    return straintables.matrixAnalysis.Execute(analysisOptions)
+    compareHeatmap.Execute(analysisOptions)
+    return matrixAnalysis.Execute(analysisOptions)
 
 
 def parse_arguments():
@@ -97,7 +100,7 @@ def parse_arguments():
     parser.add_argument("--alnmode", dest="AlignmentMode",
                         default="clustal")
 
-    parser = straintables.primerFinder.parse_arguments(parser)
+    parser = primerFinder.parse_arguments(parser)
     options = parser.parse_args()
 
     return options
@@ -105,6 +108,10 @@ def parse_arguments():
 
 def main():
     options = parse_arguments()
+    
+    if not options.PrimerFile:
+        print("Fatal: No primer file specified!")
+        exit(1)
 
     # -- SELECT WORKING DIRECTORY;
     if not options.WorkingDirectory:

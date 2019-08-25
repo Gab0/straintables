@@ -333,6 +333,7 @@ def MainDualRegionPlot(fig, alnData, regionIndexes, showLabelColors=True):
     except IndexError:
         print("Failure on %s" % a_name)
 
+
     # LOAD MATRIX DATA;
     [ma, mb] = [
         np.load(alnData.buildArrayPath(name))
@@ -433,13 +434,18 @@ def plotRecombinationPanel(ax, baseIndex):
     ax.plot(x_values, plot_35, color=color_green)
 
 
-def RegionInfoAxis(ax, currentPWMData, data, a_name, b_name):
+def RegionInfoAxis(ax, currentPWMData, MatchData, a_name, b_name):
 
-    if data[0]["Chromosome"] == data[1]["Chromosome"]:
-        distance = abs(data[0].PositionStart - data[1].PositionStart)
-        distance = "{:,}".format(distance)
+    INF_SYMBOL = chr(8734)
+
+    if MatchData[0]["Chromosome"] == MatchData[1]["Chromosome"]:
+        try:
+            distance = abs(MatchData[0]["PositionStart"] - MatchData[1]["PositionStart"])
+            distance = "{:,}".format(distance)
+        except KeyError:
+            print(MatchData)
+            distance = INF_SYMBOL
     else:
-        INF_SYMBOL = chr(8734)
         distance = INF_SYMBOL
 
     Message = [
@@ -479,10 +485,11 @@ def AlignmentHealthAxis(ax_ha, ax_hb, alnData, currentPWMData, a_name, b_name):
             ax_hb.text(0.8, 1, s=Message)
 
 
-def RecombinationAxis(fig):
+def RecombinationAxis(fig, clusterOutputData, Labels, matrix_order):
     # RECOMBINATION FIGURE;
-    # PWM[RECOMBINATION] IS DEPRECATED.
-    # if currentPWMData["recombination"]:
+
+    color_green = (0.1, 0.8, 0.1)
+    color_red = (0.8, 0.1, 0.1)
     try:
         Recombination = dissimilarityCluster.checkRecombination(
             clusterOutputData,

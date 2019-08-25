@@ -10,8 +10,7 @@ import copy
 import re
 import os
 
-from . import DrawGraphics
-from . import Viewer
+from straintables import DrawGraphics, Viewer
 import optparse
 
 

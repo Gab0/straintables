@@ -82,7 +82,7 @@ def runForWindow(options, protein, sequence, Window, Reverse):
 
     Sequences = [PROT, protein]
 
-    alignscore = MakeTestAlignment(Sequences)
+    alignscore = MakeTestAlignment(Sequences).score
     dndscore = MakeTestClustalAlignment(Sequences,
                                         TestFilePrefix,
                                         region_name,
@@ -141,7 +141,7 @@ def MakeTestAlignment(Sequences):
 
     d = Aligner.align(*SequencesAsStrings)
 
-    return d.score
+    return d
 
 
 def MakeTestClustalAlignment(Sequences, TestFilePrefix, region_name, OutputDirectory):

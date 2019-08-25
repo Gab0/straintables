@@ -52,7 +52,8 @@ class MatchedRegions(SimpleDataFrame):
         "AlignmentHealth",
         "MeanLength",
         "StdLength",
-        "Chromosome"
+        "Chromosome",
+        "StartPosition"
     ]
     filename = "MatchedRegions.csv"
 
