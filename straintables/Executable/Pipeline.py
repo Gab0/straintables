@@ -106,9 +106,8 @@ def parse_arguments():
     return options
 
 
-def main():
-    options = parse_arguments()
-    
+def Execute(options):
+
     if not options.PrimerFile:
         print("Fatal: No primer file specified!")
         exit(1)
@@ -175,6 +174,10 @@ def main():
     if matrix_analysis(options.WorkingDirectory):
         print("Analysis sucesfull.")
 
+
+def main():
+    options = parse_arguments()
+    Execute(options)
 
 
 if __name__ == "__main__":

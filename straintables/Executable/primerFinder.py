@@ -40,8 +40,8 @@ def Execute(options):
           options.wantedFeatureType)
     print("\t (allowed options: CDS, gene, mRNA)")
 
-    # -- LOAD GENOME FEATURES;
-    featureFolderPath = "annotations"
+    # -- CHECK ANNOTATED FEATURES; -- useles step maybe
+    featureFolderPath = os.path.join(options.SourceDataDirectory, "annotations")
     if os.path.isdir(featureFolderPath):
         genomeFeatureFiles = [
             os.path.join(featureFolderPath, File)
@@ -61,7 +61,7 @@ def Execute(options):
     lociPrimerList = InputFile.loadPrimerList(options.PrimerFile)
 
     # LOAD GENOMES;
-    genomeFilePaths = genomeManager.readGenomeFolder()
+    genomeFilePaths = genomeManager.readGenomeFolder(os.path.join(options.SourceDataDirectory, "genomes"))
     genomes = [PrimerEngine.GeneticEntities.Genome(genomeFilePath)
                for genomeFilePath in genomeFilePaths]
 
@@ -85,7 +85,7 @@ def Execute(options):
 
     # APPLY GENOME FEATURES TO BRUTE FORCE MODULE;
     annotationFilePath, genomeFeatures =\
-        annotationManager.loadAnnotation("annotations")
+        annotationManager.loadAnnotation(featureFolderPath)
 
     bruteForceSearcher =\
         PrimerEngine.PrimerDesign.BruteForcePrimerSearcher(
@@ -260,6 +260,9 @@ def parse_arguments(parser):
                         default=20)
 
     parser.add_argument("-d", "--dir", dest="WorkingDirectory")
+
+    parser.add_argument("--datadir", dest="SourceDataDirectory", default="")
+
     return parser
 
 

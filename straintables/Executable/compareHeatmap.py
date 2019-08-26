@@ -12,24 +12,24 @@ from . import detectMutations
 
 
 def Execute(options):
-    allFiles = os.listdir(options.InputDirectory)
-    arrayFilePaths = [os.path.join(options.InputDirectory, File)
+    allFiles = os.listdir(options.WorkingDirectory)
+    arrayFilePaths = [os.path.join(options.WorkingDirectory, File)
                       for File in allFiles if File.endswith(".aln.npy")]
 
     heatmaps = [np.load(filePath) for filePath in arrayFilePaths]
 
-    heatmapLabels = np.load(os.path.join(options.InputDirectory,
+    heatmapLabels = np.load(os.path.join(options.WorkingDirectory,
                                          "heatmap_labels.npy"))
 
     heatmap = 1 - np.abs(heatmaps[0] - heatmaps[1])
 
-    outputPath = os.path.join(options.InputDirectory, "discrepancy_matrix.pdf")
+    outputPath = os.path.join(options.WorkingDirectory, "discrepancy_matrix.pdf")
     detectMutations.createPdfHeatmap(heatmap, heatmapLabels, outputPath)
 
 
 if __name__ == "__main__":
     parser = OptionParser()
-    parser.add_option("-d", dest="InputDirectory")
+    parser.add_option("-d", dest="WorkingDirectory")
 
     options, args = parser.parse_args()
 

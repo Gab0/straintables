@@ -3,8 +3,7 @@
 import os
 
 
-def readGenomeFolder():
-    genomeDirectory = "genomes"
+def readGenomeFolder(genomeDirectory="genomes"):
     if os.path.isdir(genomeDirectory):
         genomes = os.listdir(genomeDirectory)
         genomeFilePaths = [os.path.join(genomeDirectory, genomeFile)

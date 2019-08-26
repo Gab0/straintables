@@ -89,8 +89,9 @@ class FTPConnection():
                     print("Retrying....")
 
             except BrokenPipeError as e:
-                raise e
-
+                print("FTP connection was close due to unknown reasons.")
+                print("Operation aborted... please try again.")
+                exit(1)
         return result
 
 
@@ -170,11 +171,6 @@ def downloadAssembly(ID,
         if genomeRepresentation not in ["full", "false"]:
             debug("Skipping partial genome.")
             return 0
-        """
-        if assemblyStatus != 'Complete Genome':
-            debug("Skipping scaffold entry.")
-            return 0
-        """
 
     ftpPath = relevantSummary['FtpPath_GenBank']
 
@@ -288,8 +284,10 @@ def strainToDatabase(species):
 
 def renameGenomeFiles(dirpath, organism):
     allGenomes = os.listdir(dirpath)
-    allGenomes = [g for g in allGenomes
-                  if any([g.endswith(extension) for extension in [".fna", ".fasta"]])]
+    allGenomes = [
+        g for g in allGenomes
+        if any([g.endswith(extension) for extension in [".fna", ".fasta"]])
+    ]
 
     def orderByVersion(g):
         for version in range(10, 1, -1):
@@ -318,7 +316,7 @@ def renameGenomeFiles(dirpath, organism):
             print("Moving genome %s file to %s" % (localfilepath, newFilePath))
 
 
-def parse_options():
+def parse_arguments():
     parser = optparse.OptionParser()
     parser.add_option("--nogenome",
                       dest='downloadGenomes',
@@ -348,30 +346,49 @@ def parse_options():
     parser.add_option("--rename",
                       dest="OnlyRename",
                       help="Rename genome/annotations file and exit.")
+
+    parser.add_option("--dir",
+                      dest="WorkingDirectory",
+                      help="Directory to where both genomes and annotations folders should go",
+                      default="")
     options, args = parser.parse_args()
 
     return options
 
 
-def main():
-    options = parse_options()
+def Execute(options):
+
+    # -- Define output directories;
 
     # -- Make sure output directories exist;
     requiredDirectories = ["genomes", "annotations"]
-    for Dir in requiredDirectories:
+    requiredDirectoriesPath = [
+        os.path.join(options.WorkingDirectory, Name)
+        for Name in requiredDirectories
+        ]
+
+    if not os.path.isdir(options.WorkingDirectory):
+        print("Fatal: Selected directory at %s does not exist." % options.WorkingDirectory)
+        exit(1)
+
+    for Dir in requiredDirectoriesPath:
         if not os.path.isdir(Dir):
             os.mkdir(Dir)
+
+    GenomeDirectory, AnnotationDirectory = requiredDirectoriesPath
 
     # -- Search Assemblies for Organism;
     AssemblyIDs = findAssemblyList(options.queryOrganism,
                                    retmax=options.genomeSearchMaxResults)
 
+
     # -- DOWNLOAD GENOMES;
     dataTypes = []
+
     # Fetch Genome IDs;
     if options.downloadGenomes:
         dataTypes.append(DownloadQuery(AssemblyIDs,
-                                       "genomes",
+                                       GenomeDirectory,
                                        ["_genomic.fna"]))
 
     # Download genomes
@@ -387,7 +404,7 @@ def main():
         if not options.annotationStrain:
             # Try to find an annotation that matches any genome,
             annotationStrains = [f.replace("_", " ").split(".")[0]
-                                 for f in os.listdir("genomes")]
+                                 for f in os.listdir(GenomeDirectory)]
         if options.annotationStrain:
             # Try to find the user-defined annotation;
             # Fetch user-defined annotation;
@@ -402,10 +419,10 @@ def main():
                 print()
 
                 dataTypes.append(DownloadQuery(AnnotationIDs,
-                                               "annotations",
+                                               AnnotationDirectory,
                                                ["_genomic.gbff"]))
                 dataTypes.append(DownloadQuery(AnnotationIDs,
-                                               "genomes",
+                                               GenomeDirectory,
                                                ["_genomic.fna"]))
             else:
                 print("User defined annotation strain %s not found!" %
@@ -416,7 +433,10 @@ def main():
         else:
             # Try to download a genome that has a matching annotation;
             print("Annotation not found.")
-            dataTypes.append(DownloadQuery(AssemblyIDs, "annotations", ["_genomic.gbff"]))
+            dataTypes.append(DownloadQuery(AssemblyIDs,
+                                           AnnotationDirectory,
+                                           ["_genomic.gbff"])
+            )
 
         AnnotationDownloadSuccess = [query.execute() for query in dataTypes]
 
@@ -426,10 +446,15 @@ def main():
         print("Genome files downloaded.")
 
         # properly name genome files;
-        renameGenomeFiles("genomes", options.queryOrganism)
+        renameGenomeFiles(GenomeDirectory, options.queryOrganism)
 
     if any(AnnotationDownloadSuccess):
         print("Annotation files downloaded.")
+
+
+def main():
+    options = parse_arguments()
+    Execute(options)
 
 
 if __name__ == "__main__":

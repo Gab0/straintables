@@ -41,6 +41,7 @@ class PipelineTest(unittest.TestCase):
 
         viewer_options = MatrixViewer.parse_arguments()
         viewer_options.inputDirectory = self.WorkingDirectory
+        viewer_options.inputDir = self.WorkingDirectory
 
         MatrixViewer.Execute(viewer_options)
 

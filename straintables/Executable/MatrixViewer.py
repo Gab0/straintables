@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 import threading
 
 
-from . import Viewer, OutputFile, alignmentData
+from straintables import Viewer, OutputFile, alignmentData
 
 from matplotlib.backends.backend_gtk3agg import FigureCanvas
 from matplotlib.backends.backend_gtk3 import (
@@ -700,14 +700,15 @@ def Execute(options):
         print("Analysis file not found at input directory %s." % options.inputDirectory)
 
 
-def parse_args():
+def parse_arguments():
     parser = ArgumentParser()
 
     parser.add_argument('inputDir',
                         type=str,
                         nargs=1,
                         metavar="inputDirectory",
-                        help='inputDirectory')
+                        help='inputDirectory',
+                        required=False)
 
     parser.add_argument("-d",
                         metavar="inputDirectory",
@@ -722,7 +723,7 @@ def parse_args():
 
 
 def main():
-    options = parse_args()
+    options = parse_arguments()
     Execute(options)
 
 
