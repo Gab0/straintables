@@ -707,8 +707,7 @@ def parse_arguments():
                         type=str,
                         nargs=1,
                         metavar="inputDirectory",
-                        help='inputDirectory',
-                        required=False)
+                        help='inputDirectory')
 
     parser.add_argument("-d",
                         metavar="inputDirectory",

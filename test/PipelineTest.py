@@ -3,7 +3,7 @@
 import unittest
 import os
 import shutil
-
+import types
 from straintables.Executable import Pipeline, fetchDataNCBI, MatrixViewer
 
 
@@ -39,7 +39,7 @@ class PipelineTest(unittest.TestCase):
 
     def step4_run_viewer(self):
 
-        viewer_options = MatrixViewer.parse_arguments()
+        viewer_options = types.SimpleNamespace()
         viewer_options.inputDirectory = self.WorkingDirectory
         viewer_options.inputDir = self.WorkingDirectory
 
