@@ -10,7 +10,7 @@ entry_points = {
         "stview=straintables.Executable.MatrixViewer:main",
         "stdownload=straintables.Executable.fetchDataNCBI:main",
         "stprimer=straintables.Executable.initializePrimerFile:main",
-        "stprotein=straintables.Executable.Protein.Protein:main"
+        "stprotein=straintables.Executable.Protein:main"
         ]
 }
 
@@ -34,7 +34,6 @@ setup(
         'straintables.DrawGraphics',
         'straintables.Database',
         'straintables.skdistance',
-        'straintables.Protein'
     ],
     platforms='any',
     entry_points=entry_points

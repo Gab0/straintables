@@ -20,7 +20,7 @@ The analysis follows a linear path that can be executed with the help of a pipel
 
 ### 1) Primer Docking: fetching Amplicons
 
-This step is carried by the module `straintables.primerFinder`.
+This step is carried by the module `straintables.Executable.primerFinder`.
 
 For each designated loci, the app will try to find the complement and/or the original sequence
 of both primers on all genomes. If both primers are found in a genome, the sequence between those primers is extracted and it proceeds to the next genome.
@@ -68,7 +68,7 @@ By looking at a pair of D. Matrixes at a time, both corresponding to locus that 
 `straintables` requires Python3.6+
 1. from pipy: 
 ```
-pip install numpy scipy cython pygobject --user
+pip install setuptools numpy scipy cython pygobject --user
 
 !! We run pip twice because the modules installed on the first step may have installation issues
 !! If they fail to install, check the pip message log, it contains info for missing required system packages.
