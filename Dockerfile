@@ -8,21 +8,32 @@ RUN apk add --no-cache --allow-untrusted --repository http://dl-3.alpinelinux.or
 
 
 RUN apk add --no-cache \
-    xauth \
-    xvfb \
-  xvfb-run gcc gfortran build-base wget freetype-dev \
-  libpng-dev openblas-dev glib cairo cairo-dev \
-    jpeg-dev zlib-dev 
+  xauth \
+  xvfb \
+  xvfb-run \
+  gcc \
+  gfortran \
+  build-base \
+  wget \
+  freetype-dev \
+  libpng-dev \
+  openblas-dev \
+  glib \
+  cairo \
+  cairo-dev \
+  jpeg-dev \
+  zlib-dev
 
 RUN apk add --no-cache gobject-introspection-dev \
   py3-cairo \
   py-cairo-dev \
   jpeg-dev
+
 RUN pip install numpy scipy cython
 
 COPY . /app
 
-#RUN pip install ./app
+RUN pip install /app
 #RUN pip install --no-binary :all: ./app
 #RUN lmpline --help
 
