@@ -3,16 +3,12 @@ services: docker
 language: generic
 
 
-env:
-  - DOCKER_FILE="Dockerfile" PYTHON="python3"
-
 install:
-  - docker build -t lmp -f "$DOCKER_FILE" .
-  - docker run --volume "$(pwd):/app" --workdir "/app" --tty --detach lmp > container_id
-  - ID=$(cat container_id)
-  - docker exec "$(cat container_id)" pip3 install /app
+  - docker run --volume "$(pwd):/app" --workdir "/app" --tty --detach --name straintables gab0/python3-gtk3-scipy:v1
+  - docker exec straintables git clone https://github.com/Gab0/straintables.git /app/straintables
+  - docker exec straintables pip install /app/straintables
 
 script:
-  - docker exec "$(cat container_id)" lmpline --help
+  - docker exec straintables lmpline --help
 after_script:
-  - docker stop "$(cat container_id)"
+  - docker stop straintables
