@@ -32,17 +32,18 @@ RUN apk add --no-cache \
   cairo \
   cairo-dev \
   jpeg-dev \
-  zlib-dev
+  zlib-dev \
   gobject-introspection-dev \
   py3-cairo \
   py-cairo-dev \
-  jpeg-dev
+  jpeg-dev \
+  git
 
 # PYTHON REQUIREMENTS;
 RUN pip install numpy scipy cython sklearn pandas
 
 
-
+ENTRYPOINT ["/bin/bash"]
 #COPY . /app
 
 #RUN pip install /app
