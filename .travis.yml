@@ -4,12 +4,11 @@ language: generic
 jobs:
   env:
     - DOCKER_FILE="Dockerfile" PYTHON="python3"
-  before_install:
-    - docker build -t lmp -f "$DOCKER_FILE" .
-    - docker run --volume "$(pwd):/app" --workdir "/app" --tty --detach lmp > container_id
-    - cat container_id
 
   install:
+    - docker build -t lmp -f "$DOCKER_FILE" .
+    - docker run --volume "$(pwd):/app" --workdir "/app" --tty --detach lmp > container_id
+    - ID=$(cat container_id)
     - docker exec "$(cat container_id)" pip3 install /app
 
   test:
