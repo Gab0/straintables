@@ -1,2 +1,2 @@
-from . import annotationManager, genomeManager
+from . import annotationManager, genomeManager, directoryManager
 from . import StrainNames
