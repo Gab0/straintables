@@ -4,6 +4,7 @@ language: generic
 
 
 install:
+  - tree -d / -L 3
   - docker run --volume "$(pwd)/Gab0/straintables:/app/straintables" --workdir "/app/straintables" --tty --detach --name straintables gab0/python3-gtk3-scipy:v2
   - docker exec straintables apk add tree
   - docker exec straintables tree -d / -L 3
