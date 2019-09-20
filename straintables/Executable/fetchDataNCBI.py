@@ -350,7 +350,7 @@ def parse_arguments():
     parser.add_option("--dir",
                       dest="WorkingDirectory",
                       help="Directory to where both genomes and annotations folders should go",
-                      default="")
+                      default=".")
     options, args = parser.parse_args()
 
     return options
