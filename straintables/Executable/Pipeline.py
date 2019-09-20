@@ -21,6 +21,8 @@ from straintables.logo import logo
 from straintables.Executable import primerFinder, detectMutations,\
     compareHeatmap, matrixAnalysis
 
+from straintables.Database import directoryManager
+
 
 class Options():
     def __init__(self, options):
@@ -122,21 +124,11 @@ def Execute(options):
                                                 AnalysisCode)
 
     # -- TEST CLUSTALW2 SETUP;
-    # this is giving problems.. maybe ask on Biopython issues.
     if not shutil.which("clustalw2"):
         print("Clustalw2 not found! Aborting...")
         exit(1)
 
-    if not os.path.isdir(options.WorkingDirectory):
-        Path = [
-            step for step in os.path.split(options.WorkingDirectory)
-            if step
-        ]
-        for d, Directory in enumerate(Path):
-            subDirectoryPath = os.path.join(*Path[:d+1])
-            if not os.path.isdir(subDirectoryPath):
-                print("Creating directory %s." % subDirectoryPath)
-                os.mkdir(subDirectoryPath)
+    directoryManager.createDirectoryPath(options.WorkingDirectory)
     """
     bad idea...
     else:
