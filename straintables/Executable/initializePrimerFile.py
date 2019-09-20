@@ -1,10 +1,11 @@
 #!/bin/python
+import os
 import random
 import pandas as pd
 
 from optparse import OptionParser
 
-from straintables.Database import annotationManager
+from straintables.Database import annotationManager, directoryManager
 
 
 def Execute(options):
@@ -45,6 +46,8 @@ def Execute(options):
         "ReversePrimer"
     ]
     )
+
+    directoryManager.createDirectoryPath(os.path.dirname(options.outputFile))
 
     data.to_csv(options.outputFile, index=False)
 
