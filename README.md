@@ -163,7 +163,7 @@ The user can manually add desired genomes and annotations, as explained in the n
 #### Example 1: Automatic Locus Selection with Automatic Primer Search.
 
 ```
-$ stprimer -i annotations -c X -o Primers/TEST.csv -p 0.01
+$ stprimer -d annotations -c X -o Primers/TEST.csv -p 0.01
 $ stpline -p Primers/TEST.csv
 $ stview analysisResults/TEST
 ```
