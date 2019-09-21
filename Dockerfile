@@ -40,7 +40,7 @@ RUN apk add --no-cache \
   git
 
 # PYTHON REQUIREMENTS;
-RUN pip install numpy scipy cython sklearn pandas
+RUN pip install numpy scipy cython sklearn pandas pygobject
 
 
 ENTRYPOINT ["/bin/bash"]
