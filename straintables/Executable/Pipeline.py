@@ -128,6 +128,14 @@ def Execute(options):
         print("Clustalw2 not found! Aborting...")
         exit(1)
 
+    # -- TEST MESHCLUST SETUP;
+    if shutil.which("meshclust"):
+        print("MeshClust enabled!")
+        MeshClustEnabled = True
+    else:
+        print("MeshClust not found! Disabled...")
+        MeshClustEnabled = False
+        
     directoryManager.createDirectoryPath(options.WorkingDirectory)
     """
     bad idea...
@@ -161,7 +169,8 @@ def Execute(options):
             run_alignment(filePrefix)
             # draw_tree(filePrefix)
             detect_mutations(filePrefix)
-            run_meshclust(filePrefix)
+            if MeshClustEnabled:
+                run_meshclust(filePrefix)
 
     if matrix_analysis(options.WorkingDirectory):
         print("Analysis sucesfull.")
