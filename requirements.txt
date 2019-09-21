@@ -15,4 +15,4 @@ Pillow
 setuptools==40.9.0
 scikit_learn>=0.18
 IPython
-cairo
+pycairo
