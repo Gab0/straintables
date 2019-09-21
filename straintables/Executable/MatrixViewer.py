@@ -12,6 +12,7 @@ import threading
 
 
 from straintables import Viewer, OutputFile, alignmentData
+from straintables.Viewer import mapBar
 
 from matplotlib.backends.backend_gtk3agg import FigureCanvas
 from matplotlib.backends.backend_gtk3 import (
@@ -124,7 +125,7 @@ class MatrixViewer():
         self.Window.set_title("straintables - Walk Chromosome Result")
 
         # Children structures;
-        self.locusMap = Viewer.mapBar.LocusMapBar()
+        self.locusMap = mapBar.LocusMapBar()
         self.locusNavigator = locusNamesSelectionMenu(self)
 
         # LOAD DATA;
