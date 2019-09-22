@@ -94,7 +94,10 @@ For linux users, please check the file `Dockerfile` on this repo to see which li
 
 ## Required Software
 
-### ClustalW2
+Here is a list of software required/optional for straintables.<br>
+The executables should be available at your `$PATH`.
+
+### ClustalW2 [required]
 
 The alignment step of `straintables` requires [ClustalW2](http://www.clustal.org/clustal2/) installed on your
 system.
