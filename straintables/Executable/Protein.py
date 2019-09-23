@@ -17,6 +17,7 @@ import subprocess
 import re
 import types
 
+ClustalCommand = "clustalo"
 
 def parseDndFile(filepath, region_name):
     content = open(filepath).read()
@@ -151,7 +152,7 @@ def MakeTestClustalAlignment(Sequences,
     SeqIO.write(Sequences, open(TestFilePath, 'w'), format="fasta")
 
     Outfile = os.path.join(OutputDirectory, TestFile + ".aln")
-    cmd = ClustalwCommandline("clustalw2",
+    cmd = ClustalwCommandline(ClustalCommand,
                               infile=TestFilePath,
                               outfile=Outfile)
 
@@ -234,7 +235,7 @@ def AnalyzeRegion(options, RegionSequenceSource):
 
     with open(OutputProteinFilePath, 'w') as f:
         SeqIO.write(AllRegionSequences, f, format="fasta")
-    cmd = ClustalwCommandline("clustalw2",
+    cmd = ClustalwCommandline(ClustalCommand,
                               infile=OutputProteinFilePath,
                               outfile=OutputAlignmentFilePath
     )
