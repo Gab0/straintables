@@ -254,7 +254,8 @@ def downloadAssembly(ID,
             with gzip.open(localfilepath, 'rb') as gf:
                 file_content = gf.read()
                 decompressedPath = os.path.splitext(localfilepath)[0]
-                open(decompressedPath, 'wb').write(file_content)
+                with open(decompressedPath, 'wb') as f:
+                    f.write(file_content)
                 debug("Decompressed to %s." % decompressedPath)
                 os.remove(localfilepath)
                 localfilepath = decompressedPath
