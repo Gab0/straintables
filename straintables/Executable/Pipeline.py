@@ -23,6 +23,8 @@ from straintables.Executable import primerFinder, detectMutations,\
 
 from straintables.Database import directoryManager
 
+ClustalCommand = "clustalo"
+
 
 class Options():
     def __init__(self, options):
@@ -38,13 +40,13 @@ def run_alignment(filePrefix):
     infile = filePrefix + ".fasta"
     outfile = filePrefix + ".aln"
 
-    aln_cmd = ClustalwCommandline("clustalw2", infile=infile, outfile=outfile)
+    aln_cmd = ClustalwCommandline(ClustalCommand, infile=infile, outfile=outfile)
     stdout, stderr = aln_cmd()
 
     print(stdout)
 
     infile = filePrefix + ".aln"
-    tree_cmd = ClustalwCommandline("clustalw2", infile=infile, tree=True)
+    tree_cmd = ClustalwCommandline(ClustalCommand, infile=infile, tree=True)
     tree_cmd()
 
 
@@ -123,9 +125,9 @@ def Execute(options):
         options.WorkingDirectory = os.path.join(WorkingDirectoryBase,
                                                 AnalysisCode)
 
-    # -- TEST CLUSTALW2 SETUP;
-    if not shutil.which("clustalw2"):
-        print("Clustalw2 not found! Aborting...")
+    # -- TEST CLUSTAL SETUP;
+    if not shutil.which(ClustalCommand):
+        print("%s not found! Aborting..." % ClustalCommand)
         exit(1)
 
     # -- TEST MESHCLUST SETUP;
@@ -135,15 +137,9 @@ def Execute(options):
     else:
         print("MeshClust not found! Disabled...")
         MeshClustEnabled = False
-        
+
     directoryManager.createDirectoryPath(options.WorkingDirectory)
-    """
-    bad idea...
-    else:
-        print("Selected Working directory already exists.\n" +
-              "This pipeline needs a non existing directory to avoid file conflicts.")
-        exit(1)
-    """
+
     # SHOW BEAUTIFUL ASCII ART;
     print(logo)
 
