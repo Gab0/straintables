@@ -11,17 +11,16 @@ def Execute(options):
 
     MeshClustEnabled = Pipeline.TestMeshclust()
 
-    AllRegions = straintables.OutputFile.MatchedRegions(options.WorkingDirectory)
+    AllRegions = straintables.OutputFile.MatchedRegions(
+        options.WorkingDirectory)
+
     AllRegionsData = []
     for File in allFiles:
         if not File.endswith(".fasta"):
             continue
         filePrefix = os.path.splitext(File)[0]
 
-        Pipeline.run_alignment(filePrefix)
-        Pipeline.detect_mutations(filePrefix)
-        if MeshClustEnabled:
-            Pipeline.run_meshclust(filePrefix)
+        Pipeline.process_individual_region(options, filePrefix, MeshClustEnabled)
 
         AllRegionsData.append({
             "LocusName": filePrefix,
