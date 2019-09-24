@@ -11,6 +11,6 @@ install:
 
 script:
   - docker exec straintables stpline --help
-
+  - docker exec xfvb-run python /app/straintables/test/PipelineTest.py
 after_script:
   - docker stop straintables
