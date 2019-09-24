@@ -68,6 +68,7 @@ class FTPConnection():
     def execute(self, operation, *args):
         for k in range(self.retries):
             if k == self.retries - 1:
+                return False
                 print("Failure... re-running this script should solve.")
                 exit(1)
             try:
@@ -91,7 +92,8 @@ class FTPConnection():
             except BrokenPipeError as e:
                 print("FTP connection was close due to unknown reasons.")
                 print("Operation aborted... please try again.")
-                exit(1)
+                return False
+
         return result
 
 
@@ -246,6 +248,9 @@ def downloadAssembly(ID,
 
         debug(remoteFileName)
         debug("download result: %s" % downloaded)
+
+        if not downloaded:
+            return False
 
         DownloadSuccess = True
 
@@ -406,6 +411,7 @@ def Execute(options):
             # Try to find an annotation that matches any genome,
             annotationStrains = [f.replace("_", " ").split(".")[0]
                                  for f in os.listdir(GenomeDirectory)]
+
         if options.annotationStrain:
             # Try to find the user-defined annotation;
             # Fetch user-defined annotation;
@@ -452,11 +458,16 @@ def Execute(options):
     if any(AnnotationDownloadSuccess):
         print("Annotation files downloaded.")
 
+    return True
+
 
 def main():
     options = parse_arguments()
-    Execute(options)
 
+    while True:
+        if Execute(options):
+            break
+        time.sleep(20)
 
 if __name__ == "__main__":
     main()
