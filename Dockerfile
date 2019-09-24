@@ -39,6 +39,10 @@ RUN apk add --no-cache \
   jpeg-dev \
   git
 
+
+RUN apk add --no-cache \
+  gtk+3.0
+
 # PYTHON REQUIREMENTS;
 RUN pip install numpy scipy cython sklearn pandas pygobject
 
