@@ -4,11 +4,11 @@ import numpy as np
 import sys
 import os
 
-from optparse import OptionParser
+from argparse import ArgumentParser
 
-sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
+# sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 
-from . import detectMutations
+from straintables.Executable import detectMutations
 
 
 def Execute(options):
@@ -28,8 +28,8 @@ def Execute(options):
 
 
 if __name__ == "__main__":
-    parser = OptionParser()
-    parser.add_option("-d", dest="WorkingDirectory")
+    parser = ArgumentParser()
+    parser.add_argument("-d", dest="WorkingDirectory")
 
     options, args = parser.parse_args()
 
