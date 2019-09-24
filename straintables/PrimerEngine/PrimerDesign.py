@@ -150,7 +150,8 @@ class BruteForcePrimerSearcher():
                 outputFile.close()
 
         if os.path.isfile(geneSequenceFilePath):
-            geneSequenceRaw = open(geneSequenceFilePath).read()
+            with open(geneSequenceFilePath) as f:
+                geneSequenceRaw = f.read()
         else:
             print("Primer source not found.")
             return None, None
