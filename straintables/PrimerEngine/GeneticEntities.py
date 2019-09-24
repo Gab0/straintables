@@ -29,7 +29,8 @@ class Genome():
 
     def loadFromFasta(self, filePath, contigLengthThreshold=1000):
 
-        genome = open(filePath).read()
+        with open(filePath) as f:
+            genome = f.read()
 
         chromosomes = genome.lower().split(">")
 
