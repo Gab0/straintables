@@ -63,12 +63,14 @@ def draw_tree(filePrefix):
 
 
 def run_meshclust(filePrefix):
-    subprocess.run(["meshclust",
-                    filePrefix + ".fasta",
-                    "--output",
-                    filePrefix + ".clst",
-                    "--id", "0.999",
-                    "--align"])
+    subprocess.run([
+        "meshclust",
+        filePrefix + ".fasta",
+        "--output",
+        filePrefix + ".clst",
+        "--id", "0.999",
+        "--align"
+    ])
 
 
 def detect_mutations(filePrefix):
@@ -104,10 +106,34 @@ def parse_arguments():
     parser.add_argument("--alnmode", dest="AlignmentMode",
                         default="clustal")
 
+    # parser.add_argument("--clustalpath", dest="ClustalPath",
+    #                     default="clustalo")
+
     parser = primerFinder.parse_arguments(parser)
     options = parser.parse_args()
 
     return options
+
+
+def TestMeshclust():
+    # -- TEST MESHCLUST SETUP;
+    if shutil.which("meshclust"):
+        print("MeshClust enabled!")
+        return True
+    else:
+        print("MeshClust not found! Disabled...")
+        return False
+
+
+def process_individual_region(options, locusName, MeshClustEnabled):
+    filePrefix = os.path.join(options.WorkingDirectory, "LOCI_" + locusName)
+    print("Running alignment for %s..." % locusName)
+
+    run_alignment(filePrefix)
+    # draw_tree(filePrefix)
+    detect_mutations(filePrefix)
+    if MeshClustEnabled:
+        run_meshclust(filePrefix)
 
 
 def Execute(options):
@@ -130,14 +156,7 @@ def Execute(options):
         print("%s not found! Aborting..." % ClustalCommand)
         exit(1)
 
-    # -- TEST MESHCLUST SETUP;
-    if shutil.which("meshclust"):
-        print("MeshClust enabled!")
-        MeshClustEnabled = True
-    else:
-        print("MeshClust not found! Disabled...")
-        MeshClustEnabled = False
-
+    MeshClustEnabled = TestMeshclust()
     directoryManager.createDirectoryPath(options.WorkingDirectory)
 
     # SHOW BEAUTIFUL ASCII ART;
@@ -155,18 +174,14 @@ def Execute(options):
         print("Unknown alignment mode %s." % (options.AlignmentMode))
         exit(1)
 
-    MatchedPrimersPath = os.path.join(options.WorkingDirectory, "MatchedRegions.csv")
-    SucessfulLoci = pd.read_csv(MatchedPrimersPath)["LocusName"]
+    MatchedRegions = straintables.OutputFile.MatchedRegions(options.WorkingDirectory)
+    MatchedRegions.read()
+
+    SucessfulLoci = MatchedRegions.content["LocusName"]
 
     if options.DoAlignment:
         for locusName in SucessfulLoci:
-            filePrefix = os.path.join(options.WorkingDirectory, "LOCI_" + locusName)
-            print("Running alignment for %s..." % locusName)
-            run_alignment(filePrefix)
-            # draw_tree(filePrefix)
-            detect_mutations(filePrefix)
-            if MeshClustEnabled:
-                run_meshclust(filePrefix)
+            process_individual_region(options, locusName, MeshClustEnabled)
 
     if matrix_analysis(options.WorkingDirectory):
         print("Analysis sucesfull.")
