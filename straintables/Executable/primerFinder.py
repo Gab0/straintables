@@ -269,5 +269,5 @@ def parse_arguments(parser):
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
-    options = parse_arguments().parse_args()
+    options = parse_arguments(parser).parse_args()
     Execute(options)
