@@ -2,7 +2,6 @@
 
 import os
 import re
-import pandas as pd
 import numpy as np
 
 from . import OutputFile
@@ -14,24 +13,25 @@ class AlignmentData():
         self.loadDataFiles(inputDirectory)
         self.inputDirectory = inputDirectory
 
-    def loadDataFile(self, inputDirectory, filename):
-        FilePath = os.path.join(inputDirectory, filename)
-        return pd.read_csv(FilePath)
+    def loadDataFile(self, inputDirectory, FileType):
+        data = FileType(inputDirectory)
+        data.read()
+        return data.content
 
     def loadDataFiles(self, inputDirectory):
 
         # LOAD RELEVANT DATABASES;
         self.PrimerData = self.loadDataFile(inputDirectory,
-                                            "PrimerData.csv")
+                                            OutputFile.PrimerData)
 
         self.PWMData = self.loadDataFile(inputDirectory,
-                                         "PWMAnalysis.csv")
+                                         OutputFile.PWMAnalysis)
 
         self.MatchData = self.loadDataFile(inputDirectory,
-                                           "MatchedRegions.csv")
+                                           OutputFile.MatchedRegions)
 
         self.AlignmentData = self.loadDataFile(inputDirectory,
-                                               "AlignedRegions.csv")
+                                               OutputFile.AlignedRegions)
 
         # FETCH ORIGINAL HEATMAP GENOME LABELS;
         heatmapLabelsFilePath = os.path.join(
@@ -53,10 +53,9 @@ class AlignmentData():
                     continue
                 self.allowedIndexes.append(I)
                 last = a
-        else:
-            self.allowedIndexes = list(range(self.PWMData.shape[0]))
-
-            print("Allowed: %s" % self.allowedIndexes)
+        # else:
+        #    self.allowedIndexes = list(range(self.PWMData.shape[0]))
+        #    print("Allowed: %s" % self.allowedIndexes)
 
     def findPWMDataRow(self, a_name, b_name):
         def setLength(w):
