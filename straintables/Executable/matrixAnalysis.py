@@ -6,6 +6,7 @@ import numpy as np
 from optparse import OptionParser
 
 from straintables import skdistance as skdist
+from straintables import OutputFile
 
 
 def matrixRankings(MATRIX):
@@ -72,13 +73,18 @@ def checkRecombination(ma, mb, Verbose=False):
 def Execute(options):
     # CHECK INPUT ARGUMENTS;
     if not options.WorkingDirectory:
-        print("FATAL: No input directory.")
+        print("FATAL: No input directory provided.")
+        exit(1)
+
+    if not os.path.isdir(options.WorkingDirectory):
+        print("Working Directory does not exist.")
         exit(1)
 
     # LOAD RESULT FILES;
-    matchedLociData = pd.read_csv(os.path.join(options.WorkingDirectory,
-                                               "MatchedRegions.csv"))
-    matchedLoci = matchedLociData["LocusName"]
+    matchedRegions = OutputFile.MatchedRegions(options.WorkingDirectory)
+    matchedRegions.read()
+
+    matchedLoci = matchedRegions.content["LocusName"]
 
     arrayFiles = ["LOCI_%s.aln.npy" % Locus for Locus in matchedLoci]
 
@@ -115,8 +121,9 @@ def Execute(options):
         # IF ANOSIM FAILS:
         except ValueError:
             print()
-            print("Anosim failed:")
-            print("Distances are binary, add more genomes and/or regions to the pool.")
+            print("Anosim failed...")
+            print("Distances are binary (all equal or all different):")
+            print("\tadd more genomes and/or regions to the pool.")
             print("Check results at %s" % options.inputDirectory)
             return False
 
@@ -132,9 +139,12 @@ def Execute(options):
     if options.updateOnly:
         if os.path.isfile(pwmPath):
             PWM = pd.read_csv(pwmPath)
-            PWM_Index_Labels = [(PWM.iloc[x]["Unnamed: 0"], PWM.iloc[x]["Unnamed: 1"])
+            PWM_Index_Labels = [(PWM.iloc[x]["Unnamed: 0"],
+                                 PWM.iloc[x]["Unnamed: 1"])
                                 for x in range(PWM.shape[0])]
-            PWM_Index_Indices = [(arrayFiles.index(x[0]), arrayFiles.index(x[1]))
+
+            PWM_Index_Indices = [(arrayFiles.index(x[0]),
+                                  arrayFiles.index(x[1]))
                                  for x in PWM_Index_Labels]
 
             PWM.index = pd.MultiIndex.from_tuples(PWM_Index_Labels)
@@ -202,7 +212,10 @@ def Execute(options):
 
     print("Writing output files...")
     # WRITE OUTPUT PWM FILE;
-    PWM.to_csv(pwmPath)
+    PWMFile = OutputFile.PWMAnalysis(options.WorkingDirectory)
+    PWMFile.columns = PWM.columns
+    PWMFile.content = PWM
+    PWMFile.write()
 
     outputColumns = ["Locus"] + list(allResults[0].keys())[:-1]
     outputData = pd.DataFrame(allResults,
