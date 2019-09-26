@@ -20,7 +20,9 @@ def Execute(options):
             continue
         filePrefix = os.path.splitext(File)[0]
 
-        Pipeline.process_individual_region(options, filePrefix, MeshClustEnabled)
+        Pipeline.process_individual_region(options,
+                                           filePrefix,
+                                           MeshClustEnabled)
 
         AllRegionsData.append({
             "LocusName": filePrefix,
