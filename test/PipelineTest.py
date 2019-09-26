@@ -55,7 +55,8 @@ class PipelineTest(unittest.TestCase):
             try:
                 step()
             except Exception as e:
-                self.fail("{} failed ({}: {})".format(name, str(type(e)), e))
+                print("{} failed ({}: {})".format(name, str(type(e)), e))
+                raise e
 
 
 if __name__ == "__main__":
