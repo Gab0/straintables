@@ -32,13 +32,6 @@ for i in range(loci_data.shape[0]):
     name = d["Genome"] + ".fasta"
 
     loadedSequences[d["Genome"]] = sequence
-    try:
-        GenotypeNumber = genotypeData[genotypeData.Genome == name].iloc[0].ToxoDB
-        RFLPLocus = rflpGenotypes[rflpGenotypes.Genotype==GenotypeNumber].iloc[0][ReferenceLocus]
-        name += "___%s" % RFLPLocus
-        print("Loci data found for %s" % name)
-    except Exception as e:
-        pass
 
     multifasta += ">%s\n" % name
     multifasta += sequence
