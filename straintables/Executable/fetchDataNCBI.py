@@ -68,9 +68,9 @@ class FTPConnection():
     def execute(self, operation, *args):
         for k in range(self.retries):
             if k == self.retries - 1:
+                # print("Failure... re-running this script should solve.")
+                # exit(1)
                 return False
-                print("Failure... re-running this script should solve.")
-                exit(1)
             try:
                 result = operation(*args)
                 return result
@@ -109,10 +109,12 @@ class DownloadQuery():
         for d, ID in enumerate(self.IDs):
             print("Downloading %i of %i.\n" % (d + 1, len(self.IDs)))
 
-            FileSuccess = downloadAssembly(ID,
-                                           downloadDirectory=self.downloadDirectory,
-                                           onlyCompleteGenome=True,
-                                           wantedFileTypes=self.FileTypes)
+            FileSuccess = downloadAssembly(
+                ID,
+                downloadDirectory=self.downloadDirectory,
+                onlyCompleteGenome=True,
+                wantedFileTypes=self.FileTypes
+            )
             if FileSuccess:
                 DownloadSuccess = True
 
@@ -147,7 +149,7 @@ def downloadAssembly(ID,
     relevantSummary = Summary['DocumentSummarySet']['DocumentSummary'][0]
 
     # return Summary
-    nucl_id = relevantSummary['AssemblyAccession']
+    # nucl_id = relevantSummary['AssemblyAccession']
 
     # print(json.dumps(relevantSummary, indent=2))
 
@@ -194,6 +196,8 @@ def downloadAssembly(ID,
 
     # FETCH FTP DIRECTORY FILE LIST;
     remoteFiles = Connection.listdir()
+    if not remoteFiles:
+        return False
 
     if not wantedFileTypes:
         wantedFileTypes = [
@@ -203,15 +207,14 @@ def downloadAssembly(ID,
             '_genomic.fna'
         ]
 
-    remoteFileExtension = None
     remoteFileNames = []
     for File in remoteFiles:
         for wantedFileType in wantedFileTypes:
             if wantedFileType in File:
                 remoteFileNames.append(File)
-                remoteFileExtension = "." + wantedFileType.split(".")[-1]
 
-    # download only the file with shortest name among matched files at FTP directory;
+    # download only the file with shortest name
+    # among matched files at FTP directory;
     remoteFileNames = sorted(remoteFileNames,
                              key=lambda x: len(x))[0: 1]
 
@@ -355,7 +358,8 @@ def parse_arguments():
 
     parser.add_option("--dir",
                       dest="WorkingDirectory",
-                      help="Directory to where both genomes and annotations folders should go",
+                      help="Directory to where genome and annotation " +
+                      "folders should go",
                       default=".")
     options, args = parser.parse_args()
 
@@ -374,7 +378,8 @@ def Execute(options):
         ]
 
     if not os.path.isdir(options.WorkingDirectory):
-        print("Fatal: Selected directory at %s does not exist." % options.WorkingDirectory)
+        print("Fatal: Selected directory at %s does not exist." %
+              options.WorkingDirectory)
         exit(1)
 
     for Dir in requiredDirectoriesPath:
@@ -386,7 +391,6 @@ def Execute(options):
     # -- Search Assemblies for Organism;
     AssemblyIDs = findAssemblyList(options.queryOrganism,
                                    retmax=options.genomeSearchMaxResults)
-
 
     # -- DOWNLOAD GENOMES;
     dataTypes = []
@@ -406,18 +410,14 @@ def Execute(options):
     dataTypes = []
     # Fetch Annotation IDs;
     if options.downloadAnnotations:
-        # DEPRECATED;
-        if not options.annotationStrain:
-            # Try to find an annotation that matches any genome,
-            annotationStrains = [f.replace("_", " ").split(".")[0]
-                                 for f in os.listdir(GenomeDirectory)]
-
         if options.annotationStrain:
             # Try to find the user-defined annotation;
             # Fetch user-defined annotation;
-            AnnotationIDs = findAssemblyList(options.queryOrganism,
-                                             Strain=options.annotationStrain,
-                                             retmax=options.genomeSearchMaxResults)
+            AnnotationIDs = findAssemblyList(
+                options.queryOrganism,
+                Strain=options.annotationStrain,
+                retmax=options.genomeSearchMaxResults
+            )
 
             if AnnotationIDs:
                 print("Found Annotation IDs:")
@@ -440,9 +440,10 @@ def Execute(options):
         else:
             # Try to download a genome that has a matching annotation;
             print("Annotation not found.")
-            dataTypes.append(DownloadQuery(AssemblyIDs,
-                                           AnnotationDirectory,
-                                           ["_genomic.gbff"])
+            dataTypes.append(
+                DownloadQuery(AssemblyIDs,
+                              AnnotationDirectory,
+                              ["_genomic.gbff"])
             )
 
         AnnotationDownloadSuccess = [query.execute() for query in dataTypes]
@@ -468,6 +469,7 @@ def main():
         if Execute(options):
             break
         time.sleep(20)
+
 
 if __name__ == "__main__":
     main()
