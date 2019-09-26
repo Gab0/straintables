@@ -12,6 +12,8 @@ class OutputFile():
     def __init__(self, dirpath):
         self.dirpath = dirpath
         self.filepath = self.get_filepath()
+        # if self.check():
+        #    self.read()
 
     def get_filepath(self):
         return os.path.join(self.dirpath, self.filename)
@@ -20,17 +22,21 @@ class OutputFile():
         return os.path.isfile(self.get_filepath())
 
 
-# -- TYPES OF OUTPUT FILES;
+# -- DATA FRAME OUTPUT FILE;
 class SimpleDataFrame(OutputFile):
+    csv_index = False
+
     def add(self, data):
         self.content = pd.DataFrame(data, columns=self.columns)
 
     def write(self):
-        self.content.to_csv(self.filepath, index=False)
+        self.content.to_csv(self.filepath, index=self.csv_index)
 
     def read(self):
         self.content = pd.read_csv(self.filepath)
 
+
+# -- JSON OUTPUT FILE;
 class JsonFile(OutputFile):
     content = {}
 
@@ -43,7 +49,7 @@ class JsonFile(OutputFile):
             self.content = json.load(f)
 
 
-# -- OUTPUT FILE FLAVORS;
+# -- OUTPUT FILE INSTANTIABLE CLASSES;
 class MatchedRegions(SimpleDataFrame):
     columns = [
         "LocusName",
@@ -62,12 +68,21 @@ class PrimerData(SimpleDataFrame):
     filename = "PrimerData.csv"
 
 
+class AlignedRegions(SimpleDataFrame):
+    filename = "AlignedRegions.csv"
+
+
 class AnalysisInformation(JsonFile):
     filename = "Information.json"
     fields = [
-        "?"
+        "? - TBD"
     ]
 
 
 class DockFailureReport(JsonFile):
     filename = "DockFailureReport.json"
+
+
+class PWMAnalysis(SimpleDataFrame):
+    csv_index = True
+    filename = "PWMAnalysis.csv"
