@@ -199,4 +199,4 @@ from ._mantel import mantel, pwmantel
 
 __all__ = ['DissimilarityMatrixError', 'DistanceMatrixError', 'MissingIDError',
            'DissimilarityMatrix', 'DistanceMatrix', 'randdm', 'anosim',
-           'permanova', 'bioenv', 'mantel', 'pwmantel', 'permdisp']
+           'permanova', 'bioenv', 'mantel', 'pwmantel']
