@@ -1,5 +1,7 @@
 ![Travis build](https://travis-ci.com/Gab0/straintables.svg?branch=master)
 [![PyPI version](https://badge.fury.io/py/straintables.svg)](https://badge.fury.io/py/straintables)
+[![Language grade: Python](https://img.shields.io/lgtm/grade/python/g/Gab0/straintables.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/Gab0/straintables/context:python)
+
 # About
 
 straintables is a tool that helps evaluate the difference among gene loci across an organism genomes, based on primer matching across the sequenced genome files.
@@ -111,8 +113,8 @@ on top of unaligned `.fasta` files.
 
 ### Aliview [optional]
 
-This is the program called by the `view alignment` buttons, and you should have
-it in order to quickly access them from the viewer.
+This is the program called by the `view alignment` buttons at `stview`s interface, and you should have
+this in order to quickly view the alignments that made your matrix.
 
 # Usage
 
