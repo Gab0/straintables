@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 import threading
 
 
-from straintables import Viewer, OutputFile, alignmentData
+from straintables import Viewer, OutputFile, alignmentData, Definitions
 from straintables.Viewer import mapBar
 
 from matplotlib.backends.backend_gtk3agg import FigureCanvas
@@ -22,7 +22,7 @@ import time
 
 import gi
 gi.require_version('Gtk', '3.0')
-from gi.repository import Gtk, Gdk, GdkPixbuf
+from gi.repository import Gtk, GdkPixbuf
 
 
 class locusNamesSelectionMenu(Gtk.Grid):
@@ -32,8 +32,11 @@ class locusNamesSelectionMenu(Gtk.Grid):
         self.matrixViewer = matrixViewer
 
         self.optsAllLoci = Gtk.ListStore(str)
-        self.left_choice = Gtk.ComboBox.new_with_model_and_entry(self.optsAllLoci)
-        self.right_choice = Gtk.ComboBox.new_with_model_and_entry(self.optsAllLoci)
+        self.left_choice =\
+            Gtk.ComboBox.new_with_model_and_entry(self.optsAllLoci)
+
+        self.right_choice =\
+            Gtk.ComboBox.new_with_model_and_entry(self.optsAllLoci)
 
         self.switchAutomaticDropdownLocusJump(Target=True)
 
@@ -120,8 +123,7 @@ class MatrixViewer():
         # INITIALIZE GTK WINDOW;
         self.Window = Gtk.Window()
         self.Window.connect("destroy", lambda x: Gtk.main_quit())
-        #screen = Gdk.Screen()
-        #self.Window.set_default_size(screen.get_width(), screen.get_height())
+
         self.Window.set_title("straintables - Walk Chromosome Result")
 
         # Children structures;
@@ -271,7 +273,8 @@ class MatrixViewer():
         buttonBox.attach(self.btn_next, 6, 0, 3, 1)
         buttonBox.attach(self.openSequenceRight, 9, 0, 2, 1)
 
-        self.FigureBox.pack_start(buttonBox, expand=False, fill=True, padding=0)
+        self.FigureBox.pack_start(buttonBox,
+                                  expand=False, fill=True, padding=0)
 
         # MODIFY MATPLOTLIB TOOLBAR;
         self.toolbar = NavigationToolbar(self.figurecanvas, self.Window)
@@ -293,21 +296,27 @@ class MatrixViewer():
         export_icon = loadImage(Viewer.button_icons.export)
         chr_icon = loadImage(Viewer.button_icons.chr_icon)
 
-        self.loadAlignment = Gtk.Button(image=Gtk.Image(stock=Gtk.STOCK_DND_MULTIPLE))
+        self.loadAlignment = Gtk.Button(
+            image=Gtk.Image(stock=Gtk.STOCK_DND_MULTIPLE))
         self.loadAlignment.connect("clicked", self.selectFolderPath)
-        panelBox.pack_start(self.loadAlignment, expand=False, fill=False, padding=3)
 
-        panelBox.pack_start(self.toolbar, expand=False, fill=False, padding=0)
-        panelBox.pack_start(self.btn_toggleColor, expand=False, fill=False, padding=0)
+        panelBox.pack_start(self.loadAlignment,
+                            expand=False, fill=False, padding=3)
+
+        panelBox.pack_start(self.toolbar,
+                            expand=False, fill=False, padding=0)
+
+        panelBox.pack_start(self.btn_toggleColor,
+                            expand=False, fill=False, padding=0)
 
         self.infoText.set_hexpand(True)
         panelBox.pack_start(self.infoText, expand=True, fill=True, padding=0)
 
-
         # -- MAIN VIEW SELECTORS;
         self.ModifyViewButtons = Gtk.HBox()
 
-        self.btn_viewalignment = Gtk.Button(image=Gtk.Image(stock=Gtk.STOCK_MEDIA_PLAY))
+        self.btn_viewalignment = Gtk.Button(
+            image=Gtk.Image(stock=Gtk.STOCK_MEDIA_PLAY))
         self.btn_viewalignment.connect(
             "clicked",
             lambda d: self.ModifyPanelView("alignment")
@@ -406,7 +415,9 @@ class MatrixViewer():
         if InformationFile.check():
             InformationFile.read()
             AnnotationPath = InformationFile.content["annotation"]
-            self.changeView(regions, self.plotIdeogram, AnnotationPath=AnnotationPath)
+            self.changeView(regions,
+                            self.plotIdeogram,
+                            AnnotationPath=AnnotationPath)
 
     def changeView(self, regions, plotMethod, **kwargs):
         self.figure.clf()
@@ -477,14 +488,17 @@ class MatrixViewer():
     def launchAlignViewer(self, side):
         LocusName = self.LocusNames[side]
 
-        alignmentFilePath = os.path.join(self.inputDirectory, "LOCI_%s.aln" % LocusName)
+        alignmentFilePath = os.path.join(self.inputDirectory,
+                                         "%s%s.aln" % (
+                                             Definitions.FastaRegionPrefix,
+                                             LocusName))
         command = ["aliview", alignmentFilePath]
         print(command)
 
         subprocess.run(command)
 
     def selectFolderPath(self, n):
-        a = folderPathSelector(self)
+        folderPathSelector(self)
 
     def ModifyPanelView(self, target):
         if target == "outputimage":
@@ -562,11 +576,8 @@ class BuildImageMenu(Gtk.VBox):
 
         Layout = Gtk.VBox()
 
-        n = Gtk.Label("Reordered Matrixes")
-
         btn_Confirm = Gtk.Button.new_with_label("Export.")
         btn_Confirm.connect("clicked", self.makeCustomPlot)
-
 
         # Setup normalize menu features;
         def newToggleOption(Label):
@@ -579,11 +590,12 @@ class BuildImageMenu(Gtk.VBox):
 
             return checkbox, container
 
-
         # Setup shown values features;
-        self.chk_normalize, normalizer = newToggleOption("Normalize Matrix Values")
-        self.chk_showvalues, showvalues = newToggleOption("Show Matrix Values")
+        self.chk_normalize, normalizer =\
+            newToggleOption("Normalize Matrix Values")
 
+        self.chk_showvalues, showvalues =\
+            newToggleOption("Show Matrix Values")
 
         # Build selectable region list;
         loci_list = alnData.fetchOriginalLociList()
@@ -695,10 +707,12 @@ def loadImage(source_image):
 def Execute(options):
 
     # SHOW DATA;
-    if os.path.isfile(os.path.join(options.inputDirectory, "PrimerData.csv")):
+    PrimerData = OutputFile.PrimerData(options.inputDirectory)
+    if PrimerData.check():
         MatrixViewer(options.inputDirectory)
     else:
-        print("Analysis file not found at input directory %s." % options.inputDirectory)
+        print("Analysis file not found at input directory %s." %
+              options.inputDirectory)
 
 
 def parse_arguments():
