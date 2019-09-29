@@ -1,8 +1,8 @@
 #!/bin/python
 
-from Bio import SeqIO, AlignIO
+from Bio import SeqIO
 from Bio import Data
-from Bio.Align.Applications import ClustalwCommandline
+from Bio.Align.Applications import ClustalOmegaCommandline
 
 from Bio import Align
 
@@ -17,7 +17,6 @@ import subprocess
 import re
 import types
 
-ClustalCommand = "clustalo"
 
 def parseDndFile(filepath, region_name):
     content = open(filepath).read()
@@ -77,7 +76,8 @@ def runForWindow(options, protein, sequence, Window, Reverse):
 
     TestFilePrefix = "TEST_%s_%s" % (PROT.id, StrainName)
 
-    OutDirectory = os.path.join(options.WorkingDirectory, "out_%s" % region_name)
+    OutDirectory = os.path.join(
+        options.WorkingDirectory, "out_%s" % region_name)
     if not os.path.isdir(OutDirectory):
         os.mkdir(OutDirectory)
 
@@ -94,7 +94,7 @@ def runForWindow(options, protein, sequence, Window, Reverse):
         exit()
 
     if len(PROT.seq) > len(protein.seq):
-        print("WARNING: protein fragment length is bigger than reference protein length!")
+        print("WARNING: protein fragment length > reference protein length!")
 
     print("%s: %s / %s" % (TestFilePrefix, dndscore, alignscore))
 
@@ -122,7 +122,9 @@ def processAllTranslationWindows(options, protein, sequence):
                                                                   sequence,
                                                                   Window,
                                                                   Reverse)
-            AlignmentScores.append((WindowDescriptor, WindowSequence, dndscore))
+            AlignmentScores.append(
+                (WindowDescriptor, WindowSequence, dndscore)
+            )
 
     BestAlignment = sorted(AlignmentScores, key=lambda v: v[2])[0]
     return BestAlignment
@@ -151,15 +153,19 @@ def MakeTestClustalAlignment(Sequences,
     TestFilePath = os.path.join(OutputDirectory, TestFile)
     SeqIO.write(Sequences, open(TestFilePath, 'w'), format="fasta")
 
-    Outfile = os.path.join(OutputDirectory, TestFile + ".aln")
-    cmd = ClustalwCommandline(ClustalCommand,
-                              infile=TestFilePath,
-                              outfile=Outfile)
+    dndfile = os.path.join(OutputDirectory, TestFilePrefix + ".dnd")
 
-    cmd.seqnos = "ON"
+    Outfile = os.path.join(OutputDirectory, TestFile + ".aln")
+
+    cmd = ClustalOmegaCommandline(ClustalCommand,
+                                  infile=TestFilePath,
+                                  outfile=Outfile,
+                                  guidetree_out=dndfile,
+                                  force=True)
+
+    # cmd.seqnos = "ON"
     cmd()
 
-    dndfile = os.path.join(OutputDirectory, TestFilePrefix + ".dnd")
     dndscore = parseDndFile(dndfile, region_name)
 
     if dndscore > 0.3:
@@ -184,8 +190,6 @@ def CheckClustalAlignment(FilePath):
     return HasGaps
 
 
-
-
 def AnalyzeRegion(options, RegionSequenceSource):
 
     region_name = options.RegionName
@@ -200,7 +204,8 @@ def AnalyzeRegion(options, RegionSequenceSource):
                                            RegionSequencesFilename)
 
     if not os.path.isfile(RegionSequencesFilepath):
-        print("Region sequences file not found at %s." % RegionSequencesFilepath)
+        print("Region sequences file not found at %s." %
+              RegionSequencesFilepath)
 
     source_seq = RegionSequenceSource.fetchGeneSequence(region_name)
 
@@ -229,19 +234,26 @@ def AnalyzeRegion(options, RegionSequenceSource):
         if score < 0.15:
             SuccessSequences += 1
 
-    OutputProteinFilePath = os.path.join(options.WorkingDirectory,
-                                         "Protein_%s.fasta" % region_name)
-    OutputAlignmentFilePath = OutputProteinFilePath.replace(".fasta", ".aln")
+    OutputProteinFilePrefix = os.path.join(options.WorkingDirectory,
+                                           "Protein_%s" % region_name)
+
+    OutputProteinFilePath = OutputProteinFilePrefix + ".fasta"
+    OutputAlignmentFilePath = OutputProteinFilePrefix + ".aln"
+    OutputTreeFilePath = OutputProteinFilePrefix + ".dnd"
 
     with open(OutputProteinFilePath, 'w') as f:
         SeqIO.write(AllRegionSequences, f, format="fasta")
-    cmd = ClustalwCommandline(ClustalCommand,
-                              infile=OutputProteinFilePath,
-                              outfile=OutputAlignmentFilePath
-    )
 
-    OutputProteinReferenceFilePath = os.path.join(options.WorkingDirectory,
-                                                  "Protein_ref_%s.fasta" % region_name)
+    cmd = ClustalOmegaCommandline(ClustalCommand,
+                                  infile=OutputProteinFilePath,
+                                  outfile=OutputAlignmentFilePath,
+                                  guidetree_out=OutputTreeFilePath,
+                                  force=True)
+
+    OutputProteinReferenceFilePath = os.path.join(
+        options.WorkingDirectory,
+        "Protein_ref_%s.fasta" % region_name
+    )
 
     with open(OutputProteinReferenceFilePath, 'w') as f:
         SeqIO.write(protein, f, format="fasta")
@@ -301,7 +313,8 @@ def Execute(options):
 
     GenomeFeatures = list(SeqIO.parse(AnnotationPath, format="genbank"))
 
-    RegionSequenceSource = bfps.BruteForcePrimerSearcher(GenomeFeatures, GenomeFilePaths)
+    RegionSequenceSource = bfps.BruteForcePrimerSearcher(
+        GenomeFeatures, GenomeFilePaths)
 
     if options.RunDirectory:
         runDirectory(options, RegionSequenceSource)
