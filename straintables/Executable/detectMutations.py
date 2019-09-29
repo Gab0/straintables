@@ -10,23 +10,32 @@ import copy
 import re
 import os
 
-from straintables import DrawGraphics, Viewer
+from straintables import DrawGraphics, Viewer, Definitions
 import optparse
 
 
 # BUILD HEATMAP;
-def createPdfHeatmap(MATRIX, sequenceNames, filename=None, subtitle=None, MatrixParameters=None):
+def createPdfHeatmap(MATRIX,
+                     sequenceNames,
+                     filename=None,
+                     subtitle=None,
+                     MatrixParameters=None):
     fig = plt.figure()
     ax = fig.add_subplot(111)
 
-    Viewer.MatrixPlot.heatmapToAxis(MATRIX, ax, xlabels=sequenceNames, ylabels=sequenceNames, MatrixParameters=MatrixParameters)
+    Viewer.MatrixPlot.heatmapToAxis(MATRIX,
+                                    ax,
+                                    xlabels=sequenceNames,
+                                    ylabels=sequenceNames,
+                                    MatrixParameters=MatrixParameters)
 
     # ax.grid(which='minor', color='r', linestyle='-', linewidth=2)
 
     if filename:
         plt.savefig(filename, bbox_inches='tight')
 
-    watermarkLabel = re.findall("LOCI_(.+)\.aln", filename)
+    watermarkLabel = re.findall("%s(.+)\.aln" % Definitions.FastaRegionPrefix,
+                                filename)
     # for loci similarity matrix;
     if watermarkLabel:
         watermarkLabel = watermarkLabel[0]
@@ -245,7 +254,8 @@ def Execute(options):
 
     FileDirectory = os.path.dirname(options.InputFile)
     AlignmentInfoFilepath = os.path.join(FileDirectory, "AlignedRegions.csv")
-    LocusName = os.path.splitext(os.path.split(alignPath)[-1])[0].replace("LOCI_", "")
+    LocusName = os.path.splitext(os.path.split(alignPath)[-1])[0].replace(
+        Definitions.FastaRegionPrefix, "")
 
     # Update Alignment Info database;
     data = {
