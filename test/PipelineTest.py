@@ -5,7 +5,7 @@ import os
 import shutil
 import types
 from straintables.Executable import Pipeline, fetchDataNCBI, MatrixViewer
-
+import sys
 
 class PipelineTest(unittest.TestCase):
     WorkingDirectory = "straintables_test"
