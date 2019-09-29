@@ -9,6 +9,8 @@ from Bio import SeqIO
 
 import PrimerEngine
 
+from . import Definitions
+
 
 def dataDir(filename):
     return os.path.join(options.inputDirectory, filename)
@@ -26,7 +28,9 @@ LocusData = pd.read_csv(DataFilePath)
 
 Scores = []
 for locus in LocusData.LocusName:
-    fastaFileName = "LOCI_%s.fasta" % locus
+    fastaFileName = "%s%s.fasta" % (
+        Definitions.FastaRegionPrefix + locus)
+
     fastaFilePath = dataDir(fastaFileName)
     sequences = list(SeqIO.parse(fastaFilePath, 'fasta'))
     sequences = {s.id: str(s.seq) for s in sequences}
