@@ -14,7 +14,7 @@ class LabelGroup():
         self.cropped = self.crop(self.base)
 
         # lowercase greek letters for niceness;
-        self.clusterSymbolMap = [chr(945 + x) for x in range(20)]
+        self.clusterSymbolMap = [chr(945 + x) for x in range(55)]
         print(self.cropped)
 
     @staticmethod
@@ -176,7 +176,7 @@ def colorizeSubplot(ax, Cluster):
     colorMap = plt.get_cmap("tab20")
 
     ClusterColors = [colorMap(x / 20)
-                     for x in range(20)]
+                     for x in range(20)] * 4
 
     allLabels = enumerate(zip(ax.get_xticklabels(), ax.get_yticklabels()))
     for idx, (xlabel, ylabel) in allLabels:
@@ -281,7 +281,7 @@ def plotRegionBatch(fig, alnData, regionIndexes,
         plotCluster = Labels.clusterize(Clusters[m])
         plotLabels = Labels.get_labels(Cluster=plotCluster)
 
-        fontsize = 12 - 2 * (NBL - 2)
+        fontsize = 40 / math.sqrt(Matrix.shape[0])
 
         plot = createMatrixSubplot(
             fig, PlotCode,
@@ -357,12 +357,15 @@ def MainDualRegionPlot(fig, alnData, regionIndexes, showLabelColors=True):
     RightCluster = Labels.clusterize(clusterOutputData[1])
 
     # REORDERED MATRIXES;
+    fontsize = 40 / math.sqrt(ma.shape[0])
+
     # plot;
     TA1_labels = Labels.get_ordered(matrix_order,
                                     Cluster=LeftCluster, symbolSide=0)
     top_axis1 = createMatrixSubplot(fig, 231,
                                     a_name, ordered_ma,
-                                    TA1_labels, TA1_labels)
+                                    TA1_labels, TA1_labels,
+                                    fontsize=fontsize)
 
     TA2_xlabels = Labels.get_ordered(matrix_order,
                                      Cluster=RightCluster, symbolSide=0)
@@ -370,20 +373,23 @@ def MainDualRegionPlot(fig, alnData, regionIndexes, showLabelColors=True):
                                      Cluster=RightCluster, symbolSide=1)
     top_axis2 = createMatrixSubplot(fig, 233,
                                     b_name, ordered_mb,
-                                    TA2_xlabels, TA2_ylabels)
+                                    TA2_xlabels, TA2_ylabels,
+                                    fontsize=fontsize)
 
     # ORIGINAL MATRIXES;
     # plot;
     BA1_labels = Labels.get_labels(Cluster=LeftCluster)
     bottom_axis1 = createMatrixSubplot(fig, 234,
                                        a_name, ma,
-                                       BA1_labels, BA1_labels)
+                                       BA1_labels, BA1_labels,
+                                       fontsize=fontsize)
 
     BA2_xlabels = Labels.get_labels(Cluster=RightCluster, symbolSide=0)
     BA2_ylabels = Labels.get_labels(Cluster=RightCluster, symbolSide=1)
     bottom_axis2 = createMatrixSubplot(fig, 236,
                                        b_name, mb,
-                                       BA2_xlabels, BA2_ylabels)
+                                       BA2_xlabels, BA2_ylabels,
+                                       fontsize=fontsize)
 
     # left plots have yticks on the right side.
     top_axis1.yaxis.tick_right()
@@ -392,7 +398,8 @@ def MainDualRegionPlot(fig, alnData, regionIndexes, showLabelColors=True):
     # ADDITIONAL INFORMATION FIGURE;
     if currentPWMData is not None:
         ax_information = fig.add_subplot(232)
-        RegionInfoAxis(ax_information, currentPWMData, MatchData, a_name, b_name)
+        RegionInfoAxis(ax_information, currentPWMData,
+                       MatchData, a_name, b_name)
 
     # COLORIZE MATRIX LABELS BY MESHCLUSTER;
     if showLabelColors:
