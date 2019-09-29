@@ -9,7 +9,7 @@ from Bio import Seq, SeqIO
 
 import argparse
 
-from straintables import PrimerEngine, InputFile, OutputFile
+from straintables import PrimerEngine, InputFile, OutputFile, Definitions
 from straintables.Database import annotationManager, genomeManager
 
 
@@ -112,9 +112,11 @@ def Execute(options):
         locus_name = locus_info["LocusName"]
 
         # ASSIGN OUTPUT FASTA FILE NAME AND CHECK IF EXISTS;
-        outputFastaName = "LOCI_%s.fasta" % locus_name
+        outputFastaName = "%s%s.fasta" % (
+            Definitions.FastaRegionPrefix, locus_name)
 
-        outputFastaPath = os.path.join(options.WorkingDirectory, outputFastaName)
+        outputFastaPath = os.path.join(
+            options.WorkingDirectory, outputFastaName)
 
         print("Fasta file: %s" % outputFastaPath)
 
