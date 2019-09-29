@@ -248,7 +248,7 @@ The matrix show will start with the first locus against the second locus chosen,
 ## Matrix from Fast Sequence
 
 Alternatively, you can use `straintables` as you would use [MatGAT](https://bmcbioinformatics.biomedcentral.com/articles/10.1186/1471-2105-4-29), where you just
-have a few multifasta file with many short sequences, one file per region, and just
+have a few multifasta file with many compatible short sequences, one file per region, and just
 want to see dissimilarity matrixes for them. The entire workflow is described below:
 
 ```
@@ -257,7 +257,7 @@ $stview DIRECTORU_WITH_FASTA_FILES
 
 ```
 
-The first command is a mini pipeline and should be executed only once. As of the current version, you'll need more than one region.
+The first command is a mini pipeline and should be executed only once. As of the current version, you'll need more than one region to execute this.
 
 
 
