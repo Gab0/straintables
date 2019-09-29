@@ -65,6 +65,11 @@ class MatchedRegions(SimpleDataFrame):
 
 
 class PrimerData(SimpleDataFrame):
+    columns = ["Locus",
+               "Sequence",
+               "PositionStart",
+               "PositionEnd"
+               ]
     filename = "PrimerData.csv"
 
 
