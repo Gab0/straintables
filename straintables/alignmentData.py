@@ -4,7 +4,7 @@ import os
 import re
 import numpy as np
 
-from . import OutputFile
+from . import OutputFile, Definitions
 
 
 class AlignmentData():
@@ -78,7 +78,7 @@ class AlignmentData():
     def buildArrayPath(self, f):
         possibleFilenames = [
             "%s.aln.npy" % f,
-            "LOCI_%s.aln.npy" % f
+            "%s%s.aln.npy" % (Definitions.FastaRegionPrefix, f)
         ]
 
         possibleFilepaths = [
@@ -128,5 +128,6 @@ class AlignmentData():
         return Results[0]
 
     def locusFromAlignmentFilename(self, Filename):
-        Name = re.findall("LOCI_([\w\d]+)\.", Filename)[0]
+        Name = re.findall("%s([\w\d]+)\." % Definitions.FastaRegionPrefix,
+                          Filename)[0]
         return Name
