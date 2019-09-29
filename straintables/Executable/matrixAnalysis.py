@@ -6,7 +6,7 @@ import numpy as np
 from optparse import OptionParser
 
 from straintables import skdistance as skdist
-from straintables import OutputFile
+from straintables import OutputFile, Definitions
 
 
 def matrixRankings(MATRIX):
@@ -86,7 +86,10 @@ def Execute(options):
 
     matchedLoci = matchedRegions.content["LocusName"]
 
-    arrayFiles = ["LOCI_%s.aln.npy" % Locus for Locus in matchedLoci]
+    arrayFiles = [
+        "%s%s.aln.npy" % (Definitions.FastaRegionPrefix, Locus)
+        for Locus in matchedLoci
+    ]
 
     arrayFilePaths = [os.path.join(options.WorkingDirectory, File)
                       for File in arrayFiles]
