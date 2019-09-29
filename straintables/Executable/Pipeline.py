@@ -9,12 +9,11 @@ straintables' main pipeline script;
 
 import os
 import argparse
-import pandas as pd
 import shutil
 import straintables
 import subprocess
 
-from Bio.Align.Applications import ClustalwCommandline
+from Bio.Align.Applications import ClustalOmegaCommandline
 
 from straintables.logo import logo
 
@@ -22,8 +21,6 @@ from straintables.Executable import primerFinder, detectMutations,\
     compareHeatmap, matrixAnalysis
 
 from straintables.Database import directoryManager
-
-ClustalCommand = "clustalo"
 
 
 class Options():
@@ -36,18 +33,27 @@ def find_primers(options):
     return primerFinder.Execute(options)
 
 
-def run_alignment(filePrefix):
+def run_alignment(filePrefix,
+                  clustalPath=straintables.Definitions.ClustalCommand):
     infile = filePrefix + ".fasta"
     outfile = filePrefix + ".aln"
 
-    aln_cmd = ClustalwCommandline(ClustalCommand, infile=infile, outfile=outfile)
+    aln_cmd = ClustalOmegaCommandline(clustalPath,
+                                      infile=infile,
+                                      outfile=outfile,
+                                      force=True,
+                                      outfmt="clustal")
     stdout, stderr = aln_cmd()
 
     print(stdout)
 
     infile = filePrefix + ".aln"
-    tree_cmd = ClustalwCommandline(ClustalCommand, infile=infile, tree=True)
-    tree_cmd()
+
+    # tree_cmd = ClustalOmegaCommandline(clustalPath,
+    #                                    infile=infile, tree=True)
+
+    # Clustalo does not build trees.
+    # tree_cmd()
 
 
 def draw_tree(filePrefix):
@@ -106,8 +112,8 @@ def parse_arguments():
     parser.add_argument("--alnmode", dest="AlignmentMode",
                         default="clustal")
 
-    # parser.add_argument("--clustalpath", dest="ClustalPath",
-    #                     default="clustalo")
+    parser.add_argument("--clustalpath", dest="ClustalPath",
+                        default=straintables.Definitions.ClustalCommand)
 
     parser = primerFinder.parse_arguments(parser)
     options = parser.parse_args()
@@ -126,10 +132,15 @@ def TestMeshclust():
 
 
 def process_individual_region(options, locusName, MeshClustEnabled):
-    filePrefix = os.path.join(options.WorkingDirectory, "LOCI_" + locusName)
+    filePrefix = os.path.join(
+        options.WorkingDirectory,
+        straintables.Definitions.FastaRegionPrefix + locusName)
+
     print("Running alignment for %s..." % locusName)
 
-    run_alignment(filePrefix)
+    run_alignment(filePrefix,
+                  clustalPath=options.ClustalPath)
+
     # draw_tree(filePrefix)
     detect_mutations(filePrefix)
     if MeshClustEnabled:
@@ -152,8 +163,8 @@ def Execute(options):
                                                 AnalysisCode)
 
     # -- TEST CLUSTAL SETUP;
-    if not shutil.which(ClustalCommand):
-        print("%s not found! Aborting..." % ClustalCommand)
+    if not shutil.which(options.ClustalPath):
+        print("%s not found! Aborting..." % options.ClustalPath)
         exit(1)
 
     MeshClustEnabled = TestMeshclust()
@@ -174,7 +185,8 @@ def Execute(options):
         print("Unknown alignment mode %s." % (options.AlignmentMode))
         exit(1)
 
-    MatchedRegions = straintables.OutputFile.MatchedRegions(options.WorkingDirectory)
+    MatchedRegions = straintables.OutputFile.MatchedRegions(
+        options.WorkingDirectory)
     MatchedRegions.read()
 
     SucessfulLoci = MatchedRegions.content["LocusName"]
