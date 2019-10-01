@@ -1,13 +1,8 @@
 #!/bin/python
 
-import os
-import matplotlib
-from matplotlib.patches import Circle, Wedge, Polygon, Rectangle
-from matplotlib.collections import PatchCollection
-import matplotlib.pyplot as plt
-import requests
-
+from matplotlib.patches import Wedge, Rectangle
 from Bio import SeqIO
+
 """
 
 This code is based on https://gist.github.com/kantale/e390cf7a47c4afdff9e4
