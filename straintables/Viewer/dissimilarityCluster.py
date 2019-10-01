@@ -110,9 +110,8 @@ def matchPairOfClusterOutputData(clusterOutputData, Verbose=False):
                 continue
 
             MAX = max(keyScores[mkey])
-            MIN = min(keyScores[mkey])
             if len(keyScores[mkey]) >= len(keyScores):
-                if keyScores[mkey][mkey] == max(keyScores[mkey]):
+                if keyScores[mkey][mkey] == MAX:
                     if Verbose:
                         print("GOOD!")
                     continue
