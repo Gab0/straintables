@@ -1,7 +1,6 @@
 #!/bin/python
 
 import numpy as np
-import sys
 import os
 
 from argparse import ArgumentParser
