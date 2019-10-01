@@ -4,7 +4,6 @@ import os
 
 from Bio.Graphics import GenomeDiagram
 from Bio.SeqFeature import SeqFeature, FeatureLocation
-from Bio import SeqIO
 from reportlab.lib import colors
 from reportlab.pdfgen import canvas
 
