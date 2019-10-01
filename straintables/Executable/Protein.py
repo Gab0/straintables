@@ -52,7 +52,6 @@ class ReadFrameController():
 
 def runForWindow(options, protein, sequence, Window, Reverse):
     region_name = protein.id
-    DNA = sequence
 
     RFC = ReadFrameController(Window, Reverse)
     DNA = RFC.apply(sequence)
