@@ -1,7 +1,6 @@
 #!/bin/python
 
 import os
-import re
 
 from . import PrimerDock
 from Bio import SeqIO
