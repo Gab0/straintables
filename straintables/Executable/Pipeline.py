@@ -47,14 +47,6 @@ def run_alignment(filePrefix,
 
     print(stdout)
 
-    infile = filePrefix + ".aln"
-
-    # tree_cmd = ClustalOmegaCommandline(clustalPath,
-    #                                    infile=infile, tree=True)
-
-    # Clustalo does not build trees.
-    # tree_cmd()
-
 
 def draw_tree(filePrefix):
     infile = filePrefix + ".ph"
