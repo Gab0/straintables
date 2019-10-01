@@ -465,13 +465,6 @@ class MatrixViewer():
                 Axis.set_position([0, 0, 1, 1])
                 self.zoomedPlot = Axis
 
-                if False:
-                    self.figure.clf()
-                    print(Axis)
-                    self.figure.axes.append(Axis)
-                    print(self.figure.axes)
-                    self.figurecanvas.draw()
-
                 for otherAxis in event.canvas.figure.axes:
                     if otherAxis is not Axis:
                         otherAxis.set_visible(False)
