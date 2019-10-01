@@ -1,7 +1,5 @@
 #!/bin/python
 
-import re
-
 
 def fetchStrainName(genomeDescriptor, organismName=None, Verbose=False):
 
