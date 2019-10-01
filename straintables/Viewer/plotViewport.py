@@ -531,8 +531,4 @@ def RecombinationAxis(fig, clusterOutputData, Labels, matrix_order):
         ax_recombination.scatter([0 for x in dm], dm, color=color_green)
         ax_recombination.scatter([10 for x in dm], dm, color=color_red)
 
-        b = np.array(b)
-        # d = 500
-        # ax_symbol.plot(b - d, a, color='gray')
-        # ax_symbol.plot(-b + d, a, color='brown')
         ax_recombination.axis("off")
