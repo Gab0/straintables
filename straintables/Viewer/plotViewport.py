@@ -158,7 +158,7 @@ def createMatrixSubplot(fig, position,
     return new_ax
 
 
-def sequenceInfoOnAxis(ax, reference=None, nb_snp=0, aln_len=0):
+def sequenceInfoOnAxis(ax, reference=None, nb_snp=0, aln_len=0, fontsize=10):
     Message = "nb_snp=%i\nlength=%i" % (nb_snp, aln_len)
     ax.annotate(
         Message,
@@ -167,7 +167,8 @@ def sequenceInfoOnAxis(ax, reference=None, nb_snp=0, aln_len=0):
         xycoords=reference,
         clip_on=False,
         ha='left',
-        va='top'
+        va='top',
+        fontsize=fontsize
         )
 
 
@@ -304,7 +305,8 @@ def plotRegionBatch(fig, alnData, regionIndexes,
         sequenceInfoOnAxis(AllPlots[m],
                            reference=axLabel,
                            nb_snp=alignmentData[m]["SNPCount"],
-                           aln_len=alignmentData[m]["AlignmentLength"])
+                           aln_len=alignmentData[m]["AlignmentLength"],
+                           fontsize=fontsize * 1.5)
 
     fig.tight_layout()
     fig.tight_layout()
@@ -332,7 +334,6 @@ def MainDualRegionPlot(fig, alnData, regionIndexes, showLabelColors=True):
         ]
     except IndexError:
         print("Failure on %s" % a_name)
-
 
     # LOAD MATRIX DATA;
     [ma, mb] = [
@@ -447,7 +448,8 @@ def RegionInfoAxis(ax, currentPWMData, MatchData, a_name, b_name):
 
     if MatchData[0]["Chromosome"] == MatchData[1]["Chromosome"]:
         try:
-            distance = abs(MatchData[0]["PositionStart"] - MatchData[1]["PositionStart"])
+            distance = abs(MatchData[0]["PositionStart"] -
+                           MatchData[1]["PositionStart"])
             distance = "{:,}".format(distance)
         except KeyError:
             print(MatchData)
