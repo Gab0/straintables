@@ -7,7 +7,7 @@ from Bio.Align.Applications import ClustalOmegaCommandline
 from Bio import Align
 
 import straintables.PrimerEngine.PrimerDesign as bfps
-from straintables import OutputFile
+from straintables import OutputFile, Definitions
 from straintables.Database import genomeManager
 
 import copy
@@ -122,7 +122,7 @@ def processAllTranslationWindows(options, protein, sequence):
                                                                   Window,
                                                                   Reverse)
             AlignmentScores.append(
-                (WindowDescriptor, WindowSequence, dndscore)
+                (WindowDescriptor, WindowSequence, alignscore)
             )
 
     BestAlignment = sorted(AlignmentScores, key=lambda v: v[2])[0]
@@ -156,20 +156,24 @@ def MakeTestClustalAlignment(Sequences,
 
     Outfile = os.path.join(OutputDirectory, TestFile + ".aln")
 
-    cmd = ClustalOmegaCommandline(ClustalCommand,
+    cmd = ClustalOmegaCommandline(Definitions.ClustalCommand,
                                   infile=TestFilePath,
                                   outfile=Outfile,
                                   guidetree_out=dndfile,
+                                  outfmt="clustal",
                                   force=True)
 
     # cmd.seqnos = "ON"
     cmd()
 
-    dndscore = parseDndFile(dndfile, region_name)
+    try:
+        dndscore = parseDndFile(dndfile, region_name)
+        os.remove(dndfile)
+    except FileNotFoundError:
+        dndscore = 0
 
     if dndscore > 0.3:
         os.remove(TestFilePath)
-    os.remove(dndfile)
 
     # x = AlignIO.read(Outfile, format='clustal')
     # print(str(x))
@@ -198,7 +202,8 @@ def AnalyzeRegion(options, RegionSequenceSource):
         exit(1)
 
     # p_name = "%s_prot.fasta" % region_name
-    RegionSequencesFilename = "LOCI_%s.fasta" % region_name
+    RegionSequencesFilename = "%s%s.fasta" % (
+        Definitions.FastaRegionPrefix, region_name)
     RegionSequencesFilepath = os.path.join(options.WorkingDirectory,
                                            RegionSequencesFilename)
 
@@ -209,7 +214,7 @@ def AnalyzeRegion(options, RegionSequenceSource):
     source_seq = RegionSequenceSource.fetchGeneSequence(region_name)
 
     if source_seq is None:
-        return 0
+        return 0, 0
 
     protein = SeqIO.SeqRecord(source_seq.translate())
 
@@ -243,10 +248,11 @@ def AnalyzeRegion(options, RegionSequenceSource):
     with open(OutputProteinFilePath, 'w') as f:
         SeqIO.write(AllRegionSequences, f, format="fasta")
 
-    cmd = ClustalOmegaCommandline(ClustalCommand,
+    cmd = ClustalOmegaCommandline(Definitions.ClustalCommand,
                                   infile=OutputProteinFilePath,
                                   outfile=OutputAlignmentFilePath,
                                   guidetree_out=OutputTreeFilePath,
+                                  outfmt="clustal",
                                   force=True)
 
     OutputProteinReferenceFilePath = os.path.join(
@@ -257,7 +263,6 @@ def AnalyzeRegion(options, RegionSequenceSource):
     with open(OutputProteinReferenceFilePath, 'w') as f:
         SeqIO.write(protein, f, format="fasta")
 
-    cmd.seqnos = "ON"
     cmd()
 
     HasGaps = CheckClustalAlignment(OutputAlignmentFilePath)
@@ -268,11 +273,15 @@ def AnalyzeRegion(options, RegionSequenceSource):
 
 
 def runDirectory(options, RegionSequenceSource):
-    WantedFileQuery = "LOCI_([\w\d]+).fasta"
+    WantedFileQuery = "%s([\w\d]+).fasta" % Definitions.FastaRegionPrefix
     files = [
         f for f in os.listdir(options.WorkingDirectory)
         if re.findall(WantedFileQuery, f)
     ]
+
+    if not files:
+        print("No region fasta files detected.")
+        exit(1)
 
     AllGapPresence = 0
     for f in files:
@@ -296,7 +305,6 @@ def runDirectory(options, RegionSequenceSource):
 def parse_arguments():
     parser = argparse.ArgumentParser()
     parser.add_argument("-r", dest="RegionName")
-    parser.add_argument("-a", dest="RunDirectory", action="store_true")
     parser.add_argument("-d", "--dir", dest="WorkingDirectory", default=".")
     options = parser.parse_args()
     return options
@@ -315,10 +323,10 @@ def Execute(options):
     RegionSequenceSource = bfps.BruteForcePrimerSearcher(
         GenomeFeatures, GenomeFilePaths)
 
-    if options.RunDirectory:
-        runDirectory(options, RegionSequenceSource)
-    else:
+    if options.RegionName:
         AnalyzeRegion(options, RegionSequenceSource)
+    else:
+        runDirectory(options, RegionSequenceSource)
 
 
 def main():
