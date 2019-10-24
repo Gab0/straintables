@@ -82,19 +82,19 @@ def Execute(options):
         print("\tgot only %i." % len(genomes))
         exit(1)
 
-
-    # APPLY GENOME FEATURES TO BRUTE FORCE MODULE;
+    # Initialize brute force prime searcher on top of chosen annotation file;
     annotationFilePath, genomeFeatures =\
         annotationManager.loadAnnotation(featureFolderPath)
 
-    bruteForceSearcher =\
-        PrimerEngine.PrimerDesign.BruteForcePrimerSearcher(
-            genomeFeatures,
-            genomeFilePaths,
-            options.wantedFeatureType
-        )
+    if annotationFilePath:
+        bruteForceSearcher =\
+            PrimerEngine.PrimerDesign.BruteForcePrimerSearcher(
+                genomeFeatures,
+                genomeFilePaths,
+                options.wantedFeatureType
+            )
 
-    if not bruteForceSearcher.matchedGenome:
+    if not annotationFilePath or not bruteForceSearcher.matchedGenome:
         bruteForceSearcher = None
 
     # -- SETUP OUTPUT DATA STRUCTURES;
@@ -106,7 +106,7 @@ def Execute(options):
 
     GenomeFailureReport = OutputFile.DockFailureReport(options.WorkingDirectory)
 
-    # ITERATE LOCI;
+    # ITERATE LOCI: Main Loop;
     for i in range(lociPrimerList.shape[0]):
         locus_info = lociPrimerList.iloc[i]
         locus_name = locus_info["LocusName"]
