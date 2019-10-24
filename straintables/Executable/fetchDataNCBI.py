@@ -239,15 +239,21 @@ def downloadAssembly(ID,
 
     DownloadSuccess = False
     for remoteFileName in remoteFileNames:
-        localFileName = remoteFileName
+        temporaryFileName = "downloading_" + remoteFileName
 
-        localfilepath = os.path.join(downloadDirectory, localFileName)
-        debug("Writing assembly to %s" % localfilepath)
+        localFinalFilepath = os.path.join(downloadDirectory, remoteFileName)
+
+        if os.path.isfile(localFinalFilepath):
+            print("%s already existis! Skipping..." % localFinalFilepath)
+
+        localDownloadingFilepath = os.path.join(downloadDirectory,
+                                                temporaryFileName)
+        debug("Writing file to %s" % localFinalFilepath)
 
         debug("Downloading %s" % remoteFileName)
 
         downloaded = Connection.execute(
-            Connection.downloadFile, remoteFileName, localfilepath)
+            Connection.downloadFile, remoteFileName, localDownloadingFilepath)
 
         debug(remoteFileName)
         debug("download result: %s" % downloaded)
@@ -255,21 +261,28 @@ def downloadAssembly(ID,
         if not downloaded:
             return False
 
+        shutil.move(localDownloadingFilepath, localFinalFilepath)
         DownloadSuccess = True
 
-        # GUNZIP FILE - decompress;
-        if localfilepath.endswith(".gz"):
-            with gzip.open(localfilepath, 'rb') as gf:
-                file_content = gf.read()
-                decompressedPath = os.path.splitext(localfilepath)[0]
-                with open(decompressedPath, 'wb') as f:
-                    f.write(file_content)
-                debug("Decompressed to %s." % decompressedPath)
-                os.remove(localfilepath)
-                localfilepath = decompressedPath
-                print('\n')
+        localFinalFilepath = DecompressFile(localFinalFilepath)
 
     return DownloadSuccess
+
+
+def DecompressFile(filepath):
+    # GUNZIP FILE - decompress;
+    if filepath.endswith(".gz"):
+        with gzip.open(filepath, 'rb') as gf:
+            file_content = gf.read()
+            decompressedPath = os.path.splitext(filepath)[0]
+            with open(decompressedPath, 'wb') as f:
+                f.write(file_content)
+            debug("Decompressed to %s." % decompressedPath)
+            os.remove(filepath)
+            filepath = decompressedPath
+            print('\n')
+
+    return filepath
 
 
 def strainToDatabase(species):
@@ -441,7 +454,7 @@ def Execute(options):
             # Try to download a genome that has a matching annotation;
             print("Annotation not found.")
             dataTypes.append(
-                DownloadQuery(AssemblyIDs,
+                DownloadQuery([AssemblyIDs[0]],
                               AnnotationDirectory,
                               ["_genomic.gbff"])
             )
