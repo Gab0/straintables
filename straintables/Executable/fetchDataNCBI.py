@@ -360,10 +360,15 @@ def parse_arguments():
                       dest="annotationStrain",
                       default="")
 
-    parser.add_option("--maxgenomecount",
+    parser.add_option("--nbgenomes",
                       dest="genomeSearchMaxResults",
                       type=int,
                       default=20)
+
+    parser.add_option("--nbannotations",
+                      dest="annotationSearchMaxResults",
+                      type=int,
+                      default=1)
 
     parser.add_option("--rename",
                       dest="OnlyRename",
@@ -374,6 +379,7 @@ def parse_arguments():
                       help="Directory to where genome and annotation " +
                       "folders should go",
                       default=".")
+
     options, args = parser.parse_args()
 
     return options
@@ -454,7 +460,7 @@ def Execute(options):
             # Try to download a genome that has a matching annotation;
             print("Annotation not found.")
             dataTypes.append(
-                DownloadQuery([AssemblyIDs[0]],
+                DownloadQuery([AssemblyIDs[:options.annotationSearchMaxResults]],
                               AnnotationDirectory,
                               ["_genomic.gbff"])
             )
