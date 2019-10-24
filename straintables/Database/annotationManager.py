@@ -41,15 +41,38 @@ def loadFeatures(annotationFilePath):
     return outputFeatures
 
 
-"""
+def filterScaffoldsByIdentifier(annotationScaffolds, identifier):
+    wantedIdentifiers = [
+        identifier,
+        "chromosome_%s" % identifier
+    ]
 
-This returns the most suitable annotation file from the annotations folder,
-as a list of scaffolds.
+    # -- pick only those that contain the identifier
+    allIdentifiers = []
+    wantedScaffolds = []
+    for Scaffold in annotationScaffolds:
+        Qualifiers = Scaffold.features[0].qualifiers
+        if 'chromosome' in Qualifiers.keys():
+            ChromosomeName = Qualifiers['chromosome'][0]
+            allIdentifiers.append(ChromosomeName)
+            for wantedIdentifier in wantedIdentifiers:
+                #print(identifier)
+                #print(ChromosomeName)
+                if wantedIdentifier.lower() == ChromosomeName.lower():
+                    wantedScaffolds.append(Scaffold)
 
-"""
+    return wantedScaffolds
 
 
-def loadAnnotation(annotationFolder, identifier=None, Verbose=False):
+def loadAnnotation(annotationFolder, identifier=None, Verbose=True):
+
+    """
+
+    Returns the most suitable annotation file from the annotations folder,
+    as a list of scaffolds.
+
+    """
+
     annotationFiles = os.listdir(annotationFolder)
     annotationFiles = sorted([File
                               for File in annotationFiles
@@ -58,70 +81,55 @@ def loadAnnotation(annotationFolder, identifier=None, Verbose=False):
         os.path.join(annotationFolder, annotationFile)
         for annotationFile in annotationFiles
     ]
+
     if not annotationFiles:
         print("Annotation file not found! Check your annotation folder.")
         exit(1)
 
-    def sortScaffolds(scaffold):
+    def sortScaffold(scaffold):
         genes = loadGenesFromScaffoldAnnotation(scaffold)
         return len(genes)
 
-    def sortAnnotations(annotation):
+    def scoreAnnotation(annotation):
         genes = loadGenesFromScaffoldAnnotation(annotation[0])
         return len(genes)
 
-    annotationContents = []
+    best_score = 0
+    chosen = (None, None)
     for annotationFilePath in annotationFilePaths:
         annotationScaffolds = list(SeqIO.parse(annotationFilePath, "genbank"))
 
-        #print(identifier)
-
         if identifier:
-            wantedIdentifiers = [
-                identifier,
-                "chromosome_%s" % identifier
-            ]
+            annotationScaffolds =\
+                filterScaffoldsByIdentifier(
+                    annotationScaffolds,
+                    identifier
+                )
 
-            # -- pick only those that contain the identifier
-            allIdentifiers = []
-            wantedScaffolds = []
-            for Scaffold in annotationScaffolds:
-                Qualifiers = Scaffold.features[0].qualifiers
-                if 'chromosome' in Qualifiers.keys():
-                    ChromosomeName = Qualifiers['chromosome'][0]
-                    allIdentifiers.append(ChromosomeName)
-                    for wantedIdentifier in wantedIdentifiers:
-                        #print(identifier)
-                        #print(ChromosomeName)
-                        if wantedIdentifier.lower() == ChromosomeName.lower():
-                            wantedScaffolds.append(Scaffold)
+        if annotationScaffolds:
+            annotationScaffolds = sorted(
+                annotationScaffolds,
+                key=sortScaffold,
+                reverse=True
+            )
 
-            annotationScaffolds = wantedScaffolds
-
-        if not annotationScaffolds:
-            continue
-
-        annotationScaffolds = sorted(
-            annotationScaffolds,
-            key=sortScaffolds,
-            reverse=True
-        )
-
-        annotationContents.append(annotationScaffolds)
+            score = scoreAnnotation(annotationScaffolds)
+            if score > best_score:
+                chosen = (annotationFilePath, annotationScaffolds)
+                best_score = score
+                if Verbose:
+                    print(annotationFilePath)
+                    print(score)
 
     if Verbose:
         print("\n====")
         for aS in annotationScaffolds:
             print(len(aS.features))
 
-    annotationSet = zip(annotationFilePaths, annotationContents)
-    annotationContents = sorted(annotationSet,
-                                key=lambda x: sortAnnotations(x[1]),
-                                reverse=True
-    )
-    chosenAnnotation = annotationContents[0]
+    if chosen is (None, None):
+        print("Warning: No suitable annotation file found.")
 
-    return chosenAnnotation
+    return chosen
 
 
 
