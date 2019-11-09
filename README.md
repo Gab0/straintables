@@ -45,7 +45,7 @@ After getting the loci sequence from all the genomes, the visualization of the d
 1. The multifasta file containing sequence for one loci among all genomes is passed through ClustalW2
 2. The the SNPs are detected and scored.
 3. One Dissimilarity Matrix is created, showing which genome groups have similar locus.
-4. Dissimilarity Matrixes can be viewed individually as `.pdf` files, `.npy` python files, or grouped at the visualization tool `stview`.
+4. Dissimilarity Matrices can be viewed individually as `.pdf` files, `.npy` python files, or grouped at the visualization tool `stview`.
 
 #### 2b) MeshClust Clustering
 
@@ -59,9 +59,9 @@ Afther the pipeline executes the docking and evaluation scripts, the user can ex
 
 ![](https://raw.githubusercontent.com/Gab0/straintables/master/walkChr.jpg?raw=true)
 
-More statistical analysis on the Dissimilarity Matrixes are carried, mostly using python's `skbio` module. The interpretation of analysis is under construction.
+More statistical analysis on the Dissimilarity Matrices are carried, mostly using python's `skbio` module. The interpretation of analysis is under construction.
 
-By looking at a pair of D. Matrixes at a time, both corresponding to locus that are neighbors, the user may have an insight on data of the studied organism, like the recombination frequency.
+By looking at a pair of D. Matrices at a time, both corresponding to locus that are neighbors, the user may have an insight on data of the studied organism, like the recombination frequency.
 
 # Setup
 
@@ -93,6 +93,7 @@ This has never been tested on windows, but should work. The python modules `nump
 which should installed before `straintables` can raise errors on installation, and the error message should give directions to where the problem is, and they occour mostly due to missing system packages which are required by the mentioned modules.
 For linux users, please check the file `Dockerfile` on this repo to see which linux packages are required for this to run, under the `apk add` command... package names might vary between distros.
 
+Warning: `stview` seems to segfault when using `matplotlib>=3.1.0`! So, please use `matplotlib==3.0` only.
 
 ## Required Software
 
@@ -194,7 +195,7 @@ Then, execute:
 $stpline -p Primers/chr_X.csv
 ```
 
-* Then view similarity matrixes and phylogenetic trees on `pdf` files at `Alignments/chr_X` folder.
+* Then view similarity matrices and phylogenetic trees on `pdf` files at `Alignments/chr_X` folder.
 
 
 #### Example 3: Custom Loci Selection, Custom Primer Search
@@ -242,14 +243,14 @@ stprotein [--help] (under development & undocumented)
 
 Some python scripts on the main module are not called within linkagePipeline.sh. They are optional analysis tools and should be launched by the user.
 
-1. `stview` The basic one. This will build a slide presentation of plots, each plot showing a pair of similarity matrixes.
+1. `stview` The basic one. This will build a slide presentation of plots, each plot showing a pair of similarity matrices.
 The matrix show will start with the first locus against the second locus chosen, in the order of the Primer file, along with some extra information. Then, the second locus will be compared to the third and so it goes on.
 
 ## Matrix from Fast Sequence
 
 Alternatively, you can use `straintables` as you would use [MatGAT](https://bmcbioinformatics.biomedcentral.com/articles/10.1186/1471-2105-4-29), where you just
 have a few multifasta file with many compatible short sequences, one file per region, and just
-want to see dissimilarity matrixes for them. The entire workflow is described below:
+want to see dissimilarity matrices for them. The entire workflow is described below:
 
 ```
 $stfromfasta -d DIRECTORY_WITH_FASTA_FILES
