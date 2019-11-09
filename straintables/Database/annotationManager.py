@@ -56,15 +56,13 @@ def filterScaffoldsByIdentifier(annotationScaffolds, identifier):
             ChromosomeName = Qualifiers['chromosome'][0]
             allIdentifiers.append(ChromosomeName)
             for wantedIdentifier in wantedIdentifiers:
-                #print(identifier)
-                #print(ChromosomeName)
                 if wantedIdentifier.lower() == ChromosomeName.lower():
                     wantedScaffolds.append(Scaffold)
 
     return wantedScaffolds
 
 
-def loadAnnotation(annotationFolder, identifier=None, Verbose=True):
+def loadAnnotation(annotationFolder, identifier=None, Verbose=False):
 
     """
 
@@ -130,10 +128,3 @@ def loadAnnotation(annotationFolder, identifier=None, Verbose=True):
         print("Warning: No suitable annotation file found.")
 
     return chosen
-
-
-
-
-
-
-
