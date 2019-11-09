@@ -12,7 +12,6 @@ def fetchStrainName(genomeDescriptor, organismName=None, Verbose=False):
 
         return sum([w.isupper() + w.isdigit() for w in word]) / len(word)
 
-
     # RENAMING CRITERIA 1:
     def renamingCriteria1():
         words = genomeDescriptor.replace(",", "")
@@ -28,7 +27,9 @@ def fetchStrainName(genomeDescriptor, organismName=None, Verbose=False):
     ]
 
     # unsafe;
-    genomeDescriptor = genomeDescriptor.replace("isolate ", "")
+    RemovedWords = ["isolate", "DNA"]
+    for RemovedWord in RemovedWords:
+        genomeDescriptor = genomeDescriptor.replace(RemovedWord, "")
 
     for renamingCriteria in allCriteria:
         strainName = renamingCriteria()
