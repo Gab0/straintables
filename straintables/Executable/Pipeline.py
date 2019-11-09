@@ -22,6 +22,20 @@ from straintables.Executable import primerFinder, detectMutations,\
 
 from straintables.Database import directoryManager
 
+Description = """
+
+Main straintables pipeline.
+Will initialize an analysis directory based on the provided genomes,
+annotation and wanted regions."
+If primers were not declared at the wanted regions file,
+it will try to create primers based on the region sequence,
+by using the region boundaries defined at the annotation file.
+
+The resulting directory can be inspected manually
+or used to build dissimilarity matrices through the command 'stview'.
+
+"""
+
 
 class Options():
     def __init__(self, options):
@@ -93,7 +107,7 @@ def matrix_analysis(WorkingDirectory):
 
 
 def parse_arguments():
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(description=Description)
 
     parser.add_argument("--noamplicon", dest="DoAmplicon",
                         action="store_false", default=True)
@@ -108,9 +122,8 @@ def parse_arguments():
                         default=straintables.Definitions.ClustalCommand)
 
     parser = primerFinder.parse_arguments(parser)
-    options = parser.parse_args()
 
-    return options
+    return parser.parse_args()
 
 
 def TestMeshclust():
