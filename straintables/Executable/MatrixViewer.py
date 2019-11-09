@@ -10,7 +10,6 @@ from argparse import ArgumentParser
 import matplotlib.pyplot as plt
 import threading
 
-
 from straintables import Viewer, OutputFile, alignmentData, Definitions
 from straintables.Viewer import mapBar
 
@@ -23,6 +22,13 @@ import time
 import gi
 gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk, GdkPixbuf
+
+Description = """
+straintables' visualization tool.
+This will read an output directory from the pipeline and build
+navigable dissimilarity matrices for matched regions.
+
+"""
 
 
 class locusNamesSelectionMenu(Gtk.Grid):
@@ -154,6 +160,7 @@ class MatrixViewer():
         # Initialize image;
         self.navigate(0)
         self.Window.show_all()
+
         # LAUNCH
         Gtk.main()
 
@@ -252,6 +259,7 @@ class MatrixViewer():
         self.FigureBox = Gtk.VBox()
         self.FigureBox.pack_start(self.locusMap,
                                   expand=False, fill=False, padding=0)
+
         self.FigureBox.pack_start(self.figurecanvas,
                                   expand=True, fill=True, padding=0)
 
@@ -304,7 +312,7 @@ class MatrixViewer():
                             expand=False, fill=False, padding=3)
 
         panelBox.pack_start(self.toolbar,
-                            expand=False, fill=False, padding=0)
+                          expand=False, fill=False, padding=0)
 
         panelBox.pack_start(self.btn_toggleColor,
                             expand=False, fill=False, padding=0)
@@ -709,7 +717,8 @@ def Execute(options):
 
 
 def parse_arguments():
-    parser = ArgumentParser()
+
+    parser = ArgumentParser(description=Description)
 
     parser.add_argument('inputDir',
                         type=str,
