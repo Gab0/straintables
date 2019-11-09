@@ -9,7 +9,8 @@ from straintables.Database.StrainNames import fetchStrainName
 
 """
 
-This finds a feature compatible to the query gene name, in a chromosome feature table.
+This finds a feature compatible to the query gene name,
+in a chromosome feature table.
 
 returns: (Name of chromosome, position of sequence inside chromosome)
 """
@@ -39,7 +40,9 @@ class BruteForcePrimerSearcher():
         matchingGenomeFilePath = None
         annotationStrain = fetchStrainName(AnnotationDescriptor)
 
-        print("\nSearching a genome that matches the annotation... (strain: %s)" % annotationStrain)
+        print("\nSearching a genome that matches the annotation..."
+              "(strain: %s)" % annotationStrain)
+
         if Verbose:
             print(AnnotationDescriptor)
 
