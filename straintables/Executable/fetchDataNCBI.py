@@ -26,6 +26,18 @@ import socket
 # is this legal in the terms of the LAW?
 Entrez.email = 'researcher_%i@one-time-use.cn' % random.randrange(0, 1000)
 
+Description = """
+
+straintables' genome and annotation download utility.
+Will download genomes and annotations for selected organism
+directly from NCBI's FTP servers,
+placing them in the correct directories.
+
+It is recommended to select a suitable annotation,
+which is defined by the '--strain' argument.
+
+"""
+
 
 class FTPConnection():
     def __init__(self, ftpServerAddress):
@@ -460,9 +472,11 @@ def Execute(options):
             # Try to download a genome that has a matching annotation;
             print("Annotation not found.")
             dataTypes.append(
-                DownloadQuery([AssemblyIDs[:options.annotationSearchMaxResults]],
-                              AnnotationDirectory,
-                              ["_genomic.gbff"])
+                DownloadQuery(
+                    [AssemblyIDs[:options.annotationSearchMaxResults]],
+                    AnnotationDirectory,
+                    ["_genomic.gbff"]
+                )
             )
 
         AnnotationDownloadSuccess = [query.execute() for query in dataTypes]
@@ -482,7 +496,7 @@ def Execute(options):
 
 
 def main():
-    options = parse_arguments()
+    options = parse_arguments(description=Description)
 
     while True:
         if Execute(options):
