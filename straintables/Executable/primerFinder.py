@@ -41,7 +41,9 @@ def Execute(options):
     print("\t (allowed options: CDS, gene, mRNA)")
 
     # -- CHECK ANNOTATED FEATURES; -- useles step maybe
-    featureFolderPath = os.path.join(options.SourceDataDirectory, "annotations")
+    featureFolderPath =\
+        os.path.join(options.SourceDataDirectory, "annotations")
+
     if os.path.isdir(featureFolderPath):
         genomeFeatureFiles = [
             os.path.join(featureFolderPath, File)
@@ -61,7 +63,9 @@ def Execute(options):
     lociPrimerList = InputFile.loadPrimerList(options.PrimerFile)
 
     # LOAD GENOMES;
-    genomeFilePaths = genomeManager.readGenomeFolder(os.path.join(options.SourceDataDirectory, "genomes"))
+    genomeFilePaths = genomeManager.readGenomeFolder(
+        os.path.join(options.SourceDataDirectory, "genomes")
+    )
     genomes = [PrimerEngine.GeneticEntities.Genome(genomeFilePath)
                for genomeFilePath in genomeFilePaths]
 
@@ -104,7 +108,8 @@ def Execute(options):
 
     print("\n")
 
-    GenomeFailureReport = OutputFile.DockFailureReport(options.WorkingDirectory)
+    GenomeFailureReport =\
+        OutputFile.DockFailureReport(options.WorkingDirectory)
 
     # ITERATE LOCI: Main Loop;
     for i in range(lociPrimerList.shape[0]):
@@ -143,8 +148,10 @@ def Execute(options):
                 bruteForceSearcher=bruteForceSearcher
             )
 
-        if type(RegionMatchResult) == PrimerEngine.PrimerDock.RegionMatchFailure:
-            GenomeFailureReport.content[locus_name] = RegionMatchResult.FailedGenomes
+        FailureType = PrimerEngine.PrimerDock.RegionMatchFailure
+        if type(RegionMatchResult) == FailureType:
+            GenomeFailureReport.content[locus_name] =\
+                RegionMatchResult.FailedGenomes
             continue
 
         # -- Additional region statistics;
@@ -159,7 +166,11 @@ def Execute(options):
             writeFastaFile(outputFastaPath, locus_name,
                            RegionMatchResult.LocusAmpliconSet)
 
-            primerPair = {P.label: P.sequence for P in RegionMatchResult.MatchedPrimers}
+            primerPair = {
+                P.label: P.sequence
+                for P in RegionMatchResult.MatchedPrimers
+            }
+
             primerPair["LocusName"] = locus_name
 
             primerPair["AlignmentHealth"] = score
@@ -172,7 +183,8 @@ def Execute(options):
             primerPair["MeanLength"] = np.mean(RegionLengths)
             primerPair["StdLength"] = np.std(RegionLengths)
             primerPair["Chromosome"] = RegionMatchResult.chr_identifier
-            primerPair["StartPosition"] = RegionMatchResult.MatchedPrimers[0].position.start()
+            primerPair["StartPosition"] =\
+                RegionMatchResult.MatchedPrimers[0].position.start()
 
             # Append region data;
             matchedPrimerSequences.append(primerPair)
