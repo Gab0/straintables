@@ -7,6 +7,18 @@ from straintables.Executable import Pipeline
 
 from Bio import SeqIO
 
+Description = """
+
+Secondary straintables' pipeline.
+Will initialize an output directory based on
+a multifasta sequence file per wanted region.
+
+The resulting files can be inspected manually
+or used to build dissimilarity matrices through
+the 'stview' command.
+
+"""
+
 
 def Execute(options):
     allFiles = os.listdir(options.WorkingDirectory)
@@ -64,7 +76,7 @@ def Execute(options):
 
 
 def main():
-    parser = ArgumentParser()
+    parser = ArgumentParser(description=Description)
     parser.add_argument("-d", dest="WorkingDirectory")
 
     parser.add_argument("--clustalpath", dest="ClustalPath",
