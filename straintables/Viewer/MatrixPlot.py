@@ -72,7 +72,7 @@ def heatmapToAxis(MATRIX, ax, xlabels=None,
         valueFontProperties = fontProperties
 
         valueFontProperties['fontsize'] = d * 430
-        #2 * np.sqrt(fontProperties['fontsize'])
+        # 2 * np.sqrt(fontProperties['fontsize'])
         Mean = np.mean(MATRIX)
         for i in range(MATRIX.shape[0]):
             for j in range(MATRIX.shape[1]):
