@@ -8,6 +8,17 @@ from optparse import OptionParser
 from straintables.Database import annotationManager, directoryManager
 
 
+Description = """
+
+straintables' region and primer file creator utility script.
+Used to create a primer file with a number of random regions from
+specified chromosomes.
+
+This is an alternative to writing your own primer file by hand.
+
+"""
+
+
 def Execute(options):
     print("\nSelecting annotation scaffold...\n")
 
@@ -15,7 +26,7 @@ def Execute(options):
         annotationManager.loadAnnotation(
             options.inputAnnotationFolder,
             identifier=options.inputAnnotationName
-    )
+        )
 
     selectedScaffold = selectedAnnotationContents[0]
 
@@ -24,14 +35,18 @@ def Execute(options):
         print(selectedScaffold)
         return
 
-    print("Found feature source scaffold, please review: \n\n%s" % selectedScaffold)
-    chosenFeatures = []
+    print("Found feature source scaffold, "
+          "please review: \n\n%s" % selectedScaffold)
+
     nbFeatures = len(selectedScaffold.features)
     print("Scaffold of length %i. " % nbFeatures)
 
-    # IT REPEATS A LOT OF LOCI, BECAUSE THE ANNOTATION HAS MANY ENTRIES WITH SAME NAME.
-    # MAYBE MAKING A SET IS SUFFICIENT?
-    scaffoldGenes = list(set(annotationManager.loadGenesFromScaffoldAnnotation(selectedScaffold)))
+    # IT REPEATS A LOT OF REGIONS,
+    # BECAUSE THE ANNOTATION HAS MANY ENTRIES WITH SAME NAME.
+    # MAKING A SET SEEMS SUFFICIENT.
+    scaffoldGenes = list(set(
+        annotationManager.loadGenesFromScaffoldAnnotation(selectedScaffold)
+    ))
 
     data = []
     for gene in scaffoldGenes:
@@ -51,11 +66,12 @@ def Execute(options):
 
     data.to_csv(options.outputFile, index=False)
 
-    print("\n%s written with %i primers." % (options.outputFile, data.shape[0]))
+    print("\n%s written with %i primers." %
+          (options.outputFile, data.shape[0]))
 
 
 def parse_args():
-    parser = OptionParser()
+    parser = OptionParser(description=Description)
 
     parser.add_option("-d",
                       dest="inputAnnotationFolder",
