@@ -308,9 +308,9 @@ def plotRegionBatch(fig, alnData, regionIndexes,
                            aln_len=alignmentData[m]["AlignmentLength"],
                            fontsize=fontsize * 1.5)
 
-    fig.tight_layout()
-    fig.tight_layout()
-    fig.tight_layout()
+    for i in range(3):
+        fig.tight_layout()
+
     return fig
 
 
