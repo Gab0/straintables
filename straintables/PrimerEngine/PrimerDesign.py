@@ -63,7 +63,8 @@ class BruteForcePrimerSearcher():
             print("No genome matching annotation!")
             return None
         else:
-            print("Found matching genome to annotation, for automatic primer search: %s" % matchingGenomeFilePath)
+            print("Found matching genome to annotation, "
+                  "for automatic primer search: %s" % matchingGenomeFilePath)
             print("Matching genome descriptor: %s" % matchingGenomeDescriptor)
             print("Detected genome strain: %s" % matchingStrain)
 
@@ -86,7 +87,6 @@ class BruteForcePrimerSearcher():
                         return FeatureGroup.description, feature.location
 
         print("Warning: Gene %s not found." % geneName)
-        #exit(1)
 
     def locateAndFetchSequence(self, location, chr_descriptor):
         wantedDescriptors = [chr_descriptor, "complete genome"]
@@ -97,7 +97,10 @@ class BruteForcePrimerSearcher():
             for Descriptor in wantedDescriptors:
                 print("Fetching primers from %s..." % Descriptor)
                 if Descriptor in Chromosome.description:
-                    Sequence = Chromosome.seq[location.start.position:location.end.position]
+                    Sequence = Chromosome.seq[
+                        location.start.position:location.end.position
+                    ]
+
                     if location.strand == -1:
                         Sequence = Sequence.reverse_complement()
                     return Sequence
@@ -105,7 +108,8 @@ class BruteForcePrimerSearcher():
     def fetchGeneSequence(self, geneName):
 
         # FETCH PRIMER METHODS. TO BE INTEGRATED;
-        geneLocation = self.retrieveGeneLocation(geneName, self.wantedFeatureType)
+        geneLocation =\
+            self.retrieveGeneLocation(geneName, self.wantedFeatureType)
 
         if geneLocation is None:
             print("Aborting brute force primer search: Gene name not found.")
@@ -113,12 +117,8 @@ class BruteForcePrimerSearcher():
 
         chr_descriptor, location = geneLocation
 
-
-        # print(AnnotationDescription)
-
-        regionSequence = self.locateAndFetchSequence(location,
-                                                     chr_descriptor
-        )
+        regionSequence =\
+            self.locateAndFetchSequence(location, chr_descriptor)
 
         if not regionSequence:
             print("\n")
@@ -139,7 +139,8 @@ class BruteForcePrimerSearcher():
         if not os.path.isdir(PrimerSourcesDirectory):
             os.mkdir(PrimerSourcesDirectory)
 
-        geneSequenceFilePath = os.path.join(PrimerSourcesDirectory, geneSequenceFile)
+        geneSequenceFilePath =\
+            os.path.join(PrimerSourcesDirectory, geneSequenceFile)
 
         if not os.path.isfile(geneSequenceFilePath):
             # Fetch gene sequence;
@@ -165,15 +166,17 @@ class BruteForcePrimerSearcher():
         geneSequence = "".join(geneSequence).lower()
 
         foundPrimers, chr_identifier =\
-            self.findPrimerBruteForce(chromosomes,
-                                      geneSequence,
-                                      Reverse=Reverse
+            self.findPrimerBruteForce(
+                chromosomes,
+                geneSequence,
+                Reverse=Reverse
             )
 
         if foundPrimers:
-            print("Brute force forward primer search returns %i primers." % len(foundPrimers))
+            print("Brute force forward primer search returns "
+                  "%i primers." % len(foundPrimers))
 
-        resultingPrimers = [p[0].upper() for p in foundPrimers] 
+        resultingPrimers = [p[0].upper() for p in foundPrimers]
 
         return resultingPrimers, chr_identifier
 
@@ -199,7 +202,8 @@ class BruteForcePrimerSearcher():
                 sequenceLengthBounds[0]:sequenceLengthBounds[1]]
 
         if Reverse:
-            Indexes = range(len(gene_sequence) - PRIMER_LENGTH, 0, -SEARCH_STEP)
+            Indexes =\
+                range(len(gene_sequence) - PRIMER_LENGTH, 0, -SEARCH_STEP)
         else:
             Indexes = range(0, len(gene_sequence), SEARCH_STEP)
 
@@ -208,11 +212,14 @@ class BruteForcePrimerSearcher():
         for s in Indexes:
             primer_sequence = gene_sequence[s:s + PRIMER_LENGTH]
             for c, _chr in enumerate(genome):
-                matches, sequenceVariationName = PrimerDock.findPrimer(_chr, primer_sequence)
+                matches, sequenceVariationName =\
+                    PrimerDock.findPrimer(_chr, primer_sequence)
+
                 if len(matches) > 1:
                     if Verbose:
                         print("Leak.")
                     continue
+
                 if matches:
                     if chr_identifier is None:
                         chr_identifier = _chr.name
@@ -226,5 +233,3 @@ class BruteForcePrimerSearcher():
                 break
 
         return foundPrimers, chr_identifier
-
-
