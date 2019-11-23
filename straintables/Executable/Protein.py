@@ -1,10 +1,8 @@
 #!/bin/python
 
-from Bio import SeqIO
+from Bio import Seq, SeqIO, SeqRecord
 from Bio import Data
 from Bio.Align.Applications import ClustalOmegaCommandline
-
-from Bio import Align
 
 import straintables.PrimerEngine.PrimerDesign as bfps
 from straintables import OutputFile, Definitions
@@ -16,18 +14,23 @@ import os
 import subprocess
 import re
 import types
+import importlib
+import random
+
+Description = """
+
+This command will translate multifasta sequences
+inside a straintables' WorkingDirectory.
+
+It will search thru the six translation windows to find the optimal.
+
+"""
+
+StandardAlignerParameters = {}
 
 
-def parseDndFile(filepath, region_name):
-    content = open(filepath).read()
-    qr = "%s:([\d\.]+)\);" % region_name
-    d = re.findall(qr, content)[0]
-    return float(d)
-
-
-def buildOutputName(GenomeName, RegionName, is_reverse, window):
-    rev = "reverse_" if is_reverse else ""
-    return "%s_%s_%s%i" % (GenomeName, RegionName, rev, window)
+def buildOutputName(GenomeName, RegionName, RFC):
+    return "%s_%s_%s" % (GenomeName, RegionName, RFC.FNSTR())
 
 
 class ReadFrameController():
@@ -49,21 +52,43 @@ class ReadFrameController():
         assert(not len(seq) % 3)
         return seq
 
+    def __str__(self):
+        Orientation = ["5'", "3'"]
+        if self.ReverseComplement:
+            Orientation = reversed(Orientation)
+        return "%s: +%i" % ("".join(Orientation), self.Window)
 
-def runForWindow(options, protein, sequence, Window, Reverse):
-    region_name = protein.id
+    def FNSTR(self):
+        return str(self).replace(" ", "_").replace("'", "l")
 
-    RFC = ReadFrameController(Window, Reverse)
-    DNA = RFC.apply(sequence)
+
+def FindORF(sequence):
+    return re.findall("M\w+\*", sequence)
+
+
+def evaluateTranslationWindow(options,
+                              TemplateProtein,
+                              QuerySequence,
+                              RFC,
+                              Verbose,
+                              AlignerParameters):
+
+    region_name = TemplateProtein.id
+
+    if Verbose:
+        print("Evaluating window %s" % RFC)
+
+    DNA = RFC.apply(QuerySequence)
 
     try:
-        PROT = DNA.translate()
+        PROT = DNA.translate(table=1)
     except Data.CodonTable.TranslationError:
         print("TRANSLATION ERROR.")
         exit(1)
 
-    StrainName = sequence.id
-    ID = buildOutputName(StrainName, region_name, Reverse, Window)
+    StrainName = QuerySequence.id
+    ID = buildOutputName(StrainName, region_name, RFC)
+
     DNA.id = ID
     DNA.description = ""
 
@@ -77,27 +102,69 @@ def runForWindow(options, protein, sequence, Window, Reverse):
 
     OutDirectory = os.path.join(
         options.WorkingDirectory, "out_%s" % region_name)
-    if not os.path.isdir(OutDirectory):
-        os.mkdir(OutDirectory)
 
-    Sequences = [PROT, protein]
+    if options.WriteFiles:
+        if not os.path.isdir(OutDirectory):
+            os.mkdir(OutDirectory)
 
-    alignscore = MakeTestAlignment(Sequences).score
-    dndscore = MakeTestClustalAlignment(Sequences,
-                                        TestFilePrefix,
-                                        region_name,
-                                        OutDirectory)
+    # SequencesAsStrings = [str(s.seq) for s in [PROT, TemplateProtein]]
 
-    if region_name == sequence.id:
-        print("check %s" % sequence.id)
+    # alignscore = MakeTestAlignment(SequencesAsStrings, AlignerParameters)
+    alignscore = 0
+
+    if options.OnlyOpenReadingFrame:
+        AllORFs = FindORF(str(PROT.seq))
+
+        ORFScores = []
+        if TemplateProtein is not None:
+            for ORF in AllORFs:
+                if Verbose:
+                    print("Searching ORF> %s" % ORF)
+                AlignedSequences = ([str(TemplateProtein.seq), ORF])
+                if False:
+                    Alignment = MakeTestAlignment(AlignedSequences,
+                                                  AlignerParameters)
+
+                    if Verbose:
+                        print()
+                        print(Alignment[0])
+                        print()
+
+                    orf_alignscore = Alignment.score
+                else:
+                    orf_alignscore = MakeAlignment(AlignedSequences)
+                if Verbose:
+                    print("ORF Score = %.2f" % orf_alignscore)
+                ORFScores.append(orf_alignscore)
+
+            # -- SELECT THE BEST SCORING ORF FOR CURRENT WINDOW;
+            ORF_SCORES = zip(AllORFs, ORFScores)
+            BestORF, BestORFScore = sorted(
+                ORF_SCORES,
+                key=lambda os: os[1],
+                reverse=True)[0]
+
+            Result = SeqRecord.SeqRecord(Seq.Seq(BestORF), id=ID)
+        else:
+            raise(NotImplemented)
+
+    else:
+        raise(NotImplemented)
+
+    if region_name == QuerySequence.id:
+        print("check %s" % QuerySequence.id)
         exit()
 
-    if len(PROT.seq) > len(protein.seq):
-        print("WARNING: protein fragment length > reference protein length!")
+    if Verbose:
+        if len(PROT.seq) > len(TemplateProtein.seq):
+            print("WARNING: protein fragment length > " +
+                  "reference protein length!")
 
-    print("%s: %s / %s" % (TestFilePrefix, dndscore, alignscore))
+        print("%s:\n  aln: %s\norfaln: %s" %
+              (TestFilePrefix, alignscore, orf_alignscore))
+        print("\n\n")
 
-    return PROT, dndscore, alignscore
+    return Result, alignscore, BestORFScore
 
 
 # NOT USED;
@@ -111,86 +178,149 @@ def ShowAlignment(TestFile):
     print(res[0])
 
 
-def processAllTranslationWindows(options, protein, sequence):
+def SortAlignment(ScoreData):
+    WD, WS, align_score = ScoreData
+    # EOT = len([x for x in WS if x == "*"])
+
+    return align_score
+
+
+def processAllTranslationWindows(options,
+                                 TemplateProtein,
+                                 QueryProtein,
+                                 Verbose=0,
+                                 AlignerParameters=StandardAlignerParameters):
     AlignmentScores = []
     for Reverse in range(2):
         for Window in range(3):
             WindowDescriptor = (Window, Reverse)
-            (WindowSequence, dndscore, alignscore) = runForWindow(options,
-                                                                  protein,
-                                                                  sequence,
-                                                                  Window,
-                                                                  Reverse)
+
+            RFC = ReadFrameController(Window, Reverse)
+            (WindowSequence, dndscore, alignscore) = evaluateTranslationWindow(
+                options,
+                TemplateProtein,
+                QueryProtein,
+                RFC,
+                Verbose=Verbose,
+                AlignerParameters=AlignerParameters
+            )
+
+            if Verbose:
+                print()
+                print(WindowSequence.seq)
+                print()
+
             AlignmentScores.append(
                 (WindowDescriptor, WindowSequence, alignscore)
             )
 
-    BestAlignment = sorted(AlignmentScores, key=lambda v: v[2])[0]
+    BestAlignment = sorted(AlignmentScores, key=SortAlignment, reverse=True)[0]
     return BestAlignment
 
 
-def MakeTestAlignment(Sequences):
+def EvaluateSequenceByUnknownBase(options, sequence):
+    UnknownBaseCount = len([base for base in sequence if base == "N"])
+    if UnknownBaseCount >= options.DiscardImperfectSequenceThreshold:
+        pass
+    LongestUnknownBaseCluster = 0
+    UKBC = 0
+    for base in sequence:
+        if base == "N":
+            UKBC += 1
+        else:
+            LongestUnknownBaseCluster = max(UKBC,
+                                            LongestUnknownBaseCluster)
+            UKBC = 0
 
-    SequencesAsStrings = [str(Sequence.seq) for Sequence in Sequences]
+    if LongestUnknownBaseCluster >= options.DiscardImperfectSequenceThreshold:
+        return False
+
+    return True
+
+
+def MakeAlignment(SequenceAsStrings: str):
+    """
+
+    This is used to find out which translation window sequence is most similar
+    to a reference protein sequence.
+    Bio.Align.PairwiseAligner somehow failed to achieve this.
+
+    """
+    MainSequence, QuerySequence = sorted(SequenceAsStrings,
+                                         key=lambda s: -len(s))
+
+    FragmentSize = 3
+    FragmentCount = 50
+    MatchedFragments = 0
+
+    if len(QuerySequence) < FragmentSize:
+        return 0
+
+    for w in range(FragmentCount):
+        PossibleIndexes = range(max(len(QuerySequence) - FragmentSize, 3))
+        F = random.choice(PossibleIndexes)
+        J = F + FragmentSize
+        MatchedFragments += QuerySequence[F:J] in MainSequence
+
+    return MatchedFragments
+
+
+def MakeTestAlignment(SequencesAsStrings: str, AlignerParameters: dict):
+
     # -- SETUP ALIGNER AND ITS SCORES;
+    Align = importlib.import_module("Bio.Align")
     Aligner = Align.PairwiseAligner()
 
-    Aligner.mode = "global"
-    Aligner.open_gap_score = -1000
-    Aligner.extend_gap_score = -1
-    Aligner.match_score = 100
-    # Aligner.gap_score = -100
+    Aligner.mode = "local"
+
+    Aligner.__dict__.update(AlignerParameters)
 
     d = Aligner.align(*SequencesAsStrings)
+
     return d
 
 
-def MakeTestClustalAlignment(Sequences,
-                             TestFilePrefix, region_name, OutputDirectory):
+def LoadSequences(options, region_name):
+    # p_name = "%s_prot.fasta" % region_name
+    RegionSequencesFilename = "%s%s.fasta" % (
+        Definitions.FastaRegionPrefix, region_name)
 
-    TestFile = TestFilePrefix + ".fasta"
-    TestFilePath = os.path.join(OutputDirectory, TestFile)
-    SeqIO.write(Sequences, open(TestFilePath, 'w'), format="fasta")
+    RegionSequencesFilepath = os.path.join(options.WorkingDirectory,
+                                           RegionSequencesFilename)
 
-    dndfile = os.path.join(OutputDirectory, TestFilePrefix + ".dnd")
+    if not os.path.isfile(RegionSequencesFilepath):
+        print("Region sequences file not found at %s." %
+              RegionSequencesFilepath)
 
-    Outfile = os.path.join(OutputDirectory, TestFile + ".aln")
-
-    cmd = ClustalOmegaCommandline(Definitions.ClustalCommand,
-                                  infile=TestFilePath,
-                                  outfile=Outfile,
-                                  guidetree_out=dndfile,
-                                  outfmt="clustal",
-                                  force=True)
-
-    # cmd.seqnos = "ON"
-    cmd()
-
-    try:
-        dndscore = parseDndFile(dndfile, region_name)
-        os.remove(dndfile)
-    except FileNotFoundError:
-        dndscore = 0
-
-    if dndscore > 0.3:
-        os.remove(TestFilePath)
-
-    # x = AlignIO.read(Outfile, format='clustal')
-    # print(str(x))
-
-    return dndscore
+    return list(SeqIO.parse(RegionSequencesFilepath, format="fasta"))
 
 
-def CheckClustalAlignment(FilePath):
-    Sequences = SeqIO.parse(FilePath, format="clustal")
-    HasGaps = False
-    for Sequence in Sequences:
-        S = str(Sequence.seq)
-        print(S)
-        if "-" in S:
-            HasGaps = True
+def EvaluateAllSequencesAllTranslationWindows(options,
+                                              TemplateProtein,
+                                              sequences):
+    AllRegionSequences = []
+    AllRecommendedWindows = []
+    TotalSequences = 0
+    for sequence in sorted(sequences, key=lambda s: s.id):
+        if not EvaluateSequenceByUnknownBase(options, sequence):
+            print("Discarding inaccurate sequence.")
+            continue
 
-    return HasGaps
+        TotalSequences += 1
+        (RecommendedWindow, WindowSequence, score) =\
+            processAllTranslationWindows(
+                options,
+                TemplateProtein,
+                sequence,
+                options.Verbose
+            )
+
+        AllRecommendedWindows.append(RecommendedWindow)
+        AllRegionSequences.append(WindowSequence)
+
+        print("Correct Window: %i %i" % RecommendedWindow)
+        print(">%s" % WindowSequence)
+    return AllRecommendedWindows, AllRegionSequences, TotalSequences
 
 
 def AnalyzeRegion(options, RegionSequenceSource):
@@ -201,43 +331,43 @@ def AnalyzeRegion(options, RegionSequenceSource):
         print("Region name undefined.")
         exit(1)
 
-    # p_name = "%s_prot.fasta" % region_name
-    RegionSequencesFilename = "%s%s.fasta" % (
-        Definitions.FastaRegionPrefix, region_name)
-    RegionSequencesFilepath = os.path.join(options.WorkingDirectory,
-                                           RegionSequencesFilename)
-
-    if not os.path.isfile(RegionSequencesFilepath):
-        print("Region sequences file not found at %s." %
-              RegionSequencesFilepath)
-
+    sequences = LoadSequences(options, region_name)
     source_seq = RegionSequenceSource.fetchGeneSequence(region_name)
 
     if source_seq is None:
         return 0, 0
 
-    protein = SeqIO.SeqRecord(source_seq.translate())
-
-    protein.id = region_name
-    protein.description = ""
-
-    sequences = SeqIO.parse(RegionSequencesFilepath, format="fasta")
-    SuccessSequences = 0
-    TotalSequences = 0
+    TemplateProtein = SeqIO.SeqRecord(
+        source_seq.translate(),
+        id=region_name,
+        description=""
+    )
 
     AllRegionSequences = []
+    for i in range(100):
+        AllRecommendedWindows, AllRegionSequences, TotalSequences =\
+            EvaluateAllSequencesAllTranslationWindows(options,
+                                                      TemplateProtein,
+                                                      sequences)
 
-    for sequence in sequences:
-        TotalSequences += 1
-        (RecommendedWindow, WindowSequence, score) =\
-            processAllTranslationWindows(options, protein, sequence)
-        AllRegionSequences.append(WindowSequence)
+        if len(list(set(AllRecommendedWindows))) == 1:
+            print("Found correct window.")
+            break
 
-        print("Correct Window: %i %i" % RecommendedWindow)
-        RecommendedWindow = None
-        if score < 0.15:
-            SuccessSequences += 1
+    if options.WriteFiles:
+        BuildOutputAlignments(
+            options,
+            region_name,
+            AllRegionSequences,
+            TemplateProtein
+        )
 
+    print("Rate for %s: %.2f%%" % (region_name, 0))
+    return 0, 0
+
+
+def BuildOutputAlignments(options, region_name,
+                          AllRegionSequences, TemplateProtein):
     OutputProteinFilePrefix = os.path.join(options.WorkingDirectory,
                                            "Protein_%s" % region_name)
 
@@ -261,19 +391,14 @@ def AnalyzeRegion(options, RegionSequenceSource):
     )
 
     with open(OutputProteinReferenceFilePath, 'w') as f:
-        SeqIO.write(protein, f, format="fasta")
+        SeqIO.write(TemplateProtein, f, format="fasta")
 
     cmd()
-
-    HasGaps = CheckClustalAlignment(OutputAlignmentFilePath)
-
-    successPercentage = SuccessSequences / TotalSequences * 100
-    print("Rate for %s: %.2f%%" % (region_name, successPercentage))
-    return successPercentage, HasGaps
 
 
 def runDirectory(options, RegionSequenceSource):
     WantedFileQuery = "%s([\w\d]+).fasta" % Definitions.FastaRegionPrefix
+
     files = [
         f for f in os.listdir(options.WorkingDirectory)
         if re.findall(WantedFileQuery, f)
@@ -292,9 +417,12 @@ def runDirectory(options, RegionSequenceSource):
         opt.RegionName = region_name
         opt.WorkingDirectory = options.WorkingDirectory
         successPercentage, HasGaps = AnalyzeRegion(opt, RegionSequenceSource)
-        if successPercentage < 100:
-            with open("log", 'a') as f:
-                f.write("%s with %.2f%%\n" % (region_name, successPercentage))
+
+        if options.WriteFiles:
+            if successPercentage < 100:
+                message = "%s with %.2f%%\n" % (region_name, successPercentage)
+                with open("log", 'a') as f:
+                    f.write(message)
 
         if HasGaps:
             AllGapPresence += 1
@@ -306,22 +434,36 @@ def parse_arguments():
     parser = argparse.ArgumentParser()
     parser.add_argument("-r", dest="RegionName")
     parser.add_argument("-d", "--dir", dest="WorkingDirectory", default=".")
+    parser.add_argument("--norf", dest="OnlyOpenReadingFrame",
+                        action="store_false", default=True)
+
+    parser.add_argument("--discardimp",
+                        dest="DiscardImperfectSequenceThreshold",
+                        type=int, default=5)
+    parser.add_argument("--write", dest="WriteFiles", action="store_true")
+    parser.add_argument("-v", "--verbose", dest="Verbose", action="store_true")
+
     options = parser.parse_args()
     return options
 
 
-def Execute(options):
-    InformationFile = OutputFile.AnalysisInformation(options.WorkingDirectory)
+def GetRegionSequenceSource(WorkingDirectory, genomeDirectory="genomes"):
+
+    InformationFile = OutputFile.AnalysisInformation(WorkingDirectory)
     InformationFile.read()
 
     AnnotationPath = InformationFile.content["annotation"]
 
-    GenomeFilePaths = genomeManager.readGenomeFolder()
+    GenomeFilePaths = genomeManager.readGenomeFolder(genomeDirectory)
 
     GenomeFeatures = list(SeqIO.parse(AnnotationPath, format="genbank"))
 
-    RegionSequenceSource = bfps.BruteForcePrimerSearcher(
+    return bfps.BruteForcePrimerSearcher(
         GenomeFeatures, GenomeFilePaths)
+
+
+def Execute(options):
+    RegionSequenceSource = GetRegionSequenceSource(options.WorkingDirectory)
 
     if options.RegionName:
         AnalyzeRegion(options, RegionSequenceSource)
