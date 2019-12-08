@@ -1,6 +1,7 @@
 ![Travis build](https://travis-ci.com/Gab0/straintables.svg?branch=master)
 [![PyPI version](https://badge.fury.io/py/straintables.svg)](https://badge.fury.io/py/straintables)
 [![Language grade: Python](https://img.shields.io/lgtm/grade/python/g/Gab0/straintables.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/Gab0/straintables/context:python)
+![logo](logo_stables2.png)
 
 # About
 
