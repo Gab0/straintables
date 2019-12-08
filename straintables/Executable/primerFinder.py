@@ -95,7 +95,9 @@ def Execute(options):
             PrimerEngine.PrimerDesign.BruteForcePrimerSearcher(
                 genomeFeatures,
                 genomeFilePaths,
-                options.wantedFeatureType
+                wantedFeatureType=options.wantedFeatureType,
+                FindPCRViablePrimers=options.RealPrimers,
+                AmpliconMaximumLength=options.MaxAmpliconLength
             )
 
     if not annotationFilePath or not bruteForceSearcher.matchedGenome:
@@ -265,13 +267,29 @@ def parse_arguments(parser):
                         dest="RewriteFasta")
 
     parser.add_argument("-t",
+                        "--feature",
                         dest="wantedFeatureType",
-                        default="gene")
+                        default="gene",
+                        help="Wanted feature type at annotation " +
+                        "for primer design. [gene|CDS|mRNA]"),
 
-    parser.add_argument("-m",
+    parser.add_argument("--pcr",
+                        dest="RealPrimers",
+                        action="store_true",
+                        help="Search only for primers " +
+                        "that are viable in real PCR reactions.")
+
+    parser.add_argument("-b", "--reboot",
                         dest="rebootTolerance",
                         type=int,
                         default=20)
+
+    parser.add_argument("-s",
+                        "--maxalignlen",
+                        dest="MaxAmpliconLength",
+                        type=int,
+                        default=1200,
+                        help="Maximum sequence length for extracted regions.")
 
     parser.add_argument("-d", "--dir", dest="WorkingDirectory")
 
