@@ -16,7 +16,7 @@ import re
 import types
 import importlib
 import random
-
+import copy
 Description = """
 
 This command will translate multifasta sequences
@@ -146,10 +146,10 @@ def evaluateTranslationWindow(options,
 
             Result = SeqRecord.SeqRecord(Seq.Seq(BestORF), id=ID)
         else:
-            raise(NotImplemented)
+            raise(NotImplementedError)
 
     else:
-        raise(NotImplemented)
+        raise(NotImplementedError)
 
     if region_name == QuerySequence.id:
         print("check %s" % QuerySequence.id)
@@ -412,10 +412,10 @@ def runDirectory(options, RegionSequenceSource):
     for f in files:
         region_name = re.findall(WantedFileQuery, f)[0]
 
-        opt = types.SimpleNamespace()
-
+        # Clone The Options (not quite a good development option)
+        opt = copy.deepcopy(options)
         opt.RegionName = region_name
-        opt.WorkingDirectory = options.WorkingDirectory
+
         successPercentage, HasGaps = AnalyzeRegion(opt, RegionSequenceSource)
 
         if options.WriteFiles:
@@ -440,7 +440,7 @@ def parse_arguments():
     parser.add_argument("--discardimp",
                         dest="DiscardImperfectSequenceThreshold",
                         type=int, default=5)
-    parser.add_argument("--write", dest="WriteFiles", action="store_true")
+    parser.add_argument("--nowrite", dest="WriteFiles", action="store_false", default=True)
     parser.add_argument("-v", "--verbose", dest="Verbose", action="store_true")
 
     options = parser.parse_args()
