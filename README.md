@@ -247,7 +247,7 @@ Some python scripts on the main module are not called within linkagePipeline.sh.
 1. `stview` The basic one. This will build a slide presentation of plots, each plot showing a pair of similarity matrices.
 The matrix show will start with the first locus against the second locus chosen, in the order of the Primer file, along with some extra information. Then, the second locus will be compared to the third and so it goes on.
 
-## Matrix from Fast Sequence
+## Matrix from fasta region sequences
 
 Alternatively, you can use `straintables` as you would use [MatGAT](https://bmcbioinformatics.biomedcentral.com/articles/10.1186/1471-2105-4-29), where you just
 have a few multifasta file with many compatible short sequences, one file per region, and just
