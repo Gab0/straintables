@@ -2,7 +2,7 @@
 
 import os
 
-from . import PrimerDock
+from . import PrimerDock, RealPrimers
 from Bio import SeqIO
 
 from straintables.Database.StrainNames import fetchStrainName
@@ -17,8 +17,13 @@ returns: (Name of chromosome, position of sequence inside chromosome)
 
 
 class BruteForcePrimerSearcher():
-    def __init__(self, genomeFeatures, genomeFilePaths,
-                 wantedFeatureType="CDS", PrimerSize=20):
+    def __init__(self,
+                 genomeFeatures,
+                 genomeFilePaths,
+                 wantedFeatureType="CDS",
+                 PrimerSize=20,
+                 FindPCRViablePrimers=False,
+                 AmpliconMaximumLength=1200):
 
         assert(wantedFeatureType in ["gene", "mRNA", "CDS"])
 
@@ -26,6 +31,8 @@ class BruteForcePrimerSearcher():
         self.matchedGenome = self.locateMatchingGenome(genomeFilePaths)
         self.wantedFeatureType = wantedFeatureType
         self.PrimerSize = PrimerSize
+        self.FindPCRViablePrimers = FindPCRViablePrimers
+        self.AmpliconMaximumLength = AmpliconMaximumLength
 
         if self.matchedGenome is None:
             print()
@@ -192,7 +199,8 @@ class BruteForcePrimerSearcher():
 
         # FOCUS SEARCH ON A REGION ON THE MIDDLE OF THE GENE SEQUENCE;
         sequenceLength = len(gene_sequence)
-        sequenceLengthAim = 1500
+        sequenceLengthAim = self.AmpliconMaximumLength
+
         if sequenceLength > sequenceLengthAim:
             sequenceLengthBounds = (
                 sequenceLength // 2 - sequenceLengthAim // 2,
@@ -202,15 +210,34 @@ class BruteForcePrimerSearcher():
                 sequenceLengthBounds[0]:sequenceLengthBounds[1]]
 
         if Reverse:
-            Indexes =\
+            PrimerIndexes =\
                 range(len(gene_sequence) - PRIMER_LENGTH, 0, -SEARCH_STEP)
         else:
-            Indexes = range(0, len(gene_sequence), SEARCH_STEP)
+            PrimerIndexes = range(0, len(gene_sequence), SEARCH_STEP)
 
+        PrimerSequences = [
+            gene_sequence[i:i + PRIMER_LENGTH]
+            for i in PrimerIndexes
+        ]
+
+        # Filter primers by their real PCR capabilities if the user wants;
+        if self.FindPCRViablePrimers:
+            PrimerPCRScores = [
+                (p, RealPrimers.EvaluatePrimerForPCR(p))
+                for p in PrimerSequences
+            ]
+            PrimerPCRScores = sorted(PrimerPCRScores,
+                                     key=lambda ps: ps[1], reverse=True)
+
+            PrimerSequences = [ps[0] for ps in PrimerPCRScores if ps[1] > 0]
+
+        # Test newly aquired primers;
         foundPrimers = []
         chr_identifier = None
-        for s in Indexes:
-            primer_sequence = gene_sequence[s:s + PRIMER_LENGTH]
+        for p, primer_sequence in enumerate(PrimerSequences):
+            if self.FindPCRViablePrimers:
+                if not RealPrimers.EvaluatePrimerForPCR(primer_sequence):
+                    continue
             for c, _chr in enumerate(genome):
                 matches, sequenceVariationName =\
                     PrimerDock.findPrimer(_chr, primer_sequence)
@@ -229,7 +256,8 @@ class BruteForcePrimerSearcher():
                     foundPrimers.append(matches[0])
                     if len(foundPrimers) > maximumPrimerCount:
                         return foundPrimers, chr_identifier
-            if (s <= (len(gene_sequence) // 5)) == Reverse:
+
+            if (p <= (len(gene_sequence) // 5)) == Reverse:
                 break
 
         return foundPrimers, chr_identifier
