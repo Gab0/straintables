@@ -3,26 +3,52 @@
 from Bio.SeqUtils import MeltingTemp as mt
 
 
-def EvaluatePrimerForPCR(Primer):
+def ValueInBounds(Value, Target, Tolerance, exp=0.4):
+    return max(abs(Target - Value) - Tolerance, 0) ** exp
+
+
+def PenaltyGCContent(Primer):
+    Penalty = 0.9
 
     # -- GC content;
     gcb = [base for base in Primer.lower() if base in "gc"]
     gc = len(gcb) / len(Primer)
 
-    if not (0.4 <= gc <= 0.6):
-        return False
+    TargetGC = 0.5
+    ToleranceGC = 0.1
+
+    Penalty = ValueInBounds(gc, TargetGC, ToleranceGC)
+
+    return Penalty
+
+
+def PenaltyGCExtremities(Primer):
 
     # -- GC at extremities;
     extremities = Primer[:2] + Primer[-2:]
-    if not all([e in "gc" for e in extremities.lower()]):
-        return False
+    Penalty = 1.0 -\
+        sum([e in "gc" for e in extremities.lower()]) / len(extremities)
+    return Penalty
+
+
+def PenaltyMeltingTemperature(Primer):
+    # -- Melting Temperature
+    MTemp = mt.Tm_NN(Primer)
+
+    Penalty = ValueInBounds(MTemp, 55, 3)
+
+    return Penalty
+
+
+def EvaluatePrimerForPCR(Primer):
+
+    Score = 1.0
+
+    Score -= PenaltyGCContent(Primer)
+    Score -= PenaltyGCExtremities(Primer)
+    Score -= PenaltyMeltingTemperature(Primer)
 
     # -- check for 2D primer formation;
     # TBD;
 
-    # -- Melting Temperature
-    MTemp = mt.Tm_NN(Primer)
-    if not (52 <= MTemp <= 58):
-        return False
-
-    return True
+    return Score
