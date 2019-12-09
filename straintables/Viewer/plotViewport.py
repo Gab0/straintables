@@ -486,13 +486,13 @@ def AlignmentHealthAxis(ax_ha, ax_hb, alnData, currentPWMData, a_name, b_name):
         singleLocusStatus(alnData, ax_hb, b_name)
 
         # Additional info on secondary axis DEPRECATED;
-        if False:
+        """
             RecombinationMessage = "True" \
                 if currentPWMData["recombination"] else "False"
-
+        
             Message = "Recombination? %s" % RecombinationMessage
             ax_hb.text(0.8, 1, s=Message)
-
+        """
 
 def RecombinationAxis(fig, clusterOutputData, Labels, matrix_order):
     # RECOMBINATION FIGURE;
@@ -506,7 +506,7 @@ def RecombinationAxis(fig, clusterOutputData, Labels, matrix_order):
             Threshold=0.4)
     except Exception as e:
         print(clusterOutputData)
-        Recombination = [False]
+        # Recombination = [False]
         print("WARNING: Recombination failure!")
         print(e)
         raise
