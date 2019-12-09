@@ -194,14 +194,14 @@ def Execute(options):
         options.WorkingDirectory)
     MatchedRegions.read()
 
-    SucessfulLoci = MatchedRegions.content["LocusName"]
+    SuccessfulLoci = MatchedRegions.content["LocusName"]
 
     if options.DoAlignment:
-        for locusName in SucessfulLoci:
+        for locusName in SuccessfulLoci:
             process_individual_region(options, locusName, MeshClustEnabled)
 
     if matrix_analysis(options.WorkingDirectory):
-        print("Analysis sucesfull.")
+        print("Analysis successful.")
 
 
 def main():

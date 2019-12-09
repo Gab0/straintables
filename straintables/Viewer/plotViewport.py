@@ -241,11 +241,11 @@ def plotRegionBatch(fig, alnData, regionIndexes,
         for name in data
     ]
 
-    Matrixes = [np.load(alnData.buildArrayPath(a)) for a in data]
+    Matrices = [np.load(alnData.buildArrayPath(a)) for a in data]
 
     Labels = LabelGroup(alnData.heatmapLabels)
     Clusters = [
-        loadClusterData(alnData, data[i], Matrixes[i], Labels)
+        loadClusterData(alnData, data[i], Matrices[i], Labels)
         for i in range(len(data))
     ]
 
@@ -259,9 +259,9 @@ def plotRegionBatch(fig, alnData, regionIndexes,
                 method="complete"
             )
 
-        Matrixes = [
+        Matrices = [
             matrixOperations.reorderMatrix(mat, matrix_order)
-            for mat in Matrixes
+            for mat in Matrices
         ]
 
         Labels = LabelGroup(alnData.heatmapLabels[matrix_order])
@@ -275,7 +275,7 @@ def plotRegionBatch(fig, alnData, regionIndexes,
 
     AllPlots = []
     print("Plot Count: %i\nColumns: %i\nRows: %i" % (NBL, NBCOLS, NBROWS))
-    for m, Matrix in enumerate(Matrixes):
+    for m, Matrix in enumerate(Matrices):
         print("Building...")
         PlotCode = makePlotCode(NBROWS, NBCOLS, m + 1)
         print(Clusters[m])
@@ -298,7 +298,7 @@ def plotRegionBatch(fig, alnData, regionIndexes,
 
         AllAxis.append(plot)
 
-    for m, Matrix in enumerate(Matrixes):
+    for m, Matrix in enumerate(Matrices):
         axLabels = AllPlots[m].get_yticklabels()
         axLabel = axLabels[0]
 
@@ -357,7 +357,7 @@ def MainDualRegionPlot(fig, alnData, regionIndexes, showLabelColors=True):
     LeftCluster = Labels.clusterize(clusterOutputData[0])
     RightCluster = Labels.clusterize(clusterOutputData[1])
 
-    # REORDERED MATRIXES;
+    # REORDERED MATRICES;
     fontsize = 40 / math.sqrt(ma.shape[0])
 
     # plot;
@@ -377,7 +377,7 @@ def MainDualRegionPlot(fig, alnData, regionIndexes, showLabelColors=True):
                                     TA2_xlabels, TA2_ylabels,
                                     fontsize=fontsize)
 
-    # ORIGINAL MATRIXES;
+    # ORIGINAL MATRICES;
     # plot;
     BA1_labels = Labels.get_labels(Cluster=LeftCluster)
     bottom_axis1 = createMatrixSubplot(fig, 234,
