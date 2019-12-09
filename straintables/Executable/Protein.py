@@ -121,9 +121,11 @@ def evaluateTranslationWindow(options,
                 if Verbose:
                     print("Searching ORF> %s" % ORF)
                 AlignedSequences = ([str(TemplateProtein.seq), ORF])
-                if False:
-                    Alignment = MakeTestAlignment(AlignedSequences,
+
+                """
+                Alignment = MakeTestAlignment(AlignedSequences,
                                                   AlignerParameters)
+                """
 
                     if Verbose:
                         print()
