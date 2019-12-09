@@ -124,7 +124,7 @@ def loadAnnotation(annotationFolder, identifier=None, Verbose=False):
         for aS in annotationScaffolds:
             print(len(aS.features))
 
-    if chosen is (None, None):
+    if chosen == (None, None):
         print("Warning: No suitable annotation file found.")
 
     return chosen
