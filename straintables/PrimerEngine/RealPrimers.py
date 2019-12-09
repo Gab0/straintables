@@ -8,7 +8,6 @@ def ValueInBounds(Value, Target, Tolerance, exp=0.4):
 
 
 def PenaltyGCContent(Primer):
-    Penalty = 0.9
 
     # -- GC content;
     gcb = [base for base in Primer.lower() if base in "gc"]
@@ -26,12 +25,13 @@ def PenaltyGCExtremities(Primer):
 
     # -- GC at extremities;
     extremities = Primer[:2] + Primer[-2:]
-    Penalty = 1.0 -\
-        sum([e in "gc" for e in extremities.lower()]) / len(extremities)
+    scr = sum([e in "gc" for e in extremities.lower()]) / len(extremities)
+    Penalty = 1.0 - scr
     return Penalty
 
 
 def PenaltyMeltingTemperature(Primer):
+
     # -- Melting Temperature
     MTemp = mt.Tm_NN(Primer)
 
