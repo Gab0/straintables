@@ -18,7 +18,7 @@ import random
 import shutil
 
 import ftplib
-import optparse
+import argparse
 import time
 
 from straintables.Database import StrainNames
@@ -351,50 +351,48 @@ def renameGenomeFiles(dirpath, organism):
 
 
 def parse_arguments():
-    parser = optparse.OptionParser()
-    parser.add_option("--nogenome",
-                      dest='downloadGenomes',
-                      action='store_false',
-                      default=True,
-                      help="Skip genome downloads.")
+    parser = argparse.ArgumentParser(description=Description)
+    parser.add_argument("--nogenome",
+                        dest='downloadGenomes',
+                        action='store_false',
+                        default=True,
+                        help="Skip genome downloads.")
 
-    parser.add_option("--noannotation",
-                      dest='downloadAnnotations',
-                      action='store_false',
-                      default=True,
-                      help="Skip annotation downloads.")
+    parser.add_argument("--noannotation",
+                        dest='downloadAnnotations',
+                        action='store_false',
+                        default=True,
+                        help="Skip annotation downloads.")
 
-    parser.add_option("--organism",
-                      dest="queryOrganism",
-                      default="Toxoplasma gondii")
+    parser.add_argument("--organism",
+                        dest="queryOrganism",
+                        default="Toxoplasma gondii")
 
-    parser.add_option("--strain",
-                      dest="annotationStrain",
-                      default="")
+    parser.add_argument("--strain",
+                        dest="annotationStrain",
+                        default="")
 
-    parser.add_option("--nbgenomes",
-                      dest="genomeSearchMaxResults",
-                      type=int,
-                      default=20)
+    parser.add_argument("--nbgenomes",
+                        dest="genomeSearchMaxResults",
+                        type=int,
+                        default=20)
 
-    parser.add_option("--nbannotations",
-                      dest="annotationSearchMaxResults",
-                      type=int,
-                      default=1)
+    parser.add_argument("--nbannotations",
+                        dest="annotationSearchMaxResults",
+                        type=int,
+                        default=1)
 
-    parser.add_option("--rename",
-                      dest="OnlyRename",
-                      help="Rename genome/annotations file and exit.")
+    parser.add_argument("--rename",
+                        dest="OnlyRename",
+                        help="Rename genome/annotations file and exit.")
 
-    parser.add_option("--dir",
-                      dest="WorkingDirectory",
-                      help="Directory to where genome and annotation " +
-                      "folders should go",
-                      default=".")
+    parser.add_argument("--dir",
+                        dest="WorkingDirectory",
+                        help="Directory to where genome and annotation " +
+                        "folders should go",
+                        default=".")
 
-    options, args = parser.parse_args()
-
-    return options
+    return parser.parse_args()
 
 
 def Execute(options):
@@ -496,7 +494,7 @@ def Execute(options):
 
 
 def main():
-    options = parse_arguments(description=Description)
+    options = parse_arguments()
 
     while True:
         if Execute(options):
