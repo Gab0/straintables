@@ -23,6 +23,7 @@ class BruteForcePrimerSearcher():
                  wantedFeatureType="CDS",
                  PrimerSize=20,
                  FindPCRViablePrimers=False,
+                 AmpliconMinimumLength=400,
                  AmpliconMaximumLength=1200):
 
         assert(wantedFeatureType in ["gene", "mRNA", "CDS"])
@@ -199,24 +200,29 @@ class BruteForcePrimerSearcher():
 
         # FOCUS SEARCH ON A REGION ON THE MIDDLE OF THE GENE SEQUENCE;
         sequenceLength = len(gene_sequence)
-        sequenceLengthAim = self.AmpliconMaximumLength
 
-        if sequenceLength > sequenceLengthAim:
+        allowed_gene_sequence = gene_sequence
+        if sequenceLength > self.AmpliconMaximumLength:
+            HSL = sequenceLength // 2
+            HSLA = self.AmpliconMaximumLength // 2
             sequenceLengthBounds = (
-                sequenceLength // 2 - sequenceLengthAim // 2,
-                sequenceLength // 2 + sequenceLengthAim // 2
+                HSL - HSLA,
+                HSL + HSLA
             )
-            gene_sequence = gene_sequence[
-                sequenceLengthBounds[0]:sequenceLengthBounds[1]]
 
+            allowed_gene_sequence = gene_sequence[
+                sequenceLengthBounds[0]: sequenceLengthBounds[1]]
+
+        EffectiveMinimumAmpliconLength = min(self.AmpliconMinimumLength,
+                                             len(allowed_gene_sequence) // 2)
         if Reverse:
             PrimerIndexes =\
-                range(len(gene_sequence) - PRIMER_LENGTH, 0, -SEARCH_STEP)
+                range(len(allowed_gene_sequence) - PRIMER_LENGTH, 0, -SEARCH_STEP)
         else:
-            PrimerIndexes = range(0, len(gene_sequence), SEARCH_STEP)
+            PrimerIndexes = range(0, len(allowed_gene_sequence), SEARCH_STEP)
 
         PrimerSequences = [
-            gene_sequence[i:i + PRIMER_LENGTH]
+            allowed_gene_sequence[i:i + PRIMER_LENGTH]
             for i in PrimerIndexes
         ]
 
@@ -235,9 +241,6 @@ class BruteForcePrimerSearcher():
         foundPrimers = []
         chr_identifier = None
         for p, primer_sequence in enumerate(PrimerSequences):
-            if self.FindPCRViablePrimers:
-                if not RealPrimers.EvaluatePrimerForPCR(primer_sequence):
-                    continue
             for c, _chr in enumerate(genome):
                 matches, sequenceVariationName =\
                     PrimerDock.findPrimer(_chr, primer_sequence)
@@ -257,7 +260,8 @@ class BruteForcePrimerSearcher():
                     if len(foundPrimers) > maximumPrimerCount:
                         return foundPrimers, chr_identifier
 
-            if (p <= (len(gene_sequence) // 5)) == Reverse:
+            # Limit amplicons to a minimum size;
+            if (p > abs(len(allowed_gene_sequence) - EffectiveMinimumAmpliconLength) // 2):
                 break
 
         return foundPrimers, chr_identifier
