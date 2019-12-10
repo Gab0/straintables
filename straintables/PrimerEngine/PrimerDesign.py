@@ -33,7 +33,9 @@ class BruteForcePrimerSearcher():
         self.wantedFeatureType = wantedFeatureType
         self.PrimerSize = PrimerSize
         self.FindPCRViablePrimers = FindPCRViablePrimers
+
         self.AmpliconMaximumLength = AmpliconMaximumLength
+        self.AmpliconMinimumLength = AmpliconMinimumLength
 
         if self.matchedGenome is None:
             print()
@@ -215,11 +217,14 @@ class BruteForcePrimerSearcher():
 
         EffectiveMinimumAmpliconLength = min(self.AmpliconMinimumLength,
                                              len(allowed_gene_sequence) // 2)
+
+        FinalIndex = abs(len(allowed_gene_sequence) - EffectiveMinimumAmpliconLength)
         if Reverse:
             PrimerIndexes =\
-                range(len(allowed_gene_sequence) - PRIMER_LENGTH, 0, -SEARCH_STEP)
+                range(len(allowed_gene_sequence) - PRIMER_LENGTH,
+                      len(allowed_gene_sequence) - FinalIndex, -SEARCH_STEP)
         else:
-            PrimerIndexes = range(0, len(allowed_gene_sequence), SEARCH_STEP)
+            PrimerIndexes = range(0, FinalIndex, SEARCH_STEP)
 
         PrimerSequences = [
             allowed_gene_sequence[i:i + PRIMER_LENGTH]
@@ -259,9 +264,5 @@ class BruteForcePrimerSearcher():
                     foundPrimers.append(matches[0])
                     if len(foundPrimers) > maximumPrimerCount:
                         return foundPrimers, chr_identifier
-
-            # Limit amplicons to a minimum size;
-            if (p > abs(len(allowed_gene_sequence) - EffectiveMinimumAmpliconLength) // 2):
-                break
 
         return foundPrimers, chr_identifier
