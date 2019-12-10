@@ -255,7 +255,7 @@ want to see dissimilarity matrices for them. The entire workflow is described be
 
 ```
 $stfromfasta -d DIRECTORY_WITH_FASTA_FILES
-$stview DIRECTORU_WITH_FASTA_FILES
+$stview DIRECTORY_WITH_FASTA_FILES
 
 ```
 
