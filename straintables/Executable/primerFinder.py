@@ -97,6 +97,7 @@ def Execute(options):
                 genomeFilePaths,
                 wantedFeatureType=options.wantedFeatureType,
                 FindPCRViablePrimers=options.RealPrimers,
+                AmpliconMinimumLength=options.MinAmpliconLength,
                 AmpliconMaximumLength=options.MaxAmpliconLength
             )
 
@@ -284,12 +285,17 @@ def parse_arguments(parser):
                         type=int,
                         default=20)
 
-    parser.add_argument("-s",
-                        "--maxalignlen",
+    parser.add_argument("--maxalignlen",
                         dest="MaxAmpliconLength",
                         type=int,
                         default=1200,
                         help="Maximum sequence length for extracted regions.")
+
+    parser.add_argument("--minalignlen",
+                        dest="MinAmpliconLength",
+                        type=int,
+                        default=400,
+                        help="Minimum sequence length for extracted regions.")
 
     parser.add_argument("-d", "--dir", dest="WorkingDirectory")
 
