@@ -29,22 +29,15 @@ RUN apk add --no-cache \
   libpng-dev \
   openblas-dev \
   glib \
-  cairo \
-  cairo-dev \
   jpeg-dev \
   zlib-dev \
-  gobject-introspection-dev \
-  py3-cairo \
-  py-cairo-dev \
   jpeg-dev \
   git
 
 
-RUN apk add --no-cache \
-  gtk+3.0
 
 # PYTHON REQUIREMENTS;
-RUN pip install numpy scipy cython sklearn pandas pygobject
+RUN pip install numpy scipy cython sklearn pandas
 
 
 ENTRYPOINT ["/bin/bash"]

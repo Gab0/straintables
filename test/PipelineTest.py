@@ -1,11 +1,13 @@
 #!/bin/python
 
 import unittest
+import sys
 import os
 import shutil
 import types
-from straintables.Executable import Pipeline, fetchDataNCBI, MatrixViewer
-import sys
+
+from straintables.Executable import Pipeline, fetchDataNCBI, WebViewer
+
 
 class PipelineTest(unittest.TestCase):
     WorkingDirectory = "straintables_test"
@@ -44,7 +46,7 @@ class PipelineTest(unittest.TestCase):
         viewer_options.inputDirectory = self.WorkingDirectory
         viewer_options.inputDir = self.WorkingDirectory
 
-        MatrixViewer.Execute(viewer_options)
+        WebViewer.Execute(viewer_options)
 
     def _steps(self):
         for name in dir(self):
