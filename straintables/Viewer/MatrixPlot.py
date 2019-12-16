@@ -21,15 +21,19 @@ def normalizeMatrix(MATRIX, parameters):
 
 
 def heatmapToAxis(MATRIX, ax, xlabels=None,
-                  ylabels=None, fontsize=9,
-                  MatrixName=None, MatrixParameters=None):
+                  ylabels=None,
+                  MatrixName=None,
+                  MatrixParameters={}):
 
+    DefaultMatrixParameters = {
+        "Normalize": False,
+        "showNumbers": False,
+        "fontsize": 9
+    }
     # -- Process matrix parameters;
-    if MatrixParameters is None:
-        MatrixParameters = {
-            "Normalize": False,
-            "showNumbers": False
-        }
+    for param in DefaultMatrixParameters.keys():
+        if param not in MatrixParameters.keys():
+            MatrixParameters[param] = DefaultMatrixParameters[param]
 
     if MatrixParameters["Normalize"]:
         MATRIX = normalizeMatrix(MATRIX, MatrixParameters)
@@ -53,7 +57,7 @@ def heatmapToAxis(MATRIX, ax, xlabels=None,
     # SET LABELS;
     fontProperties = {
         'family': 'monospace',
-        'fontsize': fontsize
+        'fontsize': MatrixParameters["fontsize"]
     }
 
     if xlabels is not None:

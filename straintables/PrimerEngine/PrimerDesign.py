@@ -117,7 +117,7 @@ class BruteForcePrimerSearcher():
 
     def fetchGeneSequence(self, geneName):
 
-        # FETCH PRIMER METHODS. TO BE INTEGRATED;
+        # -- FETCH PRIMER METHODS.
         geneLocation =\
             self.retrieveGeneLocation(geneName, self.wantedFeatureType)
 

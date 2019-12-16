@@ -1,0 +1,43 @@
+
+<html>
+  <head>
+    {%- include 'style.css' %}
+  </head>
+  <body>
+    <center>
+      {%- include 'Menu.html' %} <br>
+      <br>
+      <form method="GET" action="/plot_custom/set" id="setup_custom">
+          <div id="CustomOptions">
+
+              <div id="CustomSelectReference">
+                  <b>Reference Region</b><br>
+            {%- for region in regions %}
+            <input type="radio"
+                   name="reference_region"
+                   value="{{ loop.index0 }}"
+                   {{ 'checked' if loop.index0 == current_reference_region else '' }}> {{ region }} <br>
+            {%- endfor %}
+          </div>
+
+          <div id="CustomSelectRegions">
+              <b>Shown Regions</b><br>
+            {%- for region in regions %}
+            <input type="checkbox"
+                   name="allowed_regions"
+                   value="{{ loop.index0 }}"
+            {{ 'checked' if loop.index0 in current_allowed_regions else '' }}> {{ region }} <br>
+            {%- endfor %}
+          </div>
+
+          <input type="button"
+                 form="setup_custom"
+                 onclick="form.submit();"
+                 type="submit"
+                 value="Draw">
+      </form>
+      </div>
+    </center>
+  </body>
+</html>
+

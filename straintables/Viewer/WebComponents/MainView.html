@@ -1,0 +1,39 @@
+
+<html>
+  <head>
+    {%- include 'style.css' %}
+    <script>
+      {%- include 'dropdown_logic.js' %}
+    </script>
+  </head>
+  <body>
+    <center>
+      {%- include 'Menu.html' %}
+      <div class="region_selector">
+          {%- for i in regions %}
+
+        <div class="dropdown-parent">
+          <button class="regionbtn",
+                  onclick="ToggleDropdown({{ loop.index0 }})"
+                  id="region_{{ loop.index0 }}_btn">{{ i }}</button>
+
+          <div id="region_{{ loop.index0 }}_dropdown"
+               class="dropdown-content">
+
+            <a href="/plot_quad/set?r1={{ loop.index0 }}">LEFT</a>
+            <a href="/plot_quad/set?r2={{ loop.index0 }}">RIGHT</a>
+
+          </div>
+        </div>
+        {%- endfor %}
+      </div>
+      <br>
+
+      <div id="main_viewport">
+        <img src="/plot_quad/figure"
+             alt="std regions">
+
+      </div>
+    </center>
+  </body>
+</html>

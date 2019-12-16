@@ -97,8 +97,8 @@ class AlignmentData():
         return list(self.AlignmentData["LocusName"])
 
     def fetchLociList(self):
-        for t in self.dataKeys:
-            print(self.PWMData[t])
+        # for t in self.dataKeys:
+        #    print(self.PWMData[t])
         allLoci = [list(self.PWMData[d]) for d in self.dataKeys]
         allLoci = [j for s in allLoci for j in s]
 

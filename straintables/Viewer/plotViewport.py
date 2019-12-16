@@ -138,11 +138,13 @@ def singleLocusStatus(alnData, axis, locus_name):
     axis.axis("off")
 
 
-def createMatrixSubplot(fig, position,
-                        name, matrix,
-                        xlabels, ylabels,
-                        fontsize=9,
-                        MatrixParameters=None):
+def createMatrixSubplot(fig,
+                        position,
+                        name,
+                        matrix,
+                        xlabels,
+                        ylabels,
+                        MatrixParameters={}):
     new_ax = fig.add_subplot(position)
 
     MatrixPlot.heatmapToAxis(
@@ -150,7 +152,6 @@ def createMatrixSubplot(fig, position,
         new_ax,
         xlabels=xlabels,
         ylabels=ylabels,
-        fontsize=fontsize,
         MatrixName=name,
         MatrixParameters=MatrixParameters
     )
@@ -227,9 +228,12 @@ def makePlotCode(a, b, c):
     return a * 100 + b * 10 + c
 
 
-def plotRegionBatch(fig, alnData, regionIndexes,
-                    showLabelColors=True, reorganizeIndex=None,
-                    MatrixParameters=None):
+def plotRegionBatch(fig,
+                    alnData,
+                    regionIndexes,
+                    showLabelColors=True,
+                    reorganizeIndex=None,
+                    MatrixParameters={}):
     data = [
         alnData.MatchData["LocusName"].iloc[i]
         for i in regionIndexes
@@ -282,13 +286,13 @@ def plotRegionBatch(fig, alnData, regionIndexes,
         plotCluster = Labels.clusterize(Clusters[m])
         plotLabels = Labels.get_labels(Cluster=plotCluster)
 
-        fontsize = 40 / math.sqrt(Matrix.shape[0])
+        if "fontsize" not in MatrixParameters.keys():
+            MatrixParameters["fontsize"] = 40 / math.sqrt(Matrix.shape[0])
 
         plot = createMatrixSubplot(
             fig, PlotCode,
             data[m], Matrix,
             plotLabels, plotLabels,
-            fontsize=fontsize,
             MatrixParameters=MatrixParameters
         )
 
@@ -306,7 +310,7 @@ def plotRegionBatch(fig, alnData, regionIndexes,
                            reference=axLabel,
                            nb_snp=alignmentData[m]["SNPCount"],
                            aln_len=alignmentData[m]["AlignmentLength"],
-                           fontsize=fontsize * 1.5)
+                           fontsize=MatrixParameters["fontsize"] * 1.5)
 
     for i in range(3):
         fig.tight_layout()
@@ -314,7 +318,11 @@ def plotRegionBatch(fig, alnData, regionIndexes,
     return fig
 
 
-def MainDualRegionPlot(fig, alnData, regionIndexes, showLabelColors=True):
+def MainDualRegionPlot(fig,
+                       alnData,
+                       regionIndexes,
+                       showLabelColors=True,
+                       MatrixParameters={}):
 
     # EXTRACR LOCUS NAMES;
     region_names = [
@@ -357,40 +365,54 @@ def MainDualRegionPlot(fig, alnData, regionIndexes, showLabelColors=True):
     LeftCluster = Labels.clusterize(clusterOutputData[0])
     RightCluster = Labels.clusterize(clusterOutputData[1])
 
-    # REORDERED MATRICES;
-    fontsize = 40 / math.sqrt(ma.shape[0])
+    # -- DEFINE FONTSIZE FOR PLOT LABELS;
+    if "fontsize" not in MatrixParameters.keys():
+        MatrixParameters["fontsize"] = 40 / math.sqrt(ma.shape[0])
 
-    # plot;
+    # -- PLOT FOR REORDERED MATRICES (TOP);
     TA1_labels = Labels.get_ordered(matrix_order,
                                     Cluster=LeftCluster, symbolSide=0)
-    top_axis1 = createMatrixSubplot(fig, 231,
-                                    a_name, ordered_ma,
-                                    TA1_labels, TA1_labels,
-                                    fontsize=fontsize)
+    top_axis1 = createMatrixSubplot(fig,
+                                    231,
+                                    a_name,
+                                    ordered_ma,
+                                    TA1_labels,
+                                    TA1_labels,
+                                    MatrixParameters=MatrixParameters)
 
     TA2_xlabels = Labels.get_ordered(matrix_order,
                                      Cluster=RightCluster, symbolSide=0)
     TA2_ylabels = Labels.get_ordered(matrix_order,
                                      Cluster=RightCluster, symbolSide=1)
-    top_axis2 = createMatrixSubplot(fig, 233,
-                                    b_name, ordered_mb,
-                                    TA2_xlabels, TA2_ylabels,
-                                    fontsize=fontsize)
 
-    # ORIGINAL MATRICES;
+    top_axis2 = createMatrixSubplot(fig,
+                                    233,
+                                    b_name,
+                                    ordered_mb,
+                                    TA2_xlabels,
+                                    TA2_ylabels,
+                                    MatrixParameters=MatrixParameters)
+
+    # -- PLOT ORIGINAL MATRICES (BOTTOM);
     # plot;
     BA1_labels = Labels.get_labels(Cluster=LeftCluster)
-    bottom_axis1 = createMatrixSubplot(fig, 234,
-                                       a_name, ma,
-                                       BA1_labels, BA1_labels,
-                                       fontsize=fontsize)
+    bottom_axis1 = createMatrixSubplot(fig,
+                                       234,
+                                       a_name,
+                                       ma,
+                                       BA1_labels,
+                                       BA1_labels,
+                                       MatrixParameters=MatrixParameters)
 
     BA2_xlabels = Labels.get_labels(Cluster=RightCluster, symbolSide=0)
     BA2_ylabels = Labels.get_labels(Cluster=RightCluster, symbolSide=1)
-    bottom_axis2 = createMatrixSubplot(fig, 236,
-                                       b_name, mb,
-                                       BA2_xlabels, BA2_ylabels,
-                                       fontsize=fontsize)
+    bottom_axis2 = createMatrixSubplot(fig,
+                                       236,
+                                       b_name,
+                                       mb,
+                                       BA2_xlabels,
+                                       BA2_ylabels,
+                                       MatrixParameters=MatrixParameters)
 
     # left plots have yticks on the right side.
     top_axis1.yaxis.tick_right()

@@ -1,0 +1,34 @@
+
+<html>
+  <head>
+    {%- include 'style.css' %}
+  </head>
+
+  <body>
+    <center>
+      {%- include "Menu.html" %}
+      <div id="PlopOptions">
+        <form method="GET" action="/options/set">
+          Label Size: <select name="fontsize">
+            {%- for i in range(11,15) %}
+            <option value="{{ i }}" {{ 'selected=selected' if i == options.font_size else '' }}>{{ i }}</option>
+            {% endfor %}
+          </select>
+          <br>
+          Show Matrix Values
+          <input type="checkbox"
+                 name="matrix_values"
+                 {{ 'checked' if options.matrix_values else '' }}
+                 value=1>
+          <br><br>
+          <input type="button"
+                 onclick="form.submit();"
+                 type="submit"
+                 value="Save Options">
+        </form>
+      </div>
+    </center>
+  </body>
+  {{ options.matrix_values }}<br>
+  {{ options.fontsize }}
+</html>

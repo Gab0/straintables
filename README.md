@@ -71,7 +71,7 @@ By looking at a pair of D. Matrices at a time, both corresponding to locus that 
 `straintables` requires Python3.6+
 1. from pipy: 
 ```
-pip install setuptools numpy scipy cython pygobject --user
+pip install setuptools numpy scipy cython --user
 
 !! We run pip twice because the modules installed on the first step may have installation issues
 !! If they fail to install, check the pip message log, it contains info for missing required system packages.
@@ -87,14 +87,10 @@ pip install straintables --user
 ### Setup issues:
 
 If the setup command shown above fails, there should be a problem with the build of some required python module.
-Take note of which module is failing, and create a issue ticket on this repository and/or check google if it has 
-some answer to the problem.
-
-This has never been tested on windows, but should work. The python modules `numpy`, `scipy`, `cython` and `pygobject`
-which should installed before `straintables` can raise errors on installation, and the error message should give directions to where the problem is, and they occour mostly due to missing system packages which are required by the mentioned modules.
+Take note of which module is failing, and create a issue ticket on this repository and/or check google if it has some answer to the problem.
+This has never been tested on windows, but should work. The python modules `numpy`, `scipy`, `cython` which should installed before `straintables` can raise errors on installation, and the error message should give directions to where the problem is, and they occour mostly due to missing system packages which are required by the mentioned modules.
 For linux users, please check the file `Dockerfile` on this repo to see which linux packages are required for this to run, under the `apk add` command... package names might vary between distros.
 
-Warning: `stview` seems to segfault when using `matplotlib>=3.1.0`! So, please use `matplotlib==3.0` only.
 
 ## Required Software
 
@@ -125,16 +121,13 @@ this in order to quickly view the alignments that made your matrix.
 This step will define the organism under analysis, so it's adivised run this inside a new directory, having one dir for each organism.
 
 The following commands download each genome matching the query organism from NCBI, along with one annotation file for one specified strain.
-It will create and populate the folders `genomes` and `annotations`. 
+Each of the command below will create and populate the folders `genomes` and `annotations`, so make your choice from the examples and run one of them.
 
 ```
-To download defaults: Toxoplasma gondii genomes, strain ME49 annotations;
-$stdownload
-
-Same result as above, manually:
+To download Toxoplasma gondii genomes, strain ME49 annotation:
 $stdownload --organism "Toxoplasma gondii" --strain ME49
 
-With lactobacillus plantarum, strain WCFS1 annotations:
+With lactobacillus plantarum, strain WCFS1 annotation:
 $stdownload --organism "Lactobacillus plantarum" --strain WCFS1
 
 Ten genomes of Saccharomyces cerevisiae:
@@ -162,7 +155,7 @@ The user can manually add desired genomes and annotations, as explained in the n
 
 1. Put the wanted Locus names, ForwardPrimers and ReversePrimers on a `.csv` file inside the `Primer` folder. The primer sequences are optional, leave blank to trigger the automatic primer search. Look for the examples.
 
-2. `lmpline` is the pipeline script, it calls analysis components at proper order.
+2. `stpline` is the pipeline script, it calls analysis components at proper order.
 
 3. Check the results at the result folder that is equal to the `Primer` file selected for the run. Result folders are down the `Alignments` folder.
 
@@ -225,7 +218,9 @@ stprotein [--help] (under development & undocumented)
 
 # Results
 
-* As the linkagePipeline.sh unfolds, `Alignments/[primer batch name]` folder will be created and populated with files of various kinds, in this order:
+* As the pipeline unfolds, the user defined `WorkingDirectory` folder (argument `-d`) 
+will be created and populated with files of various kinds, in the order described below.
+It's not required to read these files manually if you stick to the `stview` visualization tool.
 
 1. `.fasta` Sequence files, one holding the amplicon found for each loci.
 2. `.aln` Alignment files, one for each loci.
@@ -242,10 +237,11 @@ stprotein [--help] (under development & undocumented)
 
 ## Result Analysis Tools
 
-Some python scripts on the main module are not called within linkagePipeline.sh. They are optional analysis tools and should be launched by the user.
+Some python scripts on the main module are not called within `stpline` or `stfromfasta`. They are optional analysis tools and should be launched by the user.
 
-1. `stview` The basic one. This will build a slide presentation of plots, each plot showing a pair of similarity matrices.
-The matrix show will start with the first locus against the second locus chosen, in the order of the Primer file, along with some extra information. Then, the second locus will be compared to the third and so it goes on.
+1. `stview` The basic one. This will launch a webserver with default address `localhost:5000` where you can point your browser to
+and view the dissimilarity matrices built.
+
 
 ## Matrix from fasta region sequences
 
