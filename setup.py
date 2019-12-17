@@ -6,12 +6,12 @@ from setuptools import setup
 
 entry_points = {
     'console_scripts': [
-        "stpline=straintables.Executable.Pipeline:main",
+        "stgenomepline=straintables.Executable.Pipeline:main",
         "stview=straintables.Executable.WebViewer:main",
         "stdownload=straintables.Executable.fetchDataNCBI:main",
         "stgenregion=straintables.Executable.initializePrimerFile:main",
         "stprotein=straintables.Executable.Protein:main",
-        "stfromfasta=straintables.Executable.fromMultifasta:main"
+        "stfastapline=straintables.Executable.fromMultifasta:main"
         ]
 }
 
