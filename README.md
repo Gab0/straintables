@@ -17,7 +17,7 @@ Further clustering is done, based on the DMs.
 The viewer interface then shows how the genomes are different at those regions in a simple, almost educative way.
 
 This package is composed by few independent python scripts which are installed as system commands, they are listed at the botom of this readme.
-The analysis follows a linear path that can be executed with the help of a pipeline script, `stpline`.
+The analysis follows a linear path that can be executed with the help of a pipeline script, `stgenomepline`.
 
 ## Inside The Pipeline
 
@@ -155,7 +155,7 @@ The user can manually add desired genomes and annotations, as explained in the n
 
 1. Put the wanted Locus names, ForwardPrimers and ReversePrimers on a `.csv` file inside the `Primer` folder. The primer sequences are optional, leave blank to trigger the automatic primer search. Look for the examples.
 
-2. `stpline` is the pipeline script, it calls analysis components at proper order.
+2. `stgenomepline` is the pipeline script, it calls analysis components at proper order.
 
 3. Check the results at the result folder that is equal to the `Primer` file selected for the run. Result folders are down the `Alignments` folder.
 
@@ -164,7 +164,7 @@ The user can manually add desired genomes and annotations, as explained in the n
 
 ```
 $ stprimer -d annotations -c X -o Primers/TEST.csv -p 0.01
-$ stpline -p Primers/TEST.csv
+$ stgenomepline -p Primers/TEST.csv
 $ stview analysisResults/TEST
 ```
 
@@ -186,7 +186,7 @@ TGME49_227830,,
 
 Then, execute:
 ```
-$stpline -p Primers/chr_X.csv
+$stgenomepline -p Primers/chr_X.csv
 ```
 
 * Then view similarity matrices and phylogenetic trees on `pdf` files at `Alignments/chr_X` folder.
@@ -210,7 +210,7 @@ AP2X1,GCTCAAGCTGCTCCCCGGGC,TCGACGGAGGTGCTCCAACC
 ```
 stdownload [--help]
 stprimer [--help]
-stpline [--help]
+stgenomepline [--help]
 stview [--help]
 stprotein [--help] (under development & undocumented)
 ```
@@ -237,7 +237,7 @@ It's not required to read these files manually if you stick to the `stview` visu
 
 ## Result Analysis Tools
 
-Some python scripts on the main module are not called within `stpline` or `stfromfasta`. They are optional analysis tools and should be launched by the user.
+Some python scripts on the main module are not called within `stgenomepline` or `stfastapline`. They are optional analysis tools and should be launched by the user.
 
 1. `stview` The basic one. This will launch a webserver with default address `localhost:5000` where you can point your browser to
 and view the dissimilarity matrices built.
@@ -250,7 +250,7 @@ have a few multifasta file with many compatible short sequences, one file per re
 want to see dissimilarity matrices for them. The entire workflow is described below:
 
 ```
-$stfromfasta -d DIRECTORY_WITH_FASTA_FILES
+$stfastapline -d DIRECTORY_WITH_FASTA_FILES
 $stview DIRECTORY_WITH_FASTA_FILES
 
 ```

@@ -10,7 +10,7 @@ install:
   - docker exec straintables pip install /app/straintables
 
 script:
-  - docker exec straintables stpline --help
+  - docker exec straintables stgenomepline --help
   - docker exec straintables stview --help
   # Travis machine just won't download from FTP, so disabling this for now.
   #- docker exec straintables xvfb-run python /app/straintables/test/PipelineTest.py
