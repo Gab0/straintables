@@ -14,6 +14,8 @@ import re
 import numpy as np
 
 
+
+
 def plotGeneArea(Primers, referenceGenome):
     # PLOT SURROUNDING GENE AREA;
         #geneSearchPosition = np.mean([p.position.start() for p in Primers])
