@@ -1,6 +1,7 @@
 #!/bin/python
 
 import pandas as pd
+import numpy as np
 import os
 import json
 
@@ -91,3 +92,8 @@ class DockFailureReport(JsonFile):
 class PWMAnalysis(SimpleDataFrame):
     csv_index = True
     filename = "PWMAnalysis.csv"
+
+# WIP
+class ValueMatrix(OutputFile):
+    def save(self):
+        np.save()
