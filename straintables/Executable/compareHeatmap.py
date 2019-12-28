@@ -7,7 +7,7 @@ from argparse import ArgumentParser
 
 # sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 
-from straintables.Executable import detectMutations
+from straintables.Viewer import MatrixPlot
 
 
 def Execute(options):
@@ -23,7 +23,7 @@ def Execute(options):
     heatmap = 1 - np.abs(heatmaps[0] - heatmaps[1])
 
     outputPath = os.path.join(options.WorkingDirectory, "discrepancy_matrix.pdf")
-    detectMutations.createPdfHeatmap(heatmap, heatmapLabels, outputPath)
+    MatrixPlot.createPdfHeatmap(heatmap, heatmapLabels, outputPath)
 
 
 if __name__ == "__main__":
