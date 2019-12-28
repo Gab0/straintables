@@ -2,51 +2,14 @@
 
 from Bio import AlignIO
 import pandas as pd
-import matplotlib.pyplot as plt
 import numpy as np
 
 import shutil
 import copy
-import re
 import os
 
-from straintables import DrawGraphics, Viewer, Definitions
+from straintables import DistanceEngine, Definitions
 import optparse
-
-
-# BUILD HEATMAP;
-def createPdfHeatmap(MATRIX,
-                     sequenceNames,
-                     filename=None,
-                     subtitle=None,
-                     MatrixParameters=None):
-    fig = plt.figure()
-    ax = fig.add_subplot(111)
-
-    Viewer.MatrixPlot.heatmapToAxis(MATRIX,
-                                    ax,
-                                    xlabels=sequenceNames,
-                                    ylabels=sequenceNames,
-                                    MatrixParameters=MatrixParameters)
-
-    # ax.grid(which='minor', color='r', linestyle='-', linewidth=2)
-
-    if filename:
-        plt.savefig(filename, bbox_inches='tight')
-
-    watermarkLabel = re.findall("%s(.+)\.aln" % Definitions.FastaRegionPrefix,
-                                filename)
-    # for loci similarity matrix;
-    if watermarkLabel:
-        watermarkLabel = watermarkLabel[0]
-    # for other types of matrix;
-    else:
-        watermarkLabel = os.path.split(filename)[-1].split(".")[0]
-
-    DrawGraphics.geneGraphs.watermarkAndSave(watermarkLabel,
-                                             filename,
-                                             subtitle=subtitle,
-                                             verticalLabel=340)
 
 
 # reorder windows and sequenceNames;
@@ -72,88 +35,11 @@ def sortAlignments(sequenceNames, _Windows):
 
 
 def storeMatrixData(MATRIX, baseFileName, sequenceNames, subtitle=None):
-    # SAVE HEATMAP GRAPHIC;
-    createPdfHeatmap(MATRIX, sequenceNames,
-                     baseFileName + ".pdf", subtitle=subtitle)
-
     # SAVE HEATMAP MATRIX;
     np.save(baseFileName, MATRIX)
 
     labelsPath = os.path.join(os.path.dirname(baseFileName), "heatmap_labels")
     np.save(labelsPath, np.array(sequenceNames))
-
-
-def buildVariationWindows(Alignment):
-    Windows = []
-    InfoWindows = []
-
-    for s in range(len(Alignment[0].seq)):
-        letter_set = [dna.seq[s] for dna in Alignment]
-        if len(list(set(letter_set))) > 1:
-
-            # Special Cases: HUGE INSERTIONS
-            # AT THE BEGINNING OR END OF ANY SEQUENCE;
-            # TBD
-            print(letter_set)
-            Windows.append(letter_set)
-            InfoWindows.append([s] + letter_set)
-
-            snp_variations = len(set(letter_set))
-            if snp_variations > 2:
-                print("TRIALLELIC_SNP")
-
-    return Windows, InfoWindows
-
-
-def buildMatrixFromWindow(Alignment, _Windows):
-    def isLetter(v):
-        v = v.lower()
-        if v in ['a', 'c', 't', 'g', 'u', 'n']:
-            return True
-        return False
-
-    def isUknown(v):
-        v = v.lower()
-        if v == 'n':
-            return True
-        return False
-
-    # PROCESS VARIATION WINDOWS;
-    mat = range(len(_Windows))
-
-    print(len(_Windows))
-    print(_Windows)
-
-    MATRIX = [[0 for j in mat] for i in mat]
-
-    if MATRIX:
-        nb_snp = len(_Windows[0])
-        print(nb_snp)
-        for i in mat:
-            for j in mat:
-                similarity = 0
-                for k in range(nb_snp):
-                    A = _Windows[i][k]
-                    B = _Windows[j][k]
-
-                    if A == B:
-                        similarity += 1
-                    elif isUknown(A) and isLetter(B):
-                        similarity += 1
-                    elif isUknown(B) and isLetter(A):
-                        similarity += 1
-
-                similarity = similarity / nb_snp
-
-                MATRIX[i][j] = 1 - similarity
-
-        MATRIX = np.matrix(MATRIX)
-
-    else:
-        MATRIX = np.matrix(np.zeros((len(Alignment), len(Alignment))))
-        nb_snp = 0
-
-    return MATRIX, nb_snp
 
 
 def updateAlignmentInfo(AlignmentInfoFilepath, data):
@@ -198,7 +84,7 @@ def Execute(options):
     sequenceNames = [d.id for d in Alignment]
 
     # BUILD VARIATION WINDOWS;
-    Windows, InfoWindows = buildVariationWindows(Alignment)
+    Windows, InfoWindows = DistanceEngine.buildVariationWindows(Alignment)
 
     # VARIATION WINDOWS TO SIMILARITY MATRIX;
     # transpose windows;
@@ -209,7 +95,7 @@ def Execute(options):
     if _Windows:
         sequenceNames, _Windows = sortAlignments(sequenceNames, _Windows)
 
-    MATRIX, nb_snp = buildMatrixFromWindow(Alignment, _Windows)
+    MATRIX, nb_snp = DistanceEngine.buildMatrixFromWindow(Alignment, _Windows)
 
     # CHECK MATRIX HEALTH
     globalMean = np.mean(MATRIX)
