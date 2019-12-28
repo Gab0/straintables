@@ -4,15 +4,20 @@ from setuptools import setup
 #from distutils.core import setup
 
 
+Executables = [
+    "stgenomepline=straintables.Executable.GenomePipeline:main",
+    "stview=straintables.Executable.WebViewer:main",
+    "stdownload=straintables.Executable.fetchDataNCBI:main",
+    "stgenregion=straintables.Executable.initializePrimerFile:main",
+    "stprotein=straintables.Executable.Protein:main",
+    "stfastapline=straintables.Executable.FastaPipeline:main",
+    "stblast=straintables.Executable.BlastAmplicons:main"
+]
+
+Tools = []
+
 entry_points = {
-    'console_scripts': [
-        "stgenomepline=straintables.Executable.Pipeline:main",
-        "stview=straintables.Executable.WebViewer:main",
-        "stdownload=straintables.Executable.fetchDataNCBI:main",
-        "stgenregion=straintables.Executable.initializePrimerFile:main",
-        "stprotein=straintables.Executable.Protein:main",
-        "stfastapline=straintables.Executable.fromMultifasta:main"
-        ]
+    'console_scripts':  Executables + Tools
 }
 
 base_folder = os.path.dirname(os.path.realpath(__file__))
@@ -37,6 +42,7 @@ setup(
         'straintables.DrawGraphics',
         'straintables.Database',
         'straintables.skdistance',
+        'straintables.DistanceEngine'
     ],
     package_data={'': [
         'Viewer/WebComponents/' + f
