@@ -71,7 +71,7 @@ def Execute(options):
 
     print("Loaded %i genomes." % len(genomes))
 
-    maxGenomes = 25
+    maxGenomes = 100
     if len(genomes) > maxGenomes:
         print("Discarding genomes, max is %i!" % maxGenomes)
 
@@ -85,6 +85,13 @@ def Execute(options):
         print("Fatal: need at least 4 genomes to proper execute the analysis,")
         print("\tgot only %i." % len(genomes))
         exit(1)
+
+    # Avoid repeating genome names;
+    genomeNames = []
+    for genome in genomes:
+        while genome.name in genomeNames:
+            genome.name += "+"
+        genomeNames.append(genome.name)
 
     # Initialize brute force prime searcher on top of chosen annotation file;
     annotationFilePath, genomeFeatures =\
@@ -148,6 +155,7 @@ def Execute(options):
                 genomes,
                 overallProgress,
                 rebootTolerance=options.rebootTolerance,
+                allowN=options.AllowUnknownBaseInAmplicon,
                 bruteForceSearcher=bruteForceSearcher
             )
 
@@ -225,9 +233,8 @@ def Execute(options):
         information = OutputFile.AnalysisInformation(options.WorkingDirectory)
         information.content = {
             "annotation": os.path.realpath(annotationFilePath),
-            "feature_type": options.wantedFeatureType,
-            "reboot_tolerance": options.rebootTolerance
-        }
+            }
+        information.content.update(options.__dict__)
         information.write()
 
         # -- WRITE GENOME FAILURE REPORT IF ANY REGION FAILED;
@@ -239,7 +246,6 @@ def Execute(options):
     # NOPE
     # MasterGenome = [g for g in genomes if "ME49" in g.name][0]
     # geneGraphs.plotGeneArea(allPrimers, MasterGenome)
-
     return matchedPrimerSequences
 
 
@@ -296,6 +302,10 @@ def parse_arguments(parser):
                         type=int,
                         default=400,
                         help="Minimum sequence length for extracted regions.")
+
+    parser.add_argument("--allow-n",
+                        dest="AllowUnknownBaseInAmplicon",
+                        action="store_true")
 
     parser.add_argument("-d", "--dir", dest="WorkingDirectory")
 
