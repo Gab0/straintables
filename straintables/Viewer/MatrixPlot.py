@@ -1,7 +1,47 @@
 #!/bin/python
 
+import os
+import re
 import numpy as np
 import matplotlib.cm
+import matplotlib.pyplot as plt
+from straintables import DrawGraphics, Definitions
+
+
+# BUILD HEATMAP;
+def createPdfHeatmap(MATRIX,
+                     sequenceNames,
+                     filename=None,
+                     subtitle=None,
+                     MatrixParameters={}):
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+
+    heatmapToAxis(MATRIX,
+                  ax,
+                  xlabels=sequenceNames,
+                  ylabels=sequenceNames,
+                  MatrixParameters=MatrixParameters)
+
+    # ax.grid(which='minor', color='r', linestyle='-', linewidth=2)
+
+    if filename:
+        plt.savefig(filename, bbox_inches='tight')
+
+    FilenamePattern = "%s(.+)\.aln" % Definitions.FastaRegionPrefix
+    watermarkLabel = re.findall(FilenamePattern,
+                                filename)
+    # for loci similarity matrix;
+    if watermarkLabel:
+        watermarkLabel = watermarkLabel[0]
+    # for other types of matrix;
+    else:
+        watermarkLabel = os.path.split(filename)[-1].split(".")[0]
+
+    DrawGraphics.geneGraphs.watermarkAndSave(watermarkLabel,
+                                             filename,
+                                             subtitle=subtitle,
+                                             verticalLabel=340)
 
 
 def normalizeMatrix(MATRIX, parameters):
