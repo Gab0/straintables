@@ -3,7 +3,7 @@
 import os
 
 from . import PrimerDock, RealPrimers
-from Bio import SeqIO
+from Bio import SeqIO, Seq
 
 from straintables.Database.StrainNames import fetchStrainName
 
@@ -216,7 +216,7 @@ class BruteForcePrimerSearcher():
                 sequenceLengthBounds[0]: sequenceLengthBounds[1]]
 
         EffectiveMinimumAmpliconLength = min(self.AmpliconMinimumLength,
-                                             len(allowed_gene_sequence) // 2)
+                                             len(allowed_gene_sequence) // 1.2)
 
         FinalIndex = abs(len(allowed_gene_sequence) - EffectiveMinimumAmpliconLength)
         if Reverse:
@@ -233,9 +233,15 @@ class BruteForcePrimerSearcher():
 
         # Filter primers by their real PCR capabilities if the user wants;
         if self.FindPCRViablePrimers:
-            PrimerPCRScores = [
-                (p, RealPrimers.EvaluatePrimerForPCR(p))
+            # We would evaluate the reverse complements, actually.
+            PrimerReveseComplements = [
+                str(Seq.Seq(p).reverse_complement())
                 for p in PrimerSequences
+            ]
+
+            PrimerPCRScores = [
+                (p, RealPrimers.EvaluatePrimerForPCR(rev))
+                for p, rev in zip(PrimerSequences, PrimerReveseComplements)
             ]
             PrimerPCRScores = sorted(PrimerPCRScores,
                                      key=lambda ps: ps[1], reverse=True)
