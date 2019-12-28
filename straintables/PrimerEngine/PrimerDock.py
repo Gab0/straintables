@@ -179,6 +179,7 @@ def matchLocusOnGenomes(locus_name,
                         genomes,
                         overallProgress=(0, 0),
                         rebootTolerance=20,
+                        allowN=False,
                         bruteForceSearcher=None):
     LocusAmpliconSet = {}
 
@@ -196,6 +197,8 @@ def matchLocusOnGenomes(locus_name,
 
     FailingGenomes = [Genome.name for Genome in genomes]
 
+    print(FailingGenomes)
+    assert(len(list(set(FailingGenomes))) == len(FailingGenomes))
     # ITERATE GENOMES UNTIL SUCCESS;
     for Genome in itertools.cycle(genomes):
         # print("Genome: %s --\n" % genome)
@@ -208,7 +211,7 @@ def matchLocusOnGenomes(locus_name,
             Genome.name
         )
 
-        M = ">>> Locus %i of %i | run number %i ->  Searching %s on %s"
+        M = ">>> Region %i of %i | run number %i ->  Searching %s on %s"
         print(M % HEADER_INFO)
 
         # primer sequence may be uknown/invalid;
@@ -286,7 +289,7 @@ def matchLocusOnGenomes(locus_name,
                 print("Resetting due to short amplicon.")
                 Sucess = False
 
-            if "n" in AmpliconSequence.lower():
+            if allowN and "n" in AmpliconSequence.lower():
                 print("Resetting due to N found in sequence.")
                 Sucess = False
 
@@ -308,7 +311,7 @@ def matchLocusOnGenomes(locus_name,
         print("%s match progress: %.2f%%" % (locus_name, progressMark * 100))
         print()
 
-        # IS LOCUS DONE?
+        # IS REGION DONE?
         if progressMark == 1:
             print(">>> Matched %s on all genomes." % locus_name)
             print()
@@ -317,12 +320,14 @@ def matchLocusOnGenomes(locus_name,
             primerPair["RebootCount"] = RebootCount
 
             # exit loop...
-            return RegionMatchSuccess(LocusAmpliconSet, MatchedPrimers, chr_identifier)
+            return RegionMatchSuccess(LocusAmpliconSet,
+                                      MatchedPrimers, chr_identifier)
 
         # IF IT FAILS ENOUGH, SKIP LOCUS;
         elif RebootCount > rebootTolerance:
             FailureReason = "Too many reboots."
-            return RegionMatchFailure(FailureReason, FailedGenomes=FailingGenomes)
+            return RegionMatchFailure(FailureReason,
+                                      FailedGenomes=FailingGenomes)
 
 
 class RegionMatchFailure():
