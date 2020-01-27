@@ -104,6 +104,7 @@ class FTPConnection():
             except BrokenPipeError as e:
                 print("FTP connection was close due to unknown reasons.")
                 print("Operation aborted... please try again.")
+                print("\n(%s)\n" % e)
                 return False
 
         return result
@@ -120,7 +121,9 @@ class DownloadQuery():
 
         for d, ID in enumerate(self.IDs):
             print("Downloading %i of %i.\n" % (d + 1, len(self.IDs)))
-
+            if not ID:
+                DownloadSuccess = False
+                continue
             FileSuccess = downloadAssembly(
                 ID,
                 downloadDirectory=self.downloadDirectory,
@@ -145,7 +148,8 @@ def findAssemblyList(Organism, Strain=None, retmax=100):
 
     P = Entrez.read(result)
 
-    print(json.dumps(P, indent=2))
+    # print(json.dumps(P, indent=2))
+
     return P['IdList']
 
 
@@ -160,13 +164,9 @@ def downloadAssembly(ID,
     Summary = Entrez.read(Summary, validate=False)
     relevantSummary = Summary['DocumentSummarySet']['DocumentSummary'][0]
 
-    # return Summary
-    # nucl_id = relevantSummary['AssemblyAccession']
-
-    # print(json.dumps(relevantSummary, indent=2))
-
     if showSummaries:
         debug("Assembly Summary %s" % json.dumps(Summary, indent=4))
+
     assemblyStatus = relevantSummary['AssemblyStatus']
     genomeRepresentation = relevantSummary["PartialGenomeRepresentation"]
 
@@ -199,7 +199,7 @@ def downloadAssembly(ID,
     else:
         ftpDirectory = ftpDirectory[0]
 
-    ftpServerAddress = re.findall("ftp\..*gov", ftpPath)[0]
+    ftpServerAddress = re.findall(r"ftp\..*gov", ftpPath)[0]
     debug(ftpServerAddress)
 
     # -- instantiate FTP connection;
@@ -344,6 +344,8 @@ def renameGenomeFiles(dirpath, organism):
         strainName = StrainNames.fetchStrainName(genomeDescription, organism)
 
         if strainName is not None:
+            # A '/' inside the strain name (and output filename) is fatal.
+            strainName = strainName.replace("/", "-")
             newFilePath = os.path.join(os.path.dirname(localfilepath),
                                        strainName + '.fna')
             shutil.move(localfilepath, newFilePath)
@@ -365,12 +367,10 @@ def parse_arguments():
                         help="Skip annotation downloads.")
 
     parser.add_argument("--organism",
-                        dest="queryOrganism",
-                        default="Toxoplasma gondii")
+                        dest="queryOrganism")
 
     parser.add_argument("--strain",
-                        dest="annotationStrain",
-                        default="")
+                        dest="annotationStrain")
 
     parser.add_argument("--nbgenomes",
                         dest="genomeSearchMaxResults",
@@ -406,6 +406,10 @@ def Execute(options):
         for Name in requiredDirectories
         ]
 
+    if options.queryOrganism is None:
+        print("Please provide an organism name for the search query.")
+        exit(1)
+
     if not os.path.isdir(options.WorkingDirectory):
         print("Fatal: Selected directory at %s does not exist." %
               options.WorkingDirectory)
@@ -420,6 +424,12 @@ def Execute(options):
     # -- Search Assemblies for Organism;
     AssemblyIDs = findAssemblyList(options.queryOrganism,
                                    retmax=options.genomeSearchMaxResults)
+
+    # -- Abort if no organism is found.
+    if not AssemblyIDs:
+        print("The search for '%s' returned 0 results... unable to proceed." %
+              options.queryOrganism)
+        exit(1)
 
     # -- DOWNLOAD GENOMES;
     dataTypes = []

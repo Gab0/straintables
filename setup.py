@@ -7,7 +7,7 @@ from setuptools import setup
 Executables = [
     "stgenomepline=straintables.Executable.GenomePipeline:main",
     "stview=straintables.Executable.WebViewer:main",
-    "stdownload=straintables.Executable.fetchDataNCBI:main",
+    "stdownload=straintables.Executable.NCBIDownload:main",
     "stgenregion=straintables.Executable.initializePrimerFile:main",
     "stprotein=straintables.Executable.Protein:main",
     "stfastapline=straintables.Executable.FastaPipeline:main",

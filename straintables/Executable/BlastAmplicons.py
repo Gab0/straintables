@@ -6,19 +6,21 @@ from Bio.Blast import NCBIWWW, NCBIXML
 from straintables import OutputFile, Definitions
 
 
+def ExtractAllPrimers(data):
+    for i in range(data.content.shape[0]):
+        for PT in Definitions.PrimerTypes:
+            yield ("%s_%s" % (data.content.LocusName[i], PT), data.content[PT][i])
+
+
 def Execute(options):
 
-    data = OutputFile.MatchedRegions(options.WorkingDirectory)
-    data.read()
+    PrimerData = OutputFile.MatchedRegions(options.WorkingDirectory)
+    PrimerData.read()
 
-    def ExtractFromData(data):
-        for i in range(data.content.shape[0]):
-            for PT in Definitions.PrimerTypes:
-                yield data.content[PT][i]
-
-    Query = list(ExtractFromData(data))
+    Query = [x[1] for x in (ExtractAllPrimers(PrimerData))]
     blast_result = NCBIWWW.qblast(program="blastn",
                                           database="nr", sequence=Query)
+
 
     T = 0
     while True:

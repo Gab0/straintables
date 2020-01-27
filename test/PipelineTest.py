@@ -6,7 +6,7 @@ import os
 import shutil
 import types
 
-from straintables.Executable import Pipeline, fetchDataNCBI, WebViewer
+from straintables.Executable import Pipeline, NCBIDownload, WebViewer
 
 
 class PipelineTest(unittest.TestCase):
@@ -26,11 +26,11 @@ class PipelineTest(unittest.TestCase):
             f.write("\n".join(self.Regions))
 
     def step2_download(self):
-        download_options = fetchDataNCBI.parse_arguments()
+        download_options = NCBIDownload.parse_arguments()
         download_options.queryOrganism = "Mycobacterium leprae"
         download_options.annotationStrain = "TN"
         download_options.WorkingDirectory = self.WorkingDirectory
-        fetchDataNCBI.Execute(download_options)
+        NCBIDownload.Execute(download_options)
 
     def step3_run_pipeline(self):
 
