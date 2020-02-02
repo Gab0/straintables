@@ -5,87 +5,8 @@ import numpy as np
 import os
 import math
 
-from . import matrixOperations, dissimilarityCluster, MatrixPlot
-
-
-class LabelGroup():
-    def __init__(self, baseNames):
-        self.base = baseNames
-        self.cropped = self.crop(self.base)
-
-        # lowercase greek letters for niceness;
-        self.clusterSymbolMap = [chr(945 + x) for x in range(55)]
-        print(self.cropped)
-
-    @staticmethod
-    def crop(Labels, maxSize=13, Replacer="..."):
-        croppedLabels = []
-        maxSize -= len(Replacer)
-        for label in Labels:
-            if len(label) > maxSize:
-                crop_size = len(label) - maxSize
-                crop_size += crop_size % 2
-                crop_size //= 2
-
-                mid_point = len(label) // 2
-
-                allowed_side_size = mid_point - crop_size
-
-                cropped = label[:allowed_side_size]
-                cropped += Replacer
-                cropped += label[-allowed_side_size:]
-
-            else:
-                cropped = label
-
-            croppedLabels.append(cropped)
-
-        return croppedLabels
-
-    def clusterize(self, clusterGroup):
-        Cluster = [None for z in self.base]
-        for n in clusterGroup.keys():
-            if len(clusterGroup[n]) > 1:
-                for member in clusterGroup[n]:
-                    idx = None
-                    for l, label in enumerate(self.base):
-                        if label == member or label == member[:30]:
-                            idx = l
-                    if idx is not None:
-                        Cluster[idx] = n
-
-        return Cluster
-
-    def get_labels(self, Cluster=[], symbolSide=0):
-        Output = []
-
-        symbolSideFormat = [
-            "{symbol}{spacer}{label}",
-            "{label}{spacer}{symbol}"
-        ]
-
-        for k, label in enumerate(self.cropped):
-            if Cluster and Cluster[k] is not None:
-                symbol = self.clusterSymbolMap[Cluster[k]]
-            else:
-                symbol = " "
-
-            label_content = {
-                'label': label,
-                'spacer': " " * (15 - len(label)),
-                'symbol': symbol
-            }
-
-            output_label = symbolSideFormat[symbolSide].format(**label_content)
-            Output.append(output_label)
-
-        return Output
-
-    def get_ordered(self, reorderIndexes, **kwargs):
-        r = np.array(self.get_labels(**kwargs))
-        r = r[reorderIndexes]
-        r = list(r)
-        return r
+from . import matrixOperations, dissimilarityCluster
+from . import MatrixPlot, MatrixLabelGroup
 
 
 def fixArrayFilename(f):
@@ -147,8 +68,9 @@ def createMatrixSubplot(fig,
                         MatrixParameters={}):
     new_ax = fig.add_subplot(position)
 
-    MatrixPlot.heatmapToAxis(
+    MatrixPlot.drawMatrixOnAxis(
         matrix,
+        fig,
         new_ax,
         xlabels=xlabels,
         ylabels=ylabels,
@@ -157,20 +79,6 @@ def createMatrixSubplot(fig,
     )
 
     return new_ax
-
-
-def sequenceInfoOnAxis(ax, reference=None, nb_snp=0, aln_len=0, fontsize=10):
-    Message = "nb_snp=%i\nlength=%i" % (nb_snp, aln_len)
-    ax.annotate(
-        Message,
-        # xy=(-0.2, 1.2),
-        xy=(0, 5),
-        xycoords=reference,
-        clip_on=False,
-        ha='left',
-        va='top',
-        fontsize=fontsize
-        )
 
 
 def colorizeSubplot(ax, Cluster):
@@ -247,7 +155,7 @@ def plotRegionBatch(fig,
 
     Matrices = [np.load(alnData.buildArrayPath(a)) for a in data]
 
-    Labels = LabelGroup(alnData.heatmapLabels)
+    Labels = MatrixLabelGroup.LabelGroup(alnData.heatmapLabels)
     Clusters = [
         loadClusterData(alnData, data[i], Matrices[i], Labels)
         for i in range(len(data))
@@ -268,7 +176,8 @@ def plotRegionBatch(fig,
             for mat in Matrices
         ]
 
-        Labels = LabelGroup(alnData.heatmapLabels[matrix_order])
+        Labels = MatrixLabelGroup.LabelGroup(
+            alnData.heatmapLabels[matrix_order])
 
     AllAxis = []
 
@@ -282,19 +191,18 @@ def plotRegionBatch(fig,
     for m, Matrix in enumerate(Matrices):
         print("Building...")
         PlotCode = makePlotCode(NBROWS, NBCOLS, m + 1)
-        print(Clusters[m])
+
         plotCluster = Labels.clusterize(Clusters[m])
         plotLabels = Labels.get_labels(Cluster=plotCluster)
 
-        if "fontsize" not in MatrixParameters.keys():
-            MatrixParameters["fontsize"] = 40 / math.sqrt(Matrix.shape[0])
-
-        plot = createMatrixSubplot(
-            fig, PlotCode,
-            data[m], Matrix,
-            plotLabels, plotLabels,
-            MatrixParameters=MatrixParameters
-        )
+        plot = fig.add_subplot(PlotCode)
+        MatrixPlot.drawMatrixOnAxis(Matrix,
+                                    fig,
+                                    plot,
+                                    xlabels=plotLabels,
+                                    ylabels=plotLabels,
+                                    MatrixName=data[m],
+                                    MatrixParameters=MatrixParameters)
 
         AllPlots.append(plot)
         if showLabelColors:
@@ -306,14 +214,13 @@ def plotRegionBatch(fig,
         axLabels = AllPlots[m].get_yticklabels()
         axLabel = axLabels[0]
 
-        sequenceInfoOnAxis(AllPlots[m],
-                           reference=axLabel,
-                           nb_snp=alignmentData[m]["SNPCount"],
-                           aln_len=alignmentData[m]["AlignmentLength"],
-                           fontsize=MatrixParameters["fontsize"] * 1.5)
-
-    for i in range(3):
-        fig.tight_layout()
+        MatrixPlot.sequenceInfoOnAxis(
+            AllPlots[m],
+            reference=axLabel,
+            nb_snp=alignmentData[m]["SNPCount"],
+            aln_len=alignmentData[m]["AlignmentLength"],
+            fontsize=MatrixParameters["fontsize"]
+        )
 
     return fig
 
@@ -324,24 +231,11 @@ def MainDualRegionPlot(fig,
                        showLabelColors=True,
                        MatrixParameters={}):
 
-    # EXTRACR LOCUS NAMES;
-    region_names = [
-        alnData.MatchData["LocusName"].iloc[i]
-        for i in regionIndexes
-    ]
+    # EXTRACR REGION NAMES;
+    region_names = alnData.getRegionNamesFromIndex(regionIndexes)
     a_name, b_name = region_names
 
     currentPWMData = alnData.findPWMDataRow(*region_names)
-
-    try:
-        MatchData = [
-            alnData.MatchData[
-                alnData.MatchData.LocusName == name
-            ].iloc[0]
-            for name in region_names
-        ]
-    except IndexError:
-        print("Failure on %s" % a_name)
 
     # LOAD MATRIX DATA;
     [ma, mb] = [
@@ -350,7 +244,7 @@ def MainDualRegionPlot(fig,
     ]
 
     # Crop label lengths;
-    Labels = LabelGroup(alnData.heatmapLabels)
+    Labels = MatrixLabelGroup.LabelGroup(alnData.heatmapLabels)
 
     ordered_ma, matrix_order, B =\
         matrixOperations.compute_serial_matrix(ma, method="complete")
@@ -373,7 +267,7 @@ def MainDualRegionPlot(fig,
     TA1_labels = Labels.get_ordered(matrix_order,
                                     Cluster=LeftCluster, symbolSide=0)
     top_axis1 = createMatrixSubplot(fig,
-                                    231,
+                                    221,
                                     a_name,
                                     ordered_ma,
                                     TA1_labels,
@@ -386,7 +280,7 @@ def MainDualRegionPlot(fig,
                                      Cluster=RightCluster, symbolSide=1)
 
     top_axis2 = createMatrixSubplot(fig,
-                                    233,
+                                    222,
                                     b_name,
                                     ordered_mb,
                                     TA2_xlabels,
@@ -397,7 +291,7 @@ def MainDualRegionPlot(fig,
     # plot;
     BA1_labels = Labels.get_labels(Cluster=LeftCluster)
     bottom_axis1 = createMatrixSubplot(fig,
-                                       234,
+                                       223,
                                        a_name,
                                        ma,
                                        BA1_labels,
@@ -407,7 +301,7 @@ def MainDualRegionPlot(fig,
     BA2_xlabels = Labels.get_labels(Cluster=RightCluster, symbolSide=0)
     BA2_ylabels = Labels.get_labels(Cluster=RightCluster, symbolSide=1)
     bottom_axis2 = createMatrixSubplot(fig,
-                                       236,
+                                       224,
                                        b_name,
                                        mb,
                                        BA2_xlabels,
@@ -417,12 +311,6 @@ def MainDualRegionPlot(fig,
     # left plots have yticks on the right side.
     top_axis1.yaxis.tick_right()
     bottom_axis1.yaxis.tick_right()
-
-    # ADDITIONAL INFORMATION FIGURE;
-    if currentPWMData is not None:
-        ax_information = fig.add_subplot(232)
-        RegionInfoAxis(ax_information, currentPWMData,
-                       MatchData, a_name, b_name)
 
     # COLORIZE MATRIX LABELS BY MESHCLUSTER;
     if showLabelColors:
@@ -439,7 +327,7 @@ def MainDualRegionPlot(fig,
     plt.title("")
 
     plt.subplots_adjust(top=0.79, bottom=0.03, left=0.06, right=1.00)
-    fig.tight_layout()
+    # fig.tight_layout()
 
     return fig
 
@@ -464,8 +352,7 @@ def plotRecombinationPanel(ax, baseIndex):
     ax.plot(x_values, plot_35, color=color_green)
 
 
-def RegionInfoAxis(ax, currentPWMData, MatchData, a_name, b_name):
-
+def RegionData(currentPWMData, MatchData, a_name, b_name):
     INF_SYMBOL = chr(8734)
 
     if MatchData[0]["Chromosome"] == MatchData[1]["Chromosome"]:
@@ -479,16 +366,16 @@ def RegionInfoAxis(ax, currentPWMData, MatchData, a_name, b_name):
     else:
         distance = INF_SYMBOL
 
-    Message = [
+    return [
         "Distance = %s bp" % distance,
-        "%s vs %s" % (a_name, b_name),
         "Mantel=%.4f     p=%.4f" % (currentPWMData["mantel"],
                                     currentPWMData["mantel_p"]),
         "DIFF=%i" % currentPWMData["matrix_ranking_diff"],
         " "
     ]
 
-    Message = "\n".join(Message)
+
+def RegionInfoAxis(ax, Message):
 
     ax.text(
         0.2,
@@ -511,10 +398,11 @@ def AlignmentHealthAxis(ax_ha, ax_hb, alnData, currentPWMData, a_name, b_name):
         """
             RecombinationMessage = "True" \
                 if currentPWMData["recombination"] else "False"
-        
+
             Message = "Recombination? %s" % RecombinationMessage
             ax_hb.text(0.8, 1, s=Message)
         """
+
 
 def RecombinationAxis(fig, clusterOutputData, Labels, matrix_order):
     # RECOMBINATION FIGURE;

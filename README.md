@@ -1,6 +1,15 @@
 ![Travis build](https://travis-ci.com/Gab0/straintables.svg?branch=master)
 [![PyPI version](https://badge.fury.io/py/straintables.svg)](https://badge.fury.io/py/straintables)
 [![Language grade: Python](https://img.shields.io/lgtm/grade/python/g/Gab0/straintables.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/Gab0/straintables/context:python)
+
+
+## Contents
+
+- [About](#about)
+- [Inside The Pipeline](#inside-the-pipeline)
+- [Visualization](#visualization)
+- [Results](#results)
+
 ![logo](logo_stables2.png)
 
 # About
@@ -58,7 +67,7 @@ After getting the loci sequence from all the genomes, the visualization of the d
 Afther the pipeline executes the docking and evaluation scripts, the user can execute `stview <result_directory_path>` in order to view the results.
 
 
-![](https://raw.githubusercontent.com/Gab0/straintables/master/walkChr.jpg?raw=true)
+![](https://raw.githubusercontent.com/Gab0/straintables/master/screenshot.png?raw=true)
 
 More statistical analysis on the Dissimilarity Matrices are carried, mostly using python's `skbio` module. The interpretation of analysis is under construction.
 

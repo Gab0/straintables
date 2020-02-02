@@ -123,13 +123,11 @@ def Execute(options):
             new_v = (v / np.sum(MATRIX[i]))
             _MATRIX[i, j] = new_v
 
-    # SAVE DIVERSE VERSIONS OF THE MATRIX;
+    # -- Write Matrix file;
     storeMatrixData(MATRIX,
                     alignPath,
                     sequenceNames,
                     subtitle=options.PlotSubtitle)
-
-    # storeMatrixData(_MATRIX, alignPath + "alt")
 
     # SAVE SNP INFO DATA FILE;
     DATA = pd.DataFrame(InfoWindows, columns=["POS"] + sequenceNames)

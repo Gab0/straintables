@@ -19,6 +19,11 @@ TemplateFolder = os.path.join(
 app = Flask("straintables Viewer", template_folder=TemplateFolder)
 
 
+def GenerateBlankFigure(PlotOptions):
+    figsize = PlotOptions["figsize"]
+    return Figure(figsize=(figsize, figsize), dpi=PlotOptions["dpi"])
+
+
 def GenerateLogoWeb():
     data = logo.genlogo()
 
@@ -29,18 +34,25 @@ def GenerateLogoWeb():
 
 
 class ApplicationState():
-    quad_allowed_regions = [0, 1]
-    figsize = (15, 15)
+    # Global Options
     alnData = None
     Regions = None
 
-    custom_allowed_regions = [0, 1]
-    custom_reference_region = 0
-
+    # Global Configurable Options
     PlotOptions = {
         "fontsize": 12,
-        "matrix_values": 0
+        "dpi": 100,
+        "matrix_values": 0,
+        "figsize": 15,
+        "format": "png"
     }
+
+    # Quad mode options
+    quad_allowed_regions = [0, 1]
+
+    # Custom mode options
+    custom_allowed_regions = [0, 1]
+    custom_reference_region = 0
 
     def GetMatrixParameters(self):
 
@@ -48,6 +60,8 @@ class ApplicationState():
             "Normalize": False,
             "showNumbers": self.PlotOptions["matrix_values"]
         }
+
+        MatrixParameters.update(self.PlotOptions)
         return MatrixParameters
 
 
@@ -63,12 +77,18 @@ def parse_arguments():
 
     parser.add_argument("-d",
                         metavar="inputDirectory",
-                        dest="inputDirectory")
+                        dest="inputDirectory",
+                        help="Input directory with analysis data.")
 
     parser.add_argument("--port",
                         type=int,
                         help="Local port to serve this http application.",
                         default=5000)
+
+    parser.add_argument("--debug",
+                        dest="Debug",
+                        action="store_true")
+
     options = parser.parse_args()
 
     if not options.inputDirectory:
@@ -82,15 +102,18 @@ def ViewAlignment(index):
     pass
 
 
-def BuildImage(fig, format="png") -> bytes:
+def BuildImage(fig, imgFormat="png") -> Response:
     Formats = {
         "png": "print_png",
         "eps": "print_eps"
     }
     output = io.BytesIO()
-    FigureCanvas(fig).__getattribute__(Formats[format])(output)
 
-    return output.getvalue()
+    for i in range(3):
+        fig.tight_layout()
+    FigureCanvas(fig).__getattribute__(Formats[imgFormat])(output)
+
+    return Response(output.getvalue(), mimetype="image/%s" % imgFormat)
 
 
 @app.route("/plot_custom/set")
@@ -113,8 +136,7 @@ def plot_custom_setup():
 
 @app.route("/plot_custom/figure")
 def plot_custom():
-    fig = Figure(figsize=app.state.figsize)
-
+    fig = GenerateBlankFigure(app.state.PlotOptions)
     Viewer.plotViewport.plotRegionBatch(
         fig,
         app.state.alnData,
@@ -122,8 +144,7 @@ def plot_custom():
         reorganizeIndex=app.state.custom_reference_region,
         MatrixParameters=app.state.GetMatrixParameters())
 
-    output = BuildImage(fig)
-    return Response(output, mimetype='image/png')
+    return BuildImage(fig, app.state.PlotOptions["format"])
 
 
 @app.route("/plot_custom")
@@ -132,6 +153,7 @@ def plot_custom_view():
                            logo=GenerateLogoWeb())
 
 
+# -- Plot quad methods;
 @app.route('/plot_quad/set')
 def set_plot_quad():
     NewRegions = [request.args.get(a) for a in ["r1", "r2"]]
@@ -146,20 +168,35 @@ def set_plot_quad():
 
 @app.route('/plot_quad/figure')
 def plot_quad():
+    fig = GenerateBlankFigure(app.state.PlotOptions)
 
-    fig = Figure(figsize=app.state.figsize)
-    Viewer.plotViewport.MainDualRegionPlot(fig,
-                                           app.state.alnData,
-                                           app.state.quad_allowed_regions)
-    output = io.BytesIO()
-    FigureCanvas(fig).print_png(output)
-    return Response(output.getvalue(), mimetype='image/png')
+    Viewer.plotViewport.MainDualRegionPlot(
+        fig,
+        app.state.alnData,
+        app.state.quad_allowed_regions,
+        MatrixParameters=app.state.GetMatrixParameters()
+    )
+
+    return BuildImage(fig, app.state.PlotOptions["format"])
 
 
 @app.route("/debug")
 def show_debug():
-    message = str(app.state.custom_allowed_regions)
+    def show_dict(data):
+        m = ""
+        for k in data.keys():
+            m += "%s: %s<br>\n" % (k, data[k])
+        return m
+
+    message = "<html>\n\n"
+    message += str(app.state.custom_allowed_regions)
     message += str(app.state.PlotOptions["matrix_values"])
+
+    message += show_dict(app.state.__dict__)
+    matrix_options = app.state.GetMatrixParameters()
+    message += show_dict(matrix_options)
+
+    message += "</html>"
     return(Response(message))
 
 
@@ -167,7 +204,15 @@ def show_debug():
 def render():
 
     selected = app.state.quad_allowed_regions
+
+    region_names = app.state.alnData.getRegionNamesFromIndex(app.state.quad_allowed_regions)
+    currentPWMData = app.state.alnData.findPWMDataRow(*region_names)
+    MatchData = app.state.alnData.getMatchDataFromNames(region_names)
+    information = Viewer.plotViewport.RegionData(currentPWMData,
+                                                 MatchData, *region_names)
+    information = "<br>".join(information)
     return render_template("MainView.html",
+                           information=information,
                            regions=app.state.Regions,
                            selected_regions=selected,
                            t=request.args.get("r1"),
@@ -176,11 +221,13 @@ def render():
 
 @app.route("/export")
 def render_export():
-    return render_template("CustomPlotBuild.html",
-                           regions=app.state.Regions,
-                           logo=GenerateLogoWeb(),
-                           current_allowed_regions=app.state.custom_allowed_regions,
-                           current_reference_region=app.state.custom_reference_region)
+    return render_template(
+        "CustomPlotBuild.html",
+        regions=app.state.Regions,
+        logo=GenerateLogoWeb(),
+        current_allowed_regions=app.state.custom_allowed_regions,
+        current_reference_region=app.state.custom_reference_region
+    )
 
 
 @app.route("/options")
@@ -189,13 +236,18 @@ def show_options_page():
                            options=app.state.PlotOptions,
                            logo=GenerateLogoWeb())
 
+
 @app.route("/options/set")
 def define_options():
     for opt in app.state.PlotOptions.keys():
         new_value = request.args.get(opt)
         print(new_value)
         if new_value is not None:
-            app.state.PlotOptions[opt] = int(new_value)
+            try:
+                V = int(new_value)
+            except ValueError:
+                V = new_value
+            app.state.PlotOptions[opt] = V
 
     return render()
 
@@ -206,8 +258,12 @@ def main():
     app.state.alnData = alignmentData.AlignmentData(options.inputDirectory)
     app.state.Regions = app.state.alnData.MatchData["LocusName"]
 
-    waitress.serve(app, port=options.port, url_scheme='http')
-    #app.run(use_reloader=True, debug=True)
+    print("loading straintables matrix viewer server...")
+    print("\t point your web browser to the address below.")
+    if options.Debug:
+        app.run(use_reloader=True, debug=True)
+    else:
+        waitress.serve(app, port=options.port, url_scheme='http')
 
 
 if __name__ == "__main__":

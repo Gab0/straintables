@@ -2,6 +2,7 @@
 
 import os
 import re
+import math
 import numpy as np
 import matplotlib.cm
 import matplotlib.pyplot as plt
@@ -17,18 +18,18 @@ def createPdfHeatmap(MATRIX,
     fig = plt.figure()
     ax = fig.add_subplot(111)
 
-    heatmapToAxis(MATRIX,
-                  ax,
-                  xlabels=sequenceNames,
-                  ylabels=sequenceNames,
-                  MatrixParameters=MatrixParameters)
+    drawMatrixOnAxis(MATRIX,
+                     ax,
+                     xlabels=sequenceNames,
+                     ylabels=sequenceNames,
+                     MatrixParameters=MatrixParameters)
 
     # ax.grid(which='minor', color='r', linestyle='-', linewidth=2)
 
     if filename:
         plt.savefig(filename, bbox_inches='tight')
 
-    FilenamePattern = "%s(.+)\.aln" % Definitions.FastaRegionPrefix
+    FilenamePattern = r"%s(.+)\.aln" % Definitions.FastaRegionPrefix
     watermarkLabel = re.findall(FilenamePattern,
                                 filename)
     # for loci similarity matrix;
@@ -38,10 +39,26 @@ def createPdfHeatmap(MATRIX,
     else:
         watermarkLabel = os.path.split(filename)[-1].split(".")[0]
 
-    DrawGraphics.geneGraphs.watermarkAndSave(watermarkLabel,
-                                             filename,
-                                             subtitle=subtitle,
-                                             verticalLabel=340)
+    DrawGraphics.geneGraphs.watermarkAndSave(
+        watermarkLabel,
+        filename,
+        subtitle=subtitle,
+        verticalLabel=340
+    )
+
+
+def sequenceInfoOnAxis(ax, reference=None, nb_snp=0, aln_len=0, fontsize=10):
+    Message = "# snp=%i\nlength=%i" % (nb_snp, aln_len)
+    ax.annotate(
+        Message,
+        # xy=(-0.2, 1.2),
+        xy=(0, 5),
+        xycoords=reference,
+        clip_on=False,
+        ha='left',
+        va='top',
+        fontsize=fontsize
+        )
 
 
 def normalizeMatrix(MATRIX, parameters):
@@ -60,11 +77,7 @@ def normalizeMatrix(MATRIX, parameters):
     return MATRIX
 
 
-def heatmapToAxis(MATRIX, ax, xlabels=None,
-                  ylabels=None,
-                  MatrixName=None,
-                  MatrixParameters={}):
-
+def PreprocessMatrixParameters(MatrixParameters):
     DefaultMatrixParameters = {
         "Normalize": False,
         "showNumbers": False,
@@ -75,14 +88,30 @@ def heatmapToAxis(MATRIX, ax, xlabels=None,
         if param not in MatrixParameters.keys():
             MatrixParameters[param] = DefaultMatrixParameters[param]
 
+    return MatrixParameters
+
+
+def drawMatrixOnAxis(MATRIX,
+                     fig,
+                     ax,
+                     xlabels=None,
+                     ylabels=None,
+                     MatrixName=None,
+                     MatrixParameters={}):
+
+    if "fontsize" not in MatrixParameters.keys():
+        MatrixParameters["fontsize"] = 40 / math.sqrt(MATRIX.shape[0])
+    MatrixParameters = PreprocessMatrixParameters(MatrixParameters)
+
     if MatrixParameters["Normalize"]:
         MATRIX = normalizeMatrix(MATRIX, MatrixParameters)
 
+    # -- Select colormap
     ColorMap = matplotlib.cm.get_cmap("binary")
     ax.matshow(MATRIX, cmap=ColorMap)
 
     SIZE = len(MATRIX)
-    print(MATRIX)
+
     # MINOR TICKS -> GRID;
     DIV = SIZE // 3
     gridPoints = np.arange(0, SIZE, DIV)[1:-1] + 0.5
@@ -98,7 +127,13 @@ def heatmapToAxis(MATRIX, ax, xlabels=None,
     fontProperties = {
         'family': 'monospace',
         'fontsize': MatrixParameters["fontsize"]
+
     }
+
+    # Calculate matrix cell size in pixels
+    bbox = ax.get_window_extent().transformed(fig.dpi_scale_trans.inverted())
+    cell_size = bbox.width
+    fontProperties['fontsize'] = cell_size
 
     if xlabels is not None:
         ax.set_xticklabels(xlabels, fontProperties, rotation=90)
@@ -107,28 +142,32 @@ def heatmapToAxis(MATRIX, ax, xlabels=None,
 
     # Get approximate size for each cell.
     pos = ax.get_position()
-    d = pos.height / MATRIX.shape[0]
+    d = pos.height / SIZE
+    print(d)
 
     if MatrixName:
-        ax.set_xlabel(MatrixName, fontProperties)
+        nameFontProperties = {}
+        nameFontProperties.update(fontProperties)
+        nameFontProperties['fontsize'] *= 4
+        ax.set_xlabel(MatrixName, nameFontProperties)
 
     if MatrixParameters["showNumbers"]:
         valueFontProperties = fontProperties
 
-        valueFontProperties['fontsize'] = d * 430
+        valueFontProperties['fontsize'] = cell_size / 2
         # 2 * np.sqrt(fontProperties['fontsize'])
         Mean = np.mean(MATRIX)
         for i in range(MATRIX.shape[0]):
             for j in range(MATRIX.shape[1]):
-                value = MATRIX[i, j]
-                svalue = ("%.2f" % value)[1:]
+                cell_value = MATRIX[i, j]
+                txt_value = ("%.2f" % cell_value)[1:]
 
                 # -- invert number colors for legibility
-                if value > Mean / 2:
+                if cell_value > Mean / 2:
                     color = 0
                 else:
                     color = 255
 
                 ax.text(j, i,
-                        svalue, valueFontProperties,
+                        txt_value, valueFontProperties,
                         color=ColorMap(color), va='center', ha='center')

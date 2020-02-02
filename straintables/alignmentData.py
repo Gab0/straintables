@@ -127,7 +127,23 @@ class AlignmentData():
 
         return Results[0]
 
+    def getRegionNamesFromIndex(self, regionIndexes):
+        return [
+            self.MatchData["LocusName"].iloc[i]
+            for i in regionIndexes
+        ]
+
+    def getMatchDataFromNames(self, regionNames):
+        MatchData = [
+            self.MatchData[
+                self.MatchData.LocusName == name
+            ]
+            for name in regionNames
+        ]
+
+        return [md.iloc[0] for md in MatchData if not md.empty]
+
     def locusFromAlignmentFilename(self, Filename):
-        Name = re.findall("%s([\w\d]+)\." % Definitions.FastaRegionPrefix,
+        Name = re.findall(r"%s([\w\d]+)\." % Definitions.FastaRegionPrefix,
                           Filename)[0]
         return Name
