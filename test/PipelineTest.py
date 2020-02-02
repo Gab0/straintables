@@ -4,6 +4,10 @@ import unittest
 import os
 import shutil
 import types
+import threading
+import requests
+import time
+import ctypes
 
 from straintables.Executable import GenomePipeline, NCBIDownload, WebViewer
 
@@ -44,8 +48,25 @@ class PipelineTest(unittest.TestCase):
         viewer_options = types.SimpleNamespace()
         viewer_options.inputDirectory = self.WorkingDirectory
         viewer_options.inputDir = self.WorkingDirectory
+        viewer_options.Debug = False
+        viewer_options.port = 5000
 
-        WebViewer.Execute(viewer_options)
+        server = threading.Thread(target=WebViewer.Execute,
+                                  args=(viewer_options,), daemon=True)
+        server.start()
+        time.sleep(6)
+
+        server_id = None
+        for id, thread in threading._active.items():
+            if thread is server:
+                server_id = id
+
+        request = requests.get("http://localhost:5000")
+        ctypes.pythonapi.PyThreadState_SetAsyncExc(
+            server_id,
+            ctypes.py_object(SystemExit))
+
+        assert request.ok
 
     def _steps(self):
         for name in dir(self):
