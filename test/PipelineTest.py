@@ -1,12 +1,11 @@
 #!/bin/python
 
 import unittest
-import sys
 import os
 import shutil
 import types
 
-from straintables.Executable import Pipeline, NCBIDownload, WebViewer
+from straintables.Executable import GenomePipeline, NCBIDownload, WebViewer
 
 
 class PipelineTest(unittest.TestCase):
@@ -34,11 +33,11 @@ class PipelineTest(unittest.TestCase):
 
     def step3_run_pipeline(self):
 
-        pipeline_options = Pipeline.parse_arguments()
+        pipeline_options = GenomePipeline.parse_arguments()
         pipeline_options.WorkingDirectory = self.WorkingDirectory
         pipeline_options.PrimerFile = self.PrimerFilePath
         pipeline_options.SourceDataDirectory = self.WorkingDirectory
-        Pipeline.Execute(pipeline_options)
+        GenomePipeline.Execute(pipeline_options)
 
     def step4_run_viewer(self):
 
