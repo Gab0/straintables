@@ -252,9 +252,8 @@ def define_options():
     return render()
 
 
-def main():
+def Execute(options):
     app.state = ApplicationState()
-    options = parse_arguments()
     app.state.alnData = alignmentData.AlignmentData(options.inputDirectory)
     app.state.Regions = app.state.alnData.MatchData["LocusName"]
 
@@ -264,6 +263,11 @@ def main():
         app.run(use_reloader=True, debug=True)
     else:
         waitress.serve(app, port=options.port, url_scheme='http')
+
+
+def main():
+    options = parse_arguments()
+    Execute(options)
 
 
 if __name__ == "__main__":
