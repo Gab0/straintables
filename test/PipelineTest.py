@@ -56,15 +56,7 @@ class PipelineTest(unittest.TestCase):
         server.start()
         time.sleep(6)
 
-        server_id = None
-        for id, thread in threading._active.items():
-            if thread is server:
-                server_id = id
-
         request = requests.get("http://localhost:5000")
-        ctypes.pythonapi.PyThreadState_SetAsyncExc(
-            server_id,
-            ctypes.py_object(SystemExit))
 
         assert request.ok
 
