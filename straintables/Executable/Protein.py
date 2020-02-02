@@ -13,10 +13,10 @@ import argparse
 import os
 import subprocess
 import re
-import types
+
 import importlib
 import random
-import copy
+
 Description = """
 
 This command will translate multifasta sequences
@@ -63,7 +63,7 @@ class ReadFrameController():
 
 
 def FindORF(sequence):
-    return re.findall("M\w+\*", sequence)
+    return re.findall(r"M\w+\*", sequence)
 
 
 def evaluateTranslationWindow(options,
@@ -122,15 +122,13 @@ def evaluateTranslationWindow(options,
                     print("Searching ORF> %s" % ORF)
                 AlignedSequences = ([str(TemplateProtein.seq), ORF])
 
-                """
                 Alignment = MakeTestAlignment(AlignedSequences,
-                                                  AlignerParameters)
-                """
+                                              AlignerParameters)
 
-                    if Verbose:
-                        print()
-                        print(Alignment[0])
-                        print()
+                if Verbose:
+                    print()
+                    print(Alignment[0])
+                    print()
 
                     orf_alignscore = Alignment.score
                 else:
@@ -399,7 +397,7 @@ def BuildOutputAlignments(options, region_name,
 
 
 def runDirectory(options, RegionSequenceSource):
-    WantedFileQuery = "%s([\w\d]+).fasta" % Definitions.FastaRegionPrefix
+    WantedFileQuery = r"%s([\w\d]+).fasta" % Definitions.FastaRegionPrefix
 
     files = [
         f for f in os.listdir(options.WorkingDirectory)
@@ -442,7 +440,12 @@ def parse_arguments():
     parser.add_argument("--discardimp",
                         dest="DiscardImperfectSequenceThreshold",
                         type=int, default=5)
-    parser.add_argument("--nowrite", dest="WriteFiles", action="store_false", default=True)
+
+    parser.add_argument("--nowrite",
+                        dest="WriteFiles",
+                        action="store_false",
+                        default=True)
+
     parser.add_argument("-v", "--verbose", dest="Verbose", action="store_true")
 
     options = parser.parse_args()
