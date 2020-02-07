@@ -59,16 +59,18 @@
 }
 
 #CustomOptions {
-    width: 300px;
+    width: 400px;
     display: flex;
 }
 
 #CustomSelectReference {
-    flex: 0 0 46%;
+    flex: 0 0 57%;
+    text-align: left;
 }
 
 #CustomSelectRegions {
     flex: 1;
+    text-align: left;
 }
 
 .red-selected {

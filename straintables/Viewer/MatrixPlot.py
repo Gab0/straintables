@@ -4,9 +4,12 @@ import os
 import re
 import math
 import numpy as np
+import matplotlib
 import matplotlib.cm
 import matplotlib.pyplot as plt
 from straintables import DrawGraphics, Definitions
+
+matplotlib.use('ps')
 
 
 # BUILD HEATMAP;
@@ -116,8 +119,8 @@ def drawMatrixOnAxis(MATRIX,
     DIV = SIZE // 3
     gridPoints = np.arange(0, SIZE, DIV)[1:-1] + 0.5
 
-    ax.set_xticks(gridPoints, minor=True)
-    ax.set_yticks(gridPoints, minor=True)
+    ax.set_xticks(gridPoints, minor=False)
+    ax.set_yticks(gridPoints, minor=False)
 
     # MAJOR TICKS -> LABELS;
     ax.set_xticks(range(SIZE))
@@ -132,29 +135,26 @@ def drawMatrixOnAxis(MATRIX,
 
     # Calculate matrix cell size in pixels
     bbox = ax.get_window_extent().transformed(fig.dpi_scale_trans.inverted())
-    cell_size = bbox.width
-    fontProperties['fontsize'] = cell_size
+    cell_size = bbox.width / SIZE ** 0.5 * 10
+    print("Cell size: %.2f px" % cell_size)
+
+    fontProperties['fontsize'] = min(fontProperties['fontsize'], cell_size)
 
     if xlabels is not None:
         ax.set_xticklabels(xlabels, fontProperties, rotation=90)
     if ylabels is not None:
         ax.set_yticklabels(ylabels, fontProperties)
 
-    # Get approximate size for each cell.
-    pos = ax.get_position()
-    d = pos.height / SIZE
-    print(d)
-
     if MatrixName:
         nameFontProperties = {}
         nameFontProperties.update(fontProperties)
-        nameFontProperties['fontsize'] *= 4
+        nameFontProperties['fontsize'] *= 2
         ax.set_xlabel(MatrixName, nameFontProperties)
 
     if MatrixParameters["showNumbers"]:
         valueFontProperties = fontProperties
 
-        valueFontProperties['fontsize'] = cell_size / 2
+        valueFontProperties['fontsize'] = cell_size / 1.67
         # 2 * np.sqrt(fontProperties['fontsize'])
         Mean = np.mean(MATRIX)
         for i in range(MATRIX.shape[0]):
@@ -171,3 +171,18 @@ def drawMatrixOnAxis(MATRIX,
                 ax.text(j, i,
                         txt_value, valueFontProperties,
                         color=ColorMap(color), va='center', ha='center')
+
+    ax.tick_params(
+        axis='x',
+        which='both',
+        bottom=False,
+        top=True,
+        labelbottom=False
+    )
+    ax.tick_params(
+        axis='both',
+        which='minor',
+        bottom=False,
+        top=False,
+        labelbottom=False
+    )

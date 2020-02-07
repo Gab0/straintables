@@ -26,7 +26,7 @@ requirements = list(
 
 setup(
     name='straintables',
-    version='1.4',
+    version='1.41',
     description='Build & Compare dissimilarity matrices for genomic regions',
     author='Gabriel Araujo',
     author_email='gabriel_scf@hotmail.com',
