@@ -218,7 +218,7 @@ class BruteForcePrimerSearcher():
         EffectiveMinimumAmpliconLength = min(self.AmpliconMinimumLength,
                                              len(allowed_gene_sequence) // 1.2)
 
-        FinalIndex = abs(len(allowed_gene_sequence) - EffectiveMinimumAmpliconLength)
+        FinalIndex = int(abs(len(allowed_gene_sequence) - EffectiveMinimumAmpliconLength))
         if Reverse:
             PrimerIndexes =\
                 range(len(allowed_gene_sequence) - PRIMER_LENGTH,
