@@ -21,7 +21,7 @@ class BruteForcePrimerSearcher():
                  genomeFeatures,
                  genomeFilePaths,
                  wantedFeatureType="CDS",
-                 PrimerSize=20,
+                 PrimerLength=20,
                  FindPCRViablePrimers=False,
                  AmpliconMinimumLength=400,
                  AmpliconMaximumLength=1200):
@@ -29,20 +29,24 @@ class BruteForcePrimerSearcher():
         assert(wantedFeatureType in ["gene", "mRNA", "CDS"])
 
         self.genomeFeatures = genomeFeatures
-        self.matchedGenome = self.locateMatchingGenome(genomeFilePaths)
+
+        # DEPRECATED
+        self.matchedGenome = None
+        # self.matchedGenome = self.locateMatchingGenome(genomeFilePaths)
+
         self.wantedFeatureType = wantedFeatureType
-        self.PrimerSize = PrimerSize
+        self.PrimerLength = PrimerLength
         self.FindPCRViablePrimers = FindPCRViablePrimers
 
         self.AmpliconMaximumLength = AmpliconMaximumLength
         self.AmpliconMinimumLength = AmpliconMinimumLength
 
-        if self.matchedGenome is None:
-            print()
-            print("Warning: automatic primer search disabled.")
-            print("\tNo matching genome found!")
-            print()
-            return None
+        # if self.matchedGenome is None:
+        #    print()
+        #    print("Warning: automatic primer search disabled.")
+        #    print("\tNo matching genome found!")
+        #    print()
+        #    return None
 
     def locateMatchingGenome(self, genomeFilePaths, Verbose=False):
         AnnotationDescriptor = self.genomeFeatures[0].description
@@ -94,11 +98,17 @@ class BruteForcePrimerSearcher():
                         if geneName in feature.qualifiers['locus_tag']:
                             MATCH = True
                     if MATCH:
-                        return FeatureGroup.description, feature.location
+                        return FeatureGroup, feature.location
 
         print("Warning: Gene %s not found." % geneName)
 
-    def locateAndFetchSequence(self, location, chr_descriptor):
+    def locateAndFetchSequence(self, Sequence, position):
+        seq = Sequence[position.start.position:position.end.position]
+        if position.strand == -1:
+            seq = seq.reverse_complement()
+        return seq
+
+    def locateAndFetchSequenceOnGenomeFile(self, position, chr_descriptor):
         wantedDescriptors = [chr_descriptor, "complete genome"]
         if not self.matchedGenome:
             print("No matching genome to find gene sequence.")
@@ -108,10 +118,10 @@ class BruteForcePrimerSearcher():
                 print("Fetching primers from %s..." % Descriptor)
                 if Descriptor in Chromosome.description:
                     Sequence = Chromosome.seq[
-                        location.start.position:location.end.position
+                        position.start.position:position.end.position
                     ]
 
-                    if location.strand == -1:
+                    if position.strand == -1:
                         Sequence = Sequence.reverse_complement()
                     return Sequence
 
@@ -125,17 +135,24 @@ class BruteForcePrimerSearcher():
             print("Aborting brute force primer search: Gene name not found.")
             return
 
-        chr_descriptor, location = geneLocation
+        FeatureGroup, FeaturePosition = geneLocation
 
-        regionSequence =\
-            self.locateAndFetchSequence(location, chr_descriptor)
+        try:
+            assert FeatureGroup.seq
+            regionSequence = self.locateAndFetchSequence(
+                FeatureGroup.seq, FeaturePosition)
+        except Exception:
+            print("Falling back to template search on genome file.")
+            regionSequence =\
+                self.locateAndFetchSequenceOnGenomeFile(
+                    FeaturePosition, FeatureGroup.description)
 
         if not regionSequence:
             print("\n")
             print("Error: Failure on feching brute force sequence.")
             print("genomePath: %s" % self.matchedGenome)
-            print("chromosome descriptor: %s" % chr_descriptor)
-            print("location: %s" % location)
+            print("chromosome descriptor: %s" % FeatureGroup.description)
+            print("location: %s" % FeaturePosition)
             return
         else:
             return regionSequence
@@ -197,7 +214,7 @@ class BruteForcePrimerSearcher():
                              maximumPrimerCount=36,
                              Verbose=False):
 
-        PRIMER_LENGTH = self.PrimerSize
+        PRIMER_LENGTH = self.PrimerLength
         SEARCH_STEP = 5
 
         # FOCUS SEARCH ON A REGION ON THE MIDDLE OF THE GENE SEQUENCE;
@@ -218,7 +235,10 @@ class BruteForcePrimerSearcher():
         EffectiveMinimumAmpliconLength = min(self.AmpliconMinimumLength,
                                              len(allowed_gene_sequence) // 1.2)
 
-        FinalIndex = int(abs(len(allowed_gene_sequence) - EffectiveMinimumAmpliconLength))
+        FinalIndex = int(abs(
+            len(allowed_gene_sequence) - EffectiveMinimumAmpliconLength
+        ))
+
         if Reverse:
             PrimerIndexes =\
                 range(len(allowed_gene_sequence) - PRIMER_LENGTH,

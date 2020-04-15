@@ -210,6 +210,8 @@ def plotRegionBatch(fig,
 
         AllAxis.append(plot)
 
+    """
+    DEPRECATED;
     for m, Matrix in enumerate(Matrices):
         axLabels = AllPlots[m].get_yticklabels()
         axLabel = axLabels[0]
@@ -221,7 +223,7 @@ def plotRegionBatch(fig,
             aln_len=alignmentData[m]["AlignmentLength"],
             fontsize=MatrixParameters["fontsize"]
         )
-
+    """
     return fig
 
 
@@ -387,6 +389,7 @@ def RegionInfoAxis(ax, Message):
     ax.axis("off")
 
 
+# DEPRECATED;
 def AlignmentHealthAxis(ax_ha, ax_hb, alnData, currentPWMData, a_name, b_name):
     # ALIGNMENT HEALTH INFORMATION FIGURE;
     if "AlignmentHealth" in alnData.MatchData.keys():
@@ -404,6 +407,7 @@ def AlignmentHealthAxis(ax_ha, ax_hb, alnData, currentPWMData, a_name, b_name):
         """
 
 
+# DEPRECATED;
 def RecombinationAxis(fig, clusterOutputData, Labels, matrix_order):
     # RECOMBINATION FIGURE;
 

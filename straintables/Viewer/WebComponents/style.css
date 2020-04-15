@@ -1,6 +1,7 @@
 
 <style>
 
+
 .region hover{
     background-color: #ddd;
 }
@@ -83,8 +84,12 @@
 }
 
 .logo {
-    font-family: monospace;
-    white-space: pre;
+ display: inline-block; 
+ font-family: "Fixedsys", "Courier New", monospace;
+ letter-spacing: -0.0em;
+ line-height: 0.8em;
+ text-shadow: 0 0 5px rgba(100,100,100,0.5);
+ white-space: pre;
 }
 
 

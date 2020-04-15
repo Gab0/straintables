@@ -15,6 +15,9 @@ logob = """
                ><><><><><><><><><><
 """
 
+
 def genlogo():
     return random.choice([logoa, logob])
+
+
 logo = genlogo()

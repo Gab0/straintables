@@ -4,7 +4,7 @@ import random
 import re
 import itertools
 import numpy as np
-
+import copy
 from Bio.Seq import Seq
 
 from . import GeneticEntities
@@ -197,7 +197,6 @@ def matchLocusOnGenomes(locus_name,
 
     FailingGenomes = [Genome.name for Genome in genomes]
 
-    print(FailingGenomes)
     assert(len(list(set(FailingGenomes))) == len(FailingGenomes))
     # ITERATE GENOMES UNTIL SUCCESS;
     for Genome in itertools.cycle(genomes):
@@ -224,7 +223,7 @@ def matchLocusOnGenomes(locus_name,
         print("\n")
 
         # fix this later..
-        MatchedPrimers = primerIntegrity
+        MatchedPrimers = copy.deepcopy(primerIntegrity)
 
         if all(primerIntegrity):
             print("Searching sequence for locus %s" % locus_name)

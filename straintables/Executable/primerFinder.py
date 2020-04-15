@@ -104,11 +104,13 @@ def Execute(options):
                 genomeFilePaths,
                 wantedFeatureType=options.wantedFeatureType,
                 FindPCRViablePrimers=options.RealPrimers,
+                PrimerLength=options.PrimerLength,
                 AmpliconMinimumLength=options.MinAmpliconLength,
                 AmpliconMaximumLength=options.MaxAmpliconLength
             )
 
-    if not annotationFilePath or not bruteForceSearcher.matchedGenome:
+    if not annotationFilePath:
+        # or not bruteForceSearcher.matchedGenome:(matchedGenome is deprecated)
         bruteForceSearcher = None
 
     # -- SETUP OUTPUT DATA STRUCTURES;
@@ -310,6 +312,9 @@ def parse_arguments(parser):
     parser.add_argument("-d", "--dir", dest="WorkingDirectory")
 
     parser.add_argument("--datadir", dest="SourceDataDirectory", default="")
+
+    parser.add_argument("--primerlength", dest="PrimerLength",
+                        default=20, type=int)
 
     return parser
 
