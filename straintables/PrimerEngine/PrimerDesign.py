@@ -1,11 +1,13 @@
 #!/bin/python
 
 import os
+import random
 
 from . import PrimerDock, RealPrimers
 from Bio import SeqIO, Seq
 
 from straintables.Database.StrainNames import fetchStrainName
+
 
 """
 
@@ -24,7 +26,8 @@ class BruteForcePrimerSearcher():
                  PrimerLength=20,
                  FindPCRViablePrimers=False,
                  AmpliconMinimumLength=400,
-                 AmpliconMaximumLength=1200):
+                 AmpliconMaximumLength=1200,
+                 PrimerAllowedUncertainty=0.0):
 
         assert(wantedFeatureType in ["gene", "mRNA", "CDS"])
 
@@ -41,6 +44,7 @@ class BruteForcePrimerSearcher():
         self.AmpliconMaximumLength = AmpliconMaximumLength
         self.AmpliconMinimumLength = AmpliconMinimumLength
 
+        self.PrimerAllowedUncertainty = PrimerAllowedUncertainty
         # if self.matchedGenome is None:
         #    print()
         #    print("Warning: automatic primer search disabled.")
@@ -203,9 +207,16 @@ class BruteForcePrimerSearcher():
             print("Brute force forward primer search returns "
                   "%i primers." % len(foundPrimers))
 
-        resultingPrimers = [p[0].upper() for p in foundPrimers]
+        resultingPrimers = [p.upper() for p in foundPrimers]
 
         return resultingPrimers, chr_identifier
+
+    def GeneralizePrimer(self, Primer, U):
+        primer = "".join([
+            "." if random.random() < U else p for p in Primer
+        ])
+
+        return primer
 
     def findPrimerBruteForce(self,
                              genome,
@@ -251,6 +262,12 @@ class BruteForcePrimerSearcher():
             for i in PrimerIndexes
         ]
 
+        if self.PrimerAllowedUncertainty:
+            PrimerSequences = [
+                self.GeneralizePrimer(primer, self.PrimerAllowedUncertainty)
+                for primer in PrimerSequences
+            ]
+
         # Filter primers by their real PCR capabilities if the user wants;
         if self.FindPCRViablePrimers:
             # We would evaluate the reverse complements, actually.
@@ -287,7 +304,8 @@ class BruteForcePrimerSearcher():
                     if Verbose:
                         print(matches[0][0].upper())
                         print(sequenceVariationName)
-                    foundPrimers.append(matches[0])
+
+                    foundPrimers.append(primer_sequence)
                     if len(foundPrimers) > maximumPrimerCount:
                         return foundPrimers, chr_identifier
 

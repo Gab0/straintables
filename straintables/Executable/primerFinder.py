@@ -106,7 +106,8 @@ def Execute(options):
                 FindPCRViablePrimers=options.RealPrimers,
                 PrimerLength=options.PrimerLength,
                 AmpliconMinimumLength=options.MinAmpliconLength,
-                AmpliconMaximumLength=options.MaxAmpliconLength
+                AmpliconMaximumLength=options.MaxAmpliconLength,
+                PrimerAllowedUncertainty=options.PrimerUncertainty
             )
 
     if not annotationFilePath:
@@ -316,6 +317,9 @@ def parse_arguments(parser):
     parser.add_argument("--primerlength", dest="PrimerLength",
                         default=20, type=int)
 
+    parser.add_argument("--primer-uncertainty", dest="PrimerUncertainty",
+                        default=0.0, type=float,
+                        help="Percent of primer letters that can be set to match any base, by using the 'letter' '.'.")
     return parser
 
 

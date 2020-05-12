@@ -50,11 +50,12 @@ def searchPrimerPairOnGenome(locusName, primerPair, genome):
     matchedPrimers = {}
 
     matchSuccess = [True, True]
+
     # ITERATE THRU PRIMER TYPES;
     for PT, PrimerType in enumerate(PrimerTypes):
 
         # screen info purposes;
-        print(PrimerType)
+        print(">> Matching %s" % PrimerType)
 
         # fetch primer sequence;
         queryPrimer = primerPair[PrimerType]
@@ -75,7 +76,8 @@ def searchPrimerPairOnGenome(locusName, primerPair, genome):
             print("Primer leak... trying to fix.")
 
             # TRY TO FIX PRIMER LEAK;
-            # outright delete matches that doesn't have a pair in the same chromosome;
+            # outright delete matches that
+            # doesn't have a pair in the same chromosome;
             # if PrimerTypes[1 - PT] in matchedPrimers.keys():
             opponentIndexes = [
                 P.chr_index
@@ -96,7 +98,7 @@ def searchPrimerPairOnGenome(locusName, primerPair, genome):
 
             # PRIMER LEAK IS UNAVOIDABLE;
             # !! This len is always 1 at this point (read above);
-            #if len(matchedPrimers[PrimerType]) > 1:
+            # if len(matchedPrimers[PrimerType]) > 1:
             #    matchSuccess[PT] = False
         print()
 
@@ -110,7 +112,8 @@ def searchPrimerPairOnGenome(locusName, primerPair, genome):
         mp = [p[0] for p in mp]
         if mp[0].chr_length == mp[1].chr_length:
 
-            # if anything goes wrong while building the amplicon, the match fails.
+            # if anything goes wrong while building the amplicon,
+            # the match fails.
             # Amplicon may rase errors deliberately
             # when match result is not optimal.
             try:
@@ -140,7 +143,6 @@ def matchPrimerOnGenome(genome, PrimerSequence,
                 print("Primer overflow!")
 
             match = primerMatches[0]
-            match_position = match.start()
 
             # SEARCH REGION ON ANNOTATED CHROMOSOMES;
             print("Found at chromosome %s" % chromosome.name)
@@ -166,7 +168,7 @@ def matchPrimerOnGenome(genome, PrimerSequence,
 def validatePrimer(V):
     if type(V) == np.float64:
         return False
-    if type(V) == float:
+    elif type(V) == float:
         return False
     elif not V:
         return False
@@ -210,8 +212,8 @@ def matchLocusOnGenomes(locus_name,
             Genome.name
         )
 
-        M = ">>> Region %i of %i | run number %i ->  Searching %s on %s"
-        print(M % HEADER_INFO)
+        Message = ">>> Region %i of %i | run number %i ->  Searching %s on %s"
+        print(Message % HEADER_INFO)
 
         # primer sequence may be uknown/invalid;
         primerIntegrity = [
@@ -227,10 +229,8 @@ def matchLocusOnGenomes(locus_name,
 
         if all(primerIntegrity):
             print("Searching sequence for locus %s" % locus_name)
-
             AmpliconSequence, MatchedPrimers =\
                 searchPrimerPairOnGenome(locus_name, primerPair, Genome)
-
 
             # GET CHR NAME ONLY FOR THE FIRST GENOME;
             if Genome.name == genomes[0].name:
@@ -261,8 +261,8 @@ def matchLocusOnGenomes(locus_name,
                     # MANAGE PRIMERS ON QUEUE;
                     if not testablePrimers[PrimerType]:
                         if bruteForceSearcher:
-                            newPrimers, _chr_identifier =\
-                                bruteForceSearcher.launchBruteForcePrimerSearch(locus_name, Genome, PT)
+                            BF = bruteForceSearcher.launchBruteForcePrimerSearch(locus_name, Genome, PT)
+                            newPrimers, _chr_identifier = BF
                             if not newPrimers:
                                 print("Warning: No bruteforce primers found...")
 
@@ -299,8 +299,9 @@ def matchLocusOnGenomes(locus_name,
             else:
                 print("Resetting all primers, amplicon too short.")
                 for s in range(2):
-                    if validatePrimer(primerPair[PrimerTypes[s]]):
-                        primerTrash[PrimerTypes[s]].append(primerPair[PrimerTypes[s]])
+                    PP = primerPair[PrimerTypes[s]]
+                    if validatePrimer(PP):
+                        primerTrash[PrimerTypes[s]].append(PP)
                     primerPair[PrimerTypes[s]] = None
                 # Reset Matches;
                 LocusAmpliconSet = {}
@@ -336,7 +337,10 @@ class RegionMatchFailure():
 
 
 class RegionMatchSuccess():
-    def __init__(self, LocusAmpliconSet=None, MatchedPrimers=None, chr_identifier=None):
+    def __init__(self,
+                 LocusAmpliconSet=None,
+                 MatchedPrimers=None,
+                 chr_identifier=None):
         self.LocusAmpliconSet = LocusAmpliconSet
         self.MatchedPrimers = MatchedPrimers
         self.chr_identifier = chr_identifier
