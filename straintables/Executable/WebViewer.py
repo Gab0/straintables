@@ -205,7 +205,7 @@ def export_eps():
         fig.savefig(output_path)
 
     m = "Sucessfully created the following files:"
-    Message = "\n".join([m] + filepaths)
+    Message = "\n<br>".join([m] + filepaths)
 
     return(Response(Message))
 
