@@ -52,6 +52,7 @@ setup(
                 'CustomPlotView.html',
                 'CustomPlotBuild.html',
                 'Menu.html',
+                'Footer.html',
                 'PlotOptions.html',
                 'dropdown_logic.js'
         ]

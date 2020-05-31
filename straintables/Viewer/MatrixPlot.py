@@ -84,7 +84,8 @@ def PreprocessMatrixParameters(MatrixParameters):
     DefaultMatrixParameters = {
         "Normalize": False,
         "showNumbers": False,
-        "fontsize": 9
+        "fontsize": 9,
+        "YlabelsOnRight": False,
     }
     # -- Process matrix parameters;
     for param in DefaultMatrixParameters.keys():
@@ -94,17 +95,29 @@ def PreprocessMatrixParameters(MatrixParameters):
     return MatrixParameters
 
 
-def drawMatrixOnAxis(MATRIX,
-                     fig,
-                     ax,
-                     xlabels=None,
-                     ylabels=None,
-                     MatrixName=None,
-                     MatrixParameters={}):
+def colorizeSubplot(ax, Cluster):
+    # color map from matplotlib;
+    colorMap = plt.get_cmap("tab20")
 
-    if "fontsize" not in MatrixParameters.keys():
-        MatrixParameters["fontsize"] = 40 / math.sqrt(MATRIX.shape[0])
-    MatrixParameters = PreprocessMatrixParameters(MatrixParameters)
+    ClusterColors = [colorMap(x / 20)
+                     for x in range(20)] * 4
+
+    allLabels = enumerate(zip(ax.get_xticklabels(), ax.get_yticklabels()))
+    for idx, (xlabel, ylabel) in allLabels:
+        cluster = Cluster[idx]
+        if cluster is not None:
+            xlabel.set_color(ClusterColors[cluster])
+            ylabel.set_color(ClusterColors[cluster])
+
+
+def drawMatrixOnAxis(fig,
+                     ax,
+                     plotableMatrix):
+
+    MATRIX = plotableMatrix.matrix
+    if "fontsize" not in plotableMatrix.MatrixParameters.keys():
+        plotableMatrix.MatrixParameters["fontsize"] = 40 / math.sqrt(MATRIX.shape[0])
+    MatrixParameters = PreprocessMatrixParameters(plotableMatrix.MatrixParameters)
 
     if MatrixParameters["Normalize"]:
         MATRIX = normalizeMatrix(MATRIX, MatrixParameters)
@@ -126,6 +139,9 @@ def drawMatrixOnAxis(MATRIX,
     ax.set_xticks(range(SIZE))
     ax.set_yticks(range(SIZE))
 
+    if MatrixParameters["YlabelsOnRight"]:
+        ax.yaxis.tick_right()
+
     # SET LABELS;
     fontProperties = {
         'family': 'monospace',
@@ -140,16 +156,16 @@ def drawMatrixOnAxis(MATRIX,
 
     fontProperties['fontsize'] = min(fontProperties['fontsize'], cell_size)
 
-    if xlabels is not None:
-        ax.set_xticklabels(xlabels, fontProperties, rotation=90)
-    if ylabels is not None:
-        ax.set_yticklabels(ylabels, fontProperties)
+    if plotableMatrix.xlabels is not None:
+        ax.set_xticklabels(plotableMatrix.xlabels, fontProperties, rotation=90)
+    if plotableMatrix.ylabels is not None:
+        ax.set_yticklabels(plotableMatrix.ylabels, fontProperties)
 
-    if MatrixName:
+    if plotableMatrix.name:
         nameFontProperties = {}
         nameFontProperties.update(fontProperties)
         nameFontProperties['fontsize'] *= 2
-        ax.set_xlabel(MatrixName, nameFontProperties)
+        ax.set_xlabel(plotableMatrix.name, nameFontProperties)
 
     if MatrixParameters["showNumbers"]:
         valueFontProperties = fontProperties
@@ -186,3 +202,6 @@ def drawMatrixOnAxis(MATRIX,
         top=False,
         labelbottom=False
     )
+
+    if plotableMatrix.colorizeSubplot:
+        colorizeSubplot(ax, plotableMatrix.cluster)

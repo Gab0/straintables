@@ -44,7 +44,8 @@ class ApplicationState():
         "dpi": 100,
         "matrix_values": 0,
         "figsize": 15,
-        "format": "png"
+        "format": "png",
+        "YlabelsOnRight": False
     }
 
     # Quad mode options
@@ -58,7 +59,7 @@ class ApplicationState():
 
         MatrixParameters = {
             "Normalize": False,
-            "showNumbers": self.PlotOptions["matrix_values"]
+            "showNumbers": self.PlotOptions["matrix_values"],
         }
 
         MatrixParameters.update(self.PlotOptions)
@@ -137,7 +138,7 @@ def plot_custom_setup():
 @app.route("/plot_custom/figure")
 def plot_custom():
     fig = GenerateBlankFigure(app.state.PlotOptions)
-    Viewer.plotViewport.plotRegionBatch(
+    app.state.CurrentPlots = Viewer.plotViewport.plotRegionBatch(
         fig,
         app.state.alnData,
         app.state.custom_allowed_regions,
@@ -170,14 +171,43 @@ def set_plot_quad():
 def plot_quad():
     fig = GenerateBlankFigure(app.state.PlotOptions)
 
-    Viewer.plotViewport.MainDualRegionPlot(
+    app.state.CurrentPlots = Viewer.plotViewport.MainDualRegionPlot(
         fig,
         app.state.alnData,
         app.state.quad_allowed_regions,
         MatrixParameters=app.state.GetMatrixParameters()
     )
-
+    app.state.CurrentFigure = fig
     return BuildImage(fig, app.state.PlotOptions["format"])
+
+
+@app.route('/export_eps')
+def export_eps():
+    Path = request.args.get("export_directory")
+
+    # -- Export main figure;
+    filename = "figure_full.eps"
+    output_path = os.path.join(Path, filename)
+    app.state.CurrentFigure.savefig(output_path)
+
+    filepaths = [filename]
+
+    # -- Export individual matrices;
+    for p, plotableMatrix in enumerate(app.state.CurrentPlots):
+        fig = GenerateBlankFigure(app.state.PlotOptions)
+        Viewer.plotViewport.createMatrixSubplot(fig, 111, plotableMatrix)
+
+        filename = "figure%i_%s.eps" % (p + 1, plotableMatrix.name)
+        output_path = os.path.join(Path, filename)
+        print("Writing %s." % output_path)
+
+        filepaths.append(output_path)
+        fig.savefig(output_path)
+
+    m = "Sucessfully created the following files:"
+    Message = "\n".join([m] + filepaths)
+
+    return(Response(Message))
 
 
 @app.route("/debug")

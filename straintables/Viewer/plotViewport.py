@@ -9,6 +9,24 @@ from . import matrixOperations, dissimilarityCluster
 from . import MatrixPlot, MatrixLabelGroup
 
 
+class PlotableMatrix():
+    def __init__(self,
+                 name,
+                 matrix,
+                 xlabels,
+                 ylabels,
+                 cluster,
+                 colorizeSubplot,
+                 MatrixParameters={}):
+        self.name = name
+        self.matrix = matrix
+        self.xlabels = xlabels
+        self.ylabels = ylabels
+        self.cluster = cluster
+        self.colorizeSubplot = colorizeSubplot
+        self.MatrixParameters = MatrixParameters
+
+
 def fixArrayFilename(f):
     return f.split('.')[0]
 
@@ -61,39 +79,15 @@ def singleLocusStatus(alnData, axis, locus_name):
 
 def createMatrixSubplot(fig,
                         position,
-                        name,
-                        matrix,
-                        xlabels,
-                        ylabels,
-                        MatrixParameters={}):
+                        plotableMatrix):
     new_ax = fig.add_subplot(position)
 
     MatrixPlot.drawMatrixOnAxis(
-        matrix,
         fig,
         new_ax,
-        xlabels=xlabels,
-        ylabels=ylabels,
-        MatrixName=name,
-        MatrixParameters=MatrixParameters
-    )
+        plotableMatrix)
 
     return new_ax
-
-
-def colorizeSubplot(ax, Cluster):
-    # color map from matplotlib;
-    colorMap = plt.get_cmap("tab20")
-
-    ClusterColors = [colorMap(x / 20)
-                     for x in range(20)] * 4
-
-    allLabels = enumerate(zip(ax.get_xticklabels(), ax.get_yticklabels()))
-    for idx, (xlabel, ylabel) in allLabels:
-        cluster = Cluster[idx]
-        if cluster is not None:
-            xlabel.set_color(ClusterColors[cluster])
-            ylabel.set_color(ClusterColors[cluster])
 
 
 def loadClusterPairData(alnData, a_name, b_name, abmatrix, Labels):
@@ -147,12 +141,6 @@ def plotRegionBatch(fig,
         for i in regionIndexes
     ]
 
-    alignmentData = [
-        alnData.AlignmentData[
-            alnData.AlignmentData["LocusName"] == name].iloc[0]
-        for name in data
-    ]
-
     Matrices = [np.load(alnData.buildArrayPath(a)) for a in data]
 
     Labels = MatrixLabelGroup.LabelGroup(alnData.heatmapLabels)
@@ -187,6 +175,7 @@ def plotRegionBatch(fig,
     NBCOLS = math.ceil(NBL / NBROWS)
 
     AllPlots = []
+    AllMatrices = []
     print("Plot Count: %i\nColumns: %i\nRows: %i" % (NBL, NBCOLS, NBROWS))
     for m, Matrix in enumerate(Matrices):
         print("Building...")
@@ -196,35 +185,22 @@ def plotRegionBatch(fig,
         plotLabels = Labels.get_labels(Cluster=plotCluster)
 
         plot = fig.add_subplot(PlotCode)
-        MatrixPlot.drawMatrixOnAxis(Matrix,
-                                    fig,
+        plotableMatrix = PlotableMatrix(data[m],
+                                        Matrix,
+                                        plotLabels,
+                                        plotLabels,
+                                        plotCluster,
+                                        showLabelColors,
+                                        MatrixParameters)
+        MatrixPlot.drawMatrixOnAxis(fig,
                                     plot,
-                                    xlabels=plotLabels,
-                                    ylabels=plotLabels,
-                                    MatrixName=data[m],
-                                    MatrixParameters=MatrixParameters)
+                                    plotableMatrix)
 
+        AllMatrices.append(plotableMatrix)
         AllPlots.append(plot)
-        if showLabelColors:
-            colorizeSubplot(plot, plotCluster)
-
         AllAxis.append(plot)
 
-    """
-    DEPRECATED;
-    for m, Matrix in enumerate(Matrices):
-        axLabels = AllPlots[m].get_yticklabels()
-        axLabel = axLabels[0]
-
-        MatrixPlot.sequenceInfoOnAxis(
-            AllPlots[m],
-            reference=axLabel,
-            nb_snp=alignmentData[m]["SNPCount"],
-            aln_len=alignmentData[m]["AlignmentLength"],
-            fontsize=MatrixParameters["fontsize"]
-        )
-    """
-    return fig
+    return AllMatrices
 
 
 def MainDualRegionPlot(fig,
@@ -240,7 +216,7 @@ def MainDualRegionPlot(fig,
     currentPWMData = alnData.findPWMDataRow(*region_names)
 
     # LOAD MATRIX DATA;
-    [ma, mb] = [
+    Matrices = [ma, mb] = [
         np.load(alnData.buildArrayPath(name))
         for name in region_names
     ]
@@ -253,10 +229,17 @@ def MainDualRegionPlot(fig,
 
     ordered_mb = matrixOperations.reorderMatrix(mb, matrix_order)
 
+    OrderedMatrices = [ordered_ma, ordered_mb]
+
     # -- CLUSTER INFORMATION TO LABEL;
     abmatrix = [ma, mb]
-    clusterOutputData = loadClusterPairData(alnData, a_name,
-                                            b_name, abmatrix, Labels)
+    clusterOutputData = loadClusterPairData(
+        alnData,
+        a_name,
+        b_name,
+        abmatrix,
+        Labels
+    )
 
     LeftCluster = Labels.clusterize(clusterOutputData[0])
     RightCluster = Labels.clusterize(clusterOutputData[1])
@@ -265,62 +248,65 @@ def MainDualRegionPlot(fig,
     if "fontsize" not in MatrixParameters.keys():
         MatrixParameters["fontsize"] = 40 / math.sqrt(ma.shape[0])
 
-    # -- PLOT FOR REORDERED MATRICES (TOP);
-    TA1_labels = Labels.get_ordered(matrix_order,
-                                    Cluster=LeftCluster, symbolSide=0)
-    top_axis1 = createMatrixSubplot(fig,
-                                    221,
-                                    a_name,
-                                    ordered_ma,
-                                    TA1_labels,
-                                    TA1_labels,
-                                    MatrixParameters=MatrixParameters)
+    AllMAT = []
+    AllAxis = []
+    for vertical in range(2):
+        for horizontal in range(2):
+            BaseCluster = [LeftCluster, RightCluster][horizontal]
+            Name = region_names[horizontal]
 
-    TA2_xlabels = Labels.get_ordered(matrix_order,
-                                     Cluster=RightCluster, symbolSide=0)
-    TA2_ylabels = Labels.get_ordered(matrix_order,
-                                     Cluster=RightCluster, symbolSide=1)
+            # -- Define matrix contents & cluster reorganization when required;
+            if not vertical:
+                CurrentMatrix = OrderedMatrices[horizontal]
+                Cluster = reorderList(BaseCluster, matrix_order)
+            else:
+                CurrentMatrix = Matrices[horizontal]
+                Cluster = BaseCluster
 
-    top_axis2 = createMatrixSubplot(fig,
-                                    222,
-                                    b_name,
-                                    ordered_mb,
-                                    TA2_xlabels,
-                                    TA2_ylabels,
-                                    MatrixParameters=MatrixParameters)
+            # left plots have yticks on the right side.
+            if horizontal == 0:
+                MatrixParameters["YlabelsOnRight"] = True
+            else:
+                MatrixParameters["YlabelsOnRight"] = False
 
-    # -- PLOT ORIGINAL MATRICES (BOTTOM);
-    # plot;
-    BA1_labels = Labels.get_labels(Cluster=LeftCluster)
-    bottom_axis1 = createMatrixSubplot(fig,
-                                       223,
-                                       a_name,
-                                       ma,
-                                       BA1_labels,
-                                       BA1_labels,
-                                       MatrixParameters=MatrixParameters)
+            Position = [vertical, horizontal]
 
-    BA2_xlabels = Labels.get_labels(Cluster=RightCluster, symbolSide=0)
-    BA2_ylabels = Labels.get_labels(Cluster=RightCluster, symbolSide=1)
-    bottom_axis2 = createMatrixSubplot(fig,
-                                       224,
-                                       b_name,
-                                       mb,
-                                       BA2_xlabels,
-                                       BA2_ylabels,
-                                       MatrixParameters=MatrixParameters)
+            if Position == [0, 0]:
+                xlabels = ylabels = Labels.get_ordered(
+                    matrix_order,
+                    Cluster=BaseCluster,
+                    symbolSide=horizontal
+                )
 
-    # left plots have yticks on the right side.
-    top_axis1.yaxis.tick_right()
-    bottom_axis1.yaxis.tick_right()
+            elif Position == [0, 1]:
+                xlabels = Labels.get_ordered(matrix_order,
+                                             Cluster=BaseCluster, symbolSide=0)
+                ylabels = Labels.get_ordered(matrix_order,
+                                             Cluster=BaseCluster, symbolSide=1)
 
-    # COLORIZE MATRIX LABELS BY MESHCLUSTER;
-    if showLabelColors:
-        colorizeSubplot(top_axis1, reorderList(LeftCluster, matrix_order))
-        colorizeSubplot(bottom_axis1, LeftCluster)
+            elif Position == [1, 0]:
+                xlabels = ylabels = Labels.get_labels(Cluster=BaseCluster)
 
-        colorizeSubplot(top_axis2, reorderList(RightCluster, matrix_order))
-        colorizeSubplot(bottom_axis2, RightCluster)
+            elif Position == [1, 1]:
+                xlabels = Labels.get_labels(Cluster=BaseCluster, symbolSide=0)
+                xlabels = Labels.get_labels(Cluster=BaseCluster, symbolSide=1)
+
+
+            # -- Create Matrix and axes;
+            MAT = PlotableMatrix(Name,
+                                 CurrentMatrix,
+                                 xlabels,
+                                 ylabels,
+                                 Cluster,
+                                 showLabelColors,
+                                 MatrixParameters)
+
+            Code = 221 + 2 * vertical + horizontal
+            Axis = createMatrixSubplot(fig, Code, MAT)
+
+
+            AllMAT.append(MAT)
+            AllAxis.append(Axis)
 
     # BUILD SHOWN INFO;
     if currentPWMData is not None:
@@ -331,7 +317,7 @@ def MainDualRegionPlot(fig,
     plt.subplots_adjust(top=0.79, bottom=0.03, left=0.06, right=1.00)
     # fig.tight_layout()
 
-    return fig
+    return AllMAT
 
 
 def plotRecombinationPanel(ax, baseIndex):
@@ -368,11 +354,17 @@ def RegionData(currentPWMData, MatchData, a_name, b_name):
     else:
         distance = INF_SYMBOL
 
+    try:
+        MantelData = "Mantel=%.4f     p=%.4f" % (currentPWMData["mantel"],
+                                                 currentPWMData["mantel_p"])
+        DiffData = "DIFF=%i" % currentPWMData["matrix_ranking_diff"]
+    except TypeError:
+        MantelData = "Mantel unknown."
+        DiffData = "DIFF unknown."
     return [
         "Distance = %s bp" % distance,
-        "Mantel=%.4f     p=%.4f" % (currentPWMData["mantel"],
-                                    currentPWMData["mantel_p"]),
-        "DIFF=%i" % currentPWMData["matrix_ranking_diff"],
+        MantelData,
+        DiffData,
         " "
     ]
 
