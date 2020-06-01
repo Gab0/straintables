@@ -184,13 +184,14 @@ def plot_quad():
 @app.route('/export_eps')
 def export_eps():
     Path = request.args.get("export_directory")
+    filepaths = []
 
     # -- Export main figure;
-    filename = "figure_full.eps"
-    output_path = os.path.join(Path, filename)
-    app.state.CurrentFigure.savefig(output_path)
-
-    filepaths = [filename]
+    if len(app.state.CurrentFigure) > 1:
+        filename = "figure_full.eps"
+        output_path = os.path.join(Path, filename)
+        app.state.CurrentFigure.savefig(output_path)
+        filepaths.append(filename)
 
     # -- Export individual matrices;
     for p, plotableMatrix in enumerate(app.state.CurrentPlots):

@@ -20,7 +20,7 @@
       {%- include "Menu.html" %}
       <div id="PlopOptions">
         <form method="GET" action="/options/set">
-            Label Size: {{ dropdown_selector('fontsize', options.fontsize, range(2, 16)) }}
+            Label Size: {{ dropdown_selector('fontsize', options.fontsize, range(2, 31)) }}
             <br>
             Figure Size: {{ dropdown_selector('figsize', options.figsize, range(10, 31)) }}
             <br>
