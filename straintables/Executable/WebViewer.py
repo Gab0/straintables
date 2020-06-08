@@ -288,8 +288,12 @@ def Execute(options):
     app.state.alnData = alignmentData.AlignmentData(options.inputDirectory)
     app.state.Regions = app.state.alnData.MatchData["LocusName"]
 
+    print(logo.logo)
+    print()
     print("loading straintables matrix viewer server...")
     print("\t point your web browser to the address below.")
+    print()
+
     if options.Debug:
         app.run(use_reloader=True, debug=True)
     else:
