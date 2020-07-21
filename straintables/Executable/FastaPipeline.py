@@ -3,7 +3,7 @@ import os
 from argparse import ArgumentParser
 
 import straintables
-from straintables.Executable import Pipeline
+from straintables.Executable import GenomePipeline
 
 from Bio import SeqIO
 
@@ -23,7 +23,7 @@ the 'stview' command.
 def Execute(options):
     allFiles = os.listdir(options.WorkingDirectory)
 
-    MeshClustEnabled = Pipeline.TestMeshclust()
+    MeshClustEnabled = GenomePipeline.TestMeshclust()
 
     AllRegions = straintables.OutputFile.MatchedRegions(
         options.WorkingDirectory)
@@ -47,7 +47,7 @@ def Execute(options):
 
         SeqIO.write(sequences, open(outputFilePath, 'w'), format="fasta")
 
-        Pipeline.process_individual_region(options,
+        GenomePipeline.process_individual_region(options,
                                            filePrefix,
                                            MeshClustEnabled)
 
@@ -71,7 +71,7 @@ def Execute(options):
     AllRegions.add(AllRegionsData)
     AllRegions.write()
 
-    if Pipeline.matrix_analysis(options.WorkingDirectory):
+    if GenomePipeline.matrix_analysis(options.WorkingDirectory):
         print("Sucess.")
 
 
