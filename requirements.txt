@@ -11,7 +11,7 @@ pandas
 xmltodict==0.11.0
 Pillow
 setuptools==40.9.0
-scikit_learn
+scikit-learn
 IPython
 flask
 waitress
