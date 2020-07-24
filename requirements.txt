@@ -16,4 +16,3 @@ scikit_learn>=0.18
 IPython
 flask
 waitress
-
