@@ -10,7 +10,7 @@
 - [Visualization](#visualization)
 - [Results](#results)
 
-![logo](logo_stables2.png)
+![logo](logo_stables3.png)
 
 # About
 
@@ -75,7 +75,7 @@ By looking at a pair of D. Matrices at a time, both corresponding to locus that 
 
 # Setup
 
-### Download and install this python module
+### Method 1: Download and Install this Python module
 
 `straintables` requires Python3.6+
 1. from pipy: 
@@ -92,6 +92,14 @@ pip install straintables --user
 !! symlink them to your $PATH, add this folder to your $PATH,
 !! or run pip without "--user" and with admin privileges, which is not recommended.
 ```
+
+
+### Method 2: Install the conda package
+
+```
+conda install straintables
+```
+Then the executables should be available on your $PATH.
 
 ### Setup issues:
 
