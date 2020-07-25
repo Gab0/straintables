@@ -59,5 +59,6 @@ setup(
     ]},
     include_package_data=True,
     platforms='any',
-    entry_points=entry_points
+    entry_points=entry_points,
+    license="MIT"
 )

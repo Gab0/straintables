@@ -10,7 +10,7 @@
 - [Visualization](#visualization)
 - [Results](#results)
 
-![logo](logo_stables3.png)
+![logo](logo_stables.png)
 
 # About
 
@@ -98,8 +98,8 @@ pip install straintables --user
 
 ```
 conda install straintables
+!!Then the executables should be available on conda's $PATH.
 ```
-Then the executables should be available on your $PATH.
 
 ### Setup issues:
 
