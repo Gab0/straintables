@@ -97,7 +97,8 @@ pip install straintables --user
 ### Method 2: Install the conda package
 
 ```
-conda install straintables
+conda install -c gabzn straintables
+conda update straintables
 !!Then the executables should be available on conda's $PATH.
 ```
 
