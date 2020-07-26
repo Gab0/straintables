@@ -1,0 +1,22 @@
+{% set setup_py = load_setup_py_data() %}
+
+package:
+  name: straintables
+  version: {{ setup_py.get('version') }}
+source:
+  git_rev:
+  git_url: https://github.com/Gab0/straintables
+
+requirements:
+  host:
+  {% for req in setup_py.get('install_requires', []) -%}
+    - {{ req }}
+  {% endfor -%}
+  run:
+  {% for req in setup_py.get('install_requires', []) -%}
+    - {{ req }}
+  {% endfor -%}  
+about:
+  home: https://github.com/Gab0/straintables
+  license: {{ setup_py.get('license') }}
+  summary: {{ setup_py.get('description') }}
