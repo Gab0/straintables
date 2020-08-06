@@ -15,3 +15,4 @@ IPython
 flask
 waitress
 pkgconfig
+primer3-py

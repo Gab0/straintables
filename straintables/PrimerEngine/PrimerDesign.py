@@ -1,24 +1,31 @@
 #!/bin/python
 
-import os
-import random
-
-from . import PrimerDock, RealPrimers
-from Bio import SeqIO, Seq
-
-from straintables.Database.StrainNames import fetchStrainName
-
-
 """
 
 This finds a feature compatible to the query gene name,
 in a chromosome feature table.
 
 returns: (Name of chromosome, position of sequence inside chromosome)
+
 """
+
+import os
+import random
+
+from Bio import SeqIO, Seq
+
+from straintables.Database.StrainNames import fetchStrainName
+from . import PrimerDock, RealPrimers
 
 
 class BruteForcePrimerSearcher():
+    """
+
+    Holds user parameters for primer generation, and
+    has methods for each step of the process.
+
+
+    """
     def __init__(self,
                  genomeFeatures,
                  genomeFilePaths,
@@ -33,7 +40,7 @@ class BruteForcePrimerSearcher():
 
         self.genomeFeatures = genomeFeatures
 
-        # DEPRECATED
+        # FIXME: DEPRECATED
         self.matchedGenome = None
         # self.matchedGenome = self.locateMatchingGenome(genomeFilePaths)
 
@@ -52,7 +59,10 @@ class BruteForcePrimerSearcher():
         #    print()
         #    return None
 
-    def locateMatchingGenome(self, genomeFilePaths, Verbose=False):
+        self.Verbose = False
+
+    # FIXME: DEPRECATED?
+    def locateMatchingGenome(self, genomeFilePaths):
         AnnotationDescriptor = self.genomeFeatures[0].description
 
         matchingGenomeFilePath = None
@@ -61,14 +71,14 @@ class BruteForcePrimerSearcher():
         print("\nSearching a genome that matches the annotation..."
               "(strain: %s)" % annotationStrain)
 
-        if Verbose:
+        if self.Verbose:
             print(AnnotationDescriptor)
 
         # -- SEARCH BY ANNOTATION INFORMATION;
         for genomePath in genomeFilePaths:
             features = list(SeqIO.parse(genomePath, format="fasta"))
             GenomeDescriptor = features[0].description
-            if Verbose:
+            if self.Verbose:
                 print(">%s" % GenomeDescriptor)
 
             strain = fetchStrainName(GenomeDescriptor)
@@ -80,18 +90,18 @@ class BruteForcePrimerSearcher():
         if matchingGenomeFilePath is None:
             print("No genome matching annotation!")
             return None
-        else:
-            print("Found matching genome to annotation, "
-                  "for automatic primer search: %s" % matchingGenomeFilePath)
-            print("Matching genome descriptor: %s" % matchingGenomeDescriptor)
-            print("Detected genome strain: %s" % matchingStrain)
+
+        print("Found matching genome to annotation, "
+              "for automatic primer search: %s" % matchingGenomeFilePath)
+        print("Matching genome descriptor: %s" % matchingGenomeDescriptor)
+        print("Detected genome strain: %s" % matchingStrain)
 
         genome = list(SeqIO.parse(matchingGenomeFilePath, format="fasta"))
         return genome
 
     def retrieveGeneLocation(self, geneName, wantedFeatureType="CDS"):
 
-        for g, FeatureGroup in enumerate(self.genomeFeatures):
+        for FeatureGroup in self.genomeFeatures:
             for feature in FeatureGroup.features:
                 if feature.type == wantedFeatureType:
                     MATCH = False
@@ -105,19 +115,22 @@ class BruteForcePrimerSearcher():
                         return FeatureGroup, feature.location
 
         print("Warning: Gene %s not found." % geneName)
+        return None
 
-    def locateAndFetchSequence(self, Sequence, position):
+    @staticmethod
+    def locateAndFetchSequence(Sequence, position):
         seq = Sequence[position.start.position:position.end.position]
         if position.strand == -1:
             seq = seq.reverse_complement()
         return seq
 
+    # FIXME: DEPRECATED?
     def locateAndFetchSequenceOnGenomeFile(self, position, chr_descriptor):
         wantedDescriptors = [chr_descriptor, "complete genome"]
         if not self.matchedGenome:
             print("No matching genome to find gene sequence.")
             return ""
-        for c, Chromosome in enumerate(self.matchedGenome):
+        for _, Chromosome in enumerate(self.matchedGenome):
             for Descriptor in wantedDescriptors:
                 print("Fetching primers from %s..." % Descriptor)
                 if Descriptor in Chromosome.description:
@@ -128,6 +141,7 @@ class BruteForcePrimerSearcher():
                     if position.strand == -1:
                         Sequence = Sequence.reverse_complement()
                     return Sequence
+        return ""
 
     def fetchGeneSequence(self, geneName):
 
@@ -137,7 +151,7 @@ class BruteForcePrimerSearcher():
 
         if geneLocation is None:
             print("Aborting brute force primer search: Gene name not found.")
-            return
+            return None
 
         FeatureGroup, FeaturePosition = geneLocation
 
@@ -157,9 +171,9 @@ class BruteForcePrimerSearcher():
             print("genomePath: %s" % self.matchedGenome)
             print("chromosome descriptor: %s" % FeatureGroup.description)
             print("location: %s" % FeaturePosition)
-            return
-        else:
-            return regionSequence
+            return None
+
+        return regionSequence
 
     def launchBruteForcePrimerSearch(self, locus_name, chromosomes, Reverse):
 
@@ -211,7 +225,8 @@ class BruteForcePrimerSearcher():
 
         return resultingPrimers, chr_identifier
 
-    def GeneralizePrimer(self, Primer, U):
+    @staticmethod
+    def GeneralizePrimer(Primer, U):
         primer = "".join([
             "." if random.random() < U else p for p in Primer
         ])
@@ -222,26 +237,21 @@ class BruteForcePrimerSearcher():
                              genome,
                              gene_sequence,
                              Reverse=False,
-                             maximumPrimerCount=36,
-                             Verbose=False):
+                             maximumPrimerCount=36):
+        """
+
+        Locate a multiple primers of the same type (Forward or Backward)
+        in a single genome.
+
+
+        """
 
         PRIMER_LENGTH = self.PrimerLength
         SEARCH_STEP = 5
 
         # FOCUS SEARCH ON A REGION ON THE MIDDLE OF THE GENE SEQUENCE;
-        sequenceLength = len(gene_sequence)
-
-        allowed_gene_sequence = gene_sequence
-        if sequenceLength > self.AmpliconMaximumLength:
-            HSL = sequenceLength // 2
-            HSLA = self.AmpliconMaximumLength // 2
-            sequenceLengthBounds = (
-                HSL - HSLA,
-                HSL + HSLA
-            )
-
-            allowed_gene_sequence = gene_sequence[
-                sequenceLengthBounds[0]: sequenceLengthBounds[1]]
+        allowed_gene_sequence =\
+            self.calculateAllowedGeneSequence(gene_sequence)
 
         EffectiveMinimumAmpliconLength = min(self.AmpliconMinimumLength,
                                              len(allowed_gene_sequence) // 1.2)
@@ -270,43 +280,73 @@ class BruteForcePrimerSearcher():
 
         # Filter primers by their real PCR capabilities if the user wants;
         if self.FindPCRViablePrimers:
-            # We would evaluate the reverse complements, actually.
-            PrimerReveseComplements = [
-                str(Seq.Seq(p).reverse_complement())
-                for p in PrimerSequences
-            ]
-
-            PrimerPCRScores = [
-                (p, RealPrimers.EvaluatePrimerForPCR(rev))
-                for p, rev in zip(PrimerSequences, PrimerReveseComplements)
-            ]
-            PrimerPCRScores = sorted(PrimerPCRScores,
-                                     key=lambda ps: ps[1], reverse=True)
-
-            PrimerSequences = [ps[0] for ps in PrimerPCRScores if ps[1] > 0]
+            # We want to evaluate the reverse complements, as 'primers'
+            # at this point are fragments of the genome.
+            PrimerSequences = self.filterPrimersPCR(PrimerSequences)
 
         # Test newly aquired primers;
+        return self.evaluatePrimers(genome,
+                                    PrimerSequences,
+                                    maximumPrimerCount)
+
+    @staticmethod
+    def filterPrimersPCR(PrimerSequences):
+        PrimerReveseComplements = [
+            str(Seq.Seq(p).reverse_complement())
+            for p in PrimerSequences
+        ]
+
+        PrimerPCRScores = [
+            (p, RealPrimers.EvaluatePrimerForPCR(rev))
+            for p, rev in zip(PrimerSequences, PrimerReveseComplements)
+        ]
+
+        PrimerPCRScores = sorted(PrimerPCRScores,
+                                 key=lambda ps: ps[1], reverse=True)
+
+        return [primer for (primer, score) in PrimerPCRScores if score > 0]
+
+    def calculateAllowedGeneSequence(self, gene_sequence):
+        sequenceLength = len(gene_sequence)
+
+        if sequenceLength > self.AmpliconMaximumLength:
+            HSL = sequenceLength // 2
+            HSLA = self.AmpliconMaximumLength // 2
+            sequenceLengthBounds = (
+                HSL - HSLA,
+                HSL + HSLA
+            )
+
+            return gene_sequence[
+                sequenceLengthBounds[0]: sequenceLengthBounds[1]]
+
+        return gene_sequence
+
+    def evaluatePrimers(self,
+                        genome,
+                        PrimerSequences,
+                        maximumPrimerCount):
         foundPrimers = []
         chr_identifier = None
-        for p, primer_sequence in enumerate(PrimerSequences):
-            for c, _chr in enumerate(genome):
+        for primer_sequence in PrimerSequences:
+            for _chr in genome:
                 matches, sequenceVariationName =\
                     PrimerDock.findPrimer(_chr, primer_sequence)
 
                 if len(matches) > 1:
-                    if Verbose:
+                    if self.Verbose:
                         print("Leak.")
                     continue
 
                 if matches:
                     if chr_identifier is None:
                         chr_identifier = _chr.name
-                    if Verbose:
+                    if self.Verbose:
                         print(matches[0][0].upper())
                         print(sequenceVariationName)
 
                     foundPrimers.append(primer_sequence)
                     if len(foundPrimers) > maximumPrimerCount:
-                        return foundPrimers, chr_identifier
+                        break
 
         return foundPrimers, chr_identifier
