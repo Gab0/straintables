@@ -304,7 +304,7 @@ class BruteForcePrimerSearcher():
         PrimerPCRScores = sorted(PrimerPCRScores,
                                  key=lambda ps: ps[1], reverse=True)
 
-        return [primer for (primer, score) in PrimerPCRScores if score > 0]
+        return [primer for (primer, score) in PrimerPCRScores if score > 0.5]
 
     def calculateAllowedGeneSequence(self, gene_sequence):
         sequenceLength = len(gene_sequence)

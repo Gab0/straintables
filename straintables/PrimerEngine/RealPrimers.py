@@ -80,6 +80,7 @@ def CalculatePrimerPairScore(PrimerReport: List[OrderedDict]):
     Score = 1.0
 
     penaltyKeys = ["GCContent", "GCExtremities", "Tm p"]
+
     for pK in penaltyKeys:
         Score -= sum([d[pK] for d in PrimerReport])
 
@@ -87,6 +88,11 @@ def CalculatePrimerPairScore(PrimerReport: List[OrderedDict]):
 
 
 def EvaluatePrimerForPCR(Primer: str):
+    """
+
+    Legacy method of calculating primer PCR score;
+
+    """
 
     Score = 1.0
 
