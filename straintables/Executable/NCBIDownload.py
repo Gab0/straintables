@@ -7,7 +7,6 @@ Downloads assemblies found on 'assembly' entrez database,
 
 """
 
-from Bio import Entrez, SeqIO
 import gzip
 import json
 import os
@@ -16,13 +15,15 @@ import re
 import random
 
 import shutil
+import socket
 
 import ftplib
 import argparse
 import time
 
+from Bio import Entrez, SeqIO
+
 from straintables.Database import StrainNames
-import socket
 # is this legal in the terms of the LAW?
 Entrez.email = 'researcher_%i@one-time-use.cn' % random.randrange(0, 1000)
 
@@ -63,6 +64,12 @@ class FTPConnection():
 
     def listdir(self):
         return self.execute(self.f.nlst)
+
+    def close(self):
+        try:
+            self.f.close()
+        except Exception:
+            debug("Failure on closing connection.")
 
     def downloadFile(self,
                      remoteFileName,
@@ -277,6 +284,8 @@ def downloadAssembly(ID,
         DownloadSuccess = True
 
         localFinalFilepath = DecompressFile(localFinalFilepath)
+
+    Connection.close()
 
     return DownloadSuccess
 
