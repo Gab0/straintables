@@ -107,7 +107,11 @@ conda update straintables
 If the setup command shown above fails, there should be a problem with the build of some required python module.
 Take note of which module is failing, and create a issue ticket on this repository and/or check google if it has some answer to the problem.
 This has never been tested on windows, but should work. The python modules `numpy`, `scipy`, `cython` which should installed before `straintables` can raise errors on installation, and the error message should give directions to where the problem is, and they occour mostly due to missing system packages which are required by the mentioned modules.
-For linux users, please check the file `Dockerfile` on this repo to see which linux packages are required for this to run, under the `apk add` command... package names might vary between distros.
+
+### Docker
+
+A `Dockerfile` is provided as an experimental way of running this software for advanced users.
+This file may also be used as reference of the required packages on Linux systems.
 
 
 ## Required Software

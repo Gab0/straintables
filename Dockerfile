@@ -8,7 +8,7 @@
 
 
 
-FROM python:3.7.3-alpine
+FROM python:3.8.6-alpine3.12
 
 ENV LANG C.UTF-8
 RUN echo "http://dl-cdn.alpinelinux.org/alpine/latest-stable/main" > /etc/apk/repositories
@@ -36,14 +36,23 @@ RUN apk add --no-cache \
 
 
 
+
 # PYTHON REQUIREMENTS;
 RUN pip install numpy scipy cython sklearn pandas
 
+# DOWNLOAD AND SETUP CLUSTAL OMEGA;
+RUN wget http://www.clustal.org/omega/clustalo-1.2.4-Ubuntu-x86_64 -O clustalo
+RUN chmod +x clustalo
+RUN mv clustalo /bin/clustalo
 
-ENTRYPOINT ["/bin/bash"]
-#COPY . /app
 
-#RUN pip install /app
-#RUN pip install --no-binary :all: ./app
-#RUN lmpline --help
+
+COPY . /straintables
+
+# INSTALL STRAINTABLES MODULE & BINARIES;
+RUN pip install /straintables
+RUN pip install --no-binary :all: ./straintables
+RUN stgenomepline --help
+
+ENTRYPOINT ["/bin/sh"]
 
