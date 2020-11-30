@@ -35,8 +35,6 @@ RUN apk add --no-cache \
   git
 
 
-
-
 # PYTHON REQUIREMENTS;
 RUN pip install numpy scipy cython sklearn pandas
 
@@ -44,7 +42,6 @@ RUN pip install numpy scipy cython sklearn pandas
 RUN wget http://www.clustal.org/omega/clustalo-1.2.4-Ubuntu-x86_64 -O clustalo
 RUN chmod +x clustalo
 RUN mv clustalo /bin/clustalo
-
 
 
 COPY . /straintables
