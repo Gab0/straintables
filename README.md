@@ -192,9 +192,9 @@ $ stview analysisResults/TEST
 * Make your own primer `.csv` file, named `Primers/chr_X.csv` for this example. It should have blank primer fields. 
 
 
-```
-@file: Primers/chr_X.csv
 
+`@file: Primers/chr_X.csv`
+```
 CDPK
 IMC2A
 AP2X1
@@ -216,9 +216,8 @@ $stgenomepline -p Primers/chr_X.csv
 * Some primers, if missing or problematic, will trigger the automatic primer search.
 
 
+`@file: Primers/chr_X.csv`
 ```
-@file: Primers/chr_X.csv
-
 LocusName,ForwardPrimer,ReversePrimer
 CDPK1,ACAAAGGCTACTTCTACCTC,TTCTATGTGGGGATGCAGAG
 IMC2A,,GACGGACGCATGGCTTGCTG
