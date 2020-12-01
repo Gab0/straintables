@@ -131,11 +131,6 @@ The recombination analysis step of `straintables` has [MeShCluSt](https://github
 Having it installed on the system will enable genome group clustering to be totally independend from the alignment software, as MeShCluSt does the clustering
 on top of unaligned `.fasta` files.
 
-### Aliview [optional]
-
-This is the program called by the `view alignment` buttons at `stview`s interface, and you should have
-this in order to quickly view the alignments that made your matrix.
-
 # Usage
 
 ### Fetch genomes and annotation files
