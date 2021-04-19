@@ -1,11 +1,18 @@
 #!/bin/python
 
+from typing import Union
 import pandas as pd
 import numpy as np
 
 
+def normalizeValue(value: Union[str, float]):
+    if isinstance(value, str):
+        return value.strip()
+    
+    return value
+
 # LOAD USER DEFINED PRIMER DATA, with or without header;
-def loadPrimerList(filePath):
+def loadPrimerList(filePath: str):
 
     lociPrimerList = pd.read_csv(filePath)
 
@@ -28,5 +35,7 @@ def loadPrimerList(filePath):
             lociPrimerList = lociPrimerList.loc[:, :len(expectedColumns)-1]
 
         lociPrimerList.columns = expectedColumns
+
+    lociPrimerList = lociPrimerList.applymap(normalizeValue)
 
     return lociPrimerList
