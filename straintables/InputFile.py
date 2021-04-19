@@ -8,7 +8,7 @@ import numpy as np
 def normalizeValue(value: Union[str, float]):
     if isinstance(value, str):
         return value.strip()
-    
+
     return value
 
 # LOAD USER DEFINED PRIMER DATA, with or without header;

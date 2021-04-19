@@ -80,9 +80,10 @@ class Amplicon():
             readingFrame = readingFrame[::-1]
             ReversedAmplicon = True
 
+        # Should it include the matched primer in the amplicon?
         readingFrameBounds = [
-            readingFrame[0].end(),
-            readingFrame[1].start()
+            readingFrame[0].start(),
+            readingFrame[1].end()
         ]
 
         self.Sequence = chromosome.sequence[readingFrameBounds[0]:readingFrameBounds[1]]

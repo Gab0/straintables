@@ -8,21 +8,18 @@ import copy
 from Bio.Seq import Seq
 
 from . import GeneticEntities
-
-
-PrimerTypes = ["ForwardPrimer", "ReversePrimer"]
-
-
-"""
-
-findPrimer(string, string):
-returns the list of matched primers along with the sequence modification
- on the primer that resulted in match.
-
-"""
+from ..Definitions import PrimerTypes
 
 
 def findPrimer(genome_segment, primer_sequence):
+    """
+    findPrimer(string, string):
+    returns the list of matched primers along with the sequence modification
+    on the primer that resulted in match.
+
+    """
+
+
     Primer = Seq(primer_sequence)
     seqVarNames = [
         "Raw Primer",
@@ -60,9 +57,11 @@ def searchPrimerPairOnGenome(locusName, primerPair, genome):
         # fetch primer sequence;
         queryPrimer = primerPair[PrimerType]
         print(queryPrimer)
-        matchedPrimers[PrimerType] = matchPrimerOnGenome(genome,
-                                                         queryPrimer,
-                                                         PrimerType)
+        matchedPrimers[PrimerType] = matchPrimerOnGenome(
+            genome,
+            queryPrimer,
+            PrimerType
+        )
 
         if not matchedPrimers[PrimerType]:
             print("No match...")
@@ -110,6 +109,7 @@ def searchPrimerPairOnGenome(locusName, primerPair, genome):
     mp = (matchedPrimers[PrimerTypes[0]], matchedPrimers[PrimerTypes[1]])
     if all(mp):
         mp = [p[0] for p in mp]
+        # FIXME: Imperfect method of asserting if they're on the same chromosome.
         if mp[0].chr_length == mp[1].chr_length:
 
             # if anything goes wrong while building the amplicon,
@@ -186,7 +186,10 @@ def matchLocusOnGenomes(locus_name,
     LocusAmpliconSet = {}
 
     def initPrimerQueuer():
-        return {k: [] for k in locus_info.keys()}
+        return {
+            k: []
+            for k in locus_info.keys()
+        }
 
     primerTrash = initPrimerQueuer()
     testablePrimers = initPrimerQueuer()
@@ -200,6 +203,7 @@ def matchLocusOnGenomes(locus_name,
     FailingGenomes = [Genome.name for Genome in genomes]
 
     assert(len(list(set(FailingGenomes))) == len(FailingGenomes))
+
     # ITERATE GENOMES UNTIL SUCCESS;
     for Genome in itertools.cycle(genomes):
         # print("Genome: %s --\n" % genome)
