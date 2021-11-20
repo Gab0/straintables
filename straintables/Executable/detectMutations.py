@@ -79,10 +79,6 @@ def Execute(options):
 
     # LOAD ALIGNMENT;
     Alignment = AlignIO.read(open(alignPath), "clustal")
-
-    # GET SEQUENCE NAMES;
-    sequenceNames = [d.id for d in Alignment]
-
     # BUILD VARIATION WINDOWS;
     Windows, InfoWindows = DistanceEngine.buildVariationWindows(Alignment)
 
@@ -90,12 +86,21 @@ def Execute(options):
     # transpose windows;
     _Windows = list(zip(*Windows))
 
-    # if _Windows is empty (no variation on group),
-    # do not reorder those sequenceNames.
-    if _Windows:
-        sequenceNames, _Windows = sortAlignments(sequenceNames, _Windows)
+    # GET SEQUENCE NAMES;
+    sequenceNames = [d.id for d in Alignment]
 
-    MATRIX, nb_snp = DistanceEngine.buildMatrixFromWindow(Alignment, _Windows)
+    # if _Windows is empty (no variation on group),
+    # do not reorder the sequenceNames.
+    if _Windows:
+        sequenceNames, _Windows = sortAlignments(
+            sequenceNames,
+            _Windows
+        )
+
+    MATRIX, nb_snp = DistanceEngine.buildMatrixFromWindow(
+        Alignment,
+        _Windows
+    )
 
     # CHECK MATRIX HEALTH
     globalMean = np.mean(MATRIX)
@@ -107,7 +112,7 @@ def Execute(options):
         if rm < (globalMean / 2):
             healthFail = True
 
-    mat = range(len(_Windows))
+    mat = range(MATRIX.shape[0])
     # SHOW SIMILARITY MATRIX;
     print(MATRIX.shape)
     for i in mat:
@@ -137,9 +142,11 @@ def Execute(options):
     print("Written mutation region info at %s." % SnpInfoPath)
 
     FileDirectory = os.path.dirname(options.InputFile)
-    AlignmentInfoFilepath = os.path.join(FileDirectory, "AlignedRegions.csv")
-    LocusName = os.path.splitext(os.path.split(alignPath)[-1])[0].replace(
-        Definitions.FastaRegionPrefix, "")
+    AlignmentInfoFilepath = os.path.join(FileDirectory,
+                                         "AlignedRegions.csv")
+    LocusName = os.path.splitext(
+        os.path.split(alignPath)[-1])[0].replace(
+            Definitions.FastaRegionPrefix, "")
 
     # Update Alignment Info database;
     data = {

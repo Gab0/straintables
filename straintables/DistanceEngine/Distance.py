@@ -3,7 +3,7 @@
 import numpy as np
 
 
-def buildVariationWindows(Alignment):
+def buildVariationWindows(Alignment, Verbose=False):
     Windows = []
     InfoWindows = []
 
@@ -14,63 +14,118 @@ def buildVariationWindows(Alignment):
             # Special Cases: HUGE INSERTIONS
             # AT THE BEGINNING OR END OF ANY SEQUENCE;
             # TBD
-            print(letter_set)
+            # print(letter_set)
             Windows.append(letter_set)
             InfoWindows.append([s] + letter_set)
 
             snp_variations = len(set(letter_set))
             if snp_variations > 2:
-                print("TRIALLELIC_SNP")
+                if Verbose:
+                    print("TRIALLELIC_SNP")
 
     return Windows, InfoWindows
 
 
-def buildMatrixFromWindow(Alignment, _Windows):
-    def isLetter(v):
+def normalize_distances(Matrix):
+    """Smart normalization to improve Matrix visualization.
+
+    :param Matrix: Input matrix.
+    :returns: Modified matrix.
+
+    """
+    original_value = Matrix[0][0]
+    for k in np.nditer(Matrix):
+        if k not in [0, 1]:
+            W = k
+            break
+
+    np.fill_diagonal(Matrix, W)
+    xmax, xmin = Matrix.max(), Matrix.min()
+    Matrix = (Matrix - xmin)/(xmax - xmin)
+
+    np.fill_diagonal(Matrix, original_value)
+
+
+def buildMatrixFromWindow(Alignment, _Windows, Verbose=False):
+    def isLetter(v, includeN=True):
         v = v.lower()
-        if v in ['a', 'c', 't', 'g', 'u', 'n']:
+        L = ['a', 'c', 't', 'g', 'u']
+
+        if includeN:
+            L += ['n']
+
+        if v in L:
             return True
         return False
 
-    def isUknown(v):
+    def isUnknown(v):
         v = v.lower()
         if v == 'n':
             return True
         return False
 
+    def isGap(v):
+        if v == '-':
+            return True
+        return False
+
     # PROCESS VARIATION WINDOWS;
-    mat = range(len(_Windows))
+    n = len(_Windows)
+    a = len(Alignment)
+    mat = range(n)
 
-    print(len(_Windows))
-    print(_Windows)
+    if Verbose:
+        print(n)
+        print(_Windows)
 
-    MATRIX = [[0 for j in mat] for i in mat]
+    MATRIX = np.matrix(np.zeros((n, n)))
 
-    if MATRIX:
-        nb_snp = len(_Windows[0])
-        print(nb_snp)
-        for i in mat:
-            for j in mat:
-                similarity = 0
-                for k in range(nb_snp):
-                    A = _Windows[i][k]
-                    B = _Windows[j][k]
+    if not n:
+        return np.matrix(np.zeros((a, a))), 0
 
-                    if A == B:
-                        similarity += 1
-                    elif isUknown(A) and isLetter(B):
-                        similarity += 1
-                    elif isUknown(B) and isLetter(A):
-                        similarity += 1
+    nb_possible_snp = len(_Windows[0])
 
-                similarity = similarity / nb_snp
+    if Verbose:
+        print(nb_possible_snp)
 
-                MATRIX[i][j] = 1 - similarity
+    # CALCULATE TOTAL NUMBER OF SNPS;
+    snp_idx = []
+    for k in range(nb_possible_snp):
+        c = set([window[k] for window in _Windows])
+        if sum(map(lambda x: isLetter(x, includeN=False), c)) > 1:
+            snp_idx.append(k)
+    nb_snp = len(snp_idx)
 
-        MATRIX = np.matrix(MATRIX)
+    for i in mat:
+        for j in mat:
+            # if i > j:
+            #    MATRIX[i, j] = MATRIX[j, i]
+            #    continue
+            if j == i:
+                MATRIX[i, j] = 1
+                continue
 
-    else:
-        MATRIX = np.matrix(np.zeros((len(Alignment), len(Alignment))))
-        nb_snp = 0
+            # CALCULATE SIMILARITY;
+            similarity = 0
+            for k in snp_idx:
+                A = _Windows[i][k]
+                B = _Windows[j][k]
+                if any(
+                        not isLetter(x) and not isGap(x)
+                        for x in (A, B)):
+                    continue
+
+                if A.lower() == B.lower() or \
+                   any(isUnknown(x) for x in (A, B)):
+                    similarity += 1
+            try:
+                # FIXME: Which similarity function to use?
+                similarity = similarity / len(Alignment[0])
+            except ZeroDivisionError:
+                print("ZDO")
+                similarity = 1
+            MATRIX[i, j] = similarity
+    # Convert similarity to dissimilarity;
+    MATRIX = 1 - MATRIX
 
     return MATRIX, nb_snp

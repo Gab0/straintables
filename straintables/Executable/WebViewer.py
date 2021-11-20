@@ -37,7 +37,7 @@ class ApplicationState():
     # Global Options
     alnData = None
     Regions = None
-
+    current_figure = None
     # Global Configurable Options
     PlotOptions = {
         "fontsize": 12,
@@ -177,7 +177,7 @@ def plot_quad():
         app.state.quad_allowed_regions,
         MatrixParameters=app.state.GetMatrixParameters()
     )
-    app.state.CurrentFigure = fig
+    app.state.current_figure = fig
     return BuildImage(fig, app.state.PlotOptions["format"])
 
 
@@ -187,10 +187,10 @@ def export_eps():
     filepaths = []
 
     # -- Export main figure;
-    if len(app.state.CurrentFigure) > 1:
+    if len(app.state.current_figure) > 1:
         filename = "figure_full.eps"
         output_path = os.path.join(Path, filename)
-        app.state.CurrentFigure.savefig(output_path)
+        app.state.current_figure.savefig(output_path)
         filepaths.append(filename)
 
     # -- Export individual matrices;

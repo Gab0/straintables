@@ -289,8 +289,7 @@ def MainDualRegionPlot(fig,
 
             elif Position == [1, 1]:
                 xlabels = Labels.get_labels(Cluster=BaseCluster, symbolSide=0)
-                xlabels = Labels.get_labels(Cluster=BaseCluster, symbolSide=1)
-
+                ylabels = Labels.get_labels(Cluster=BaseCluster, symbolSide=1)
 
             # -- Create Matrix and axes;
             MAT = PlotableMatrix(Name,
