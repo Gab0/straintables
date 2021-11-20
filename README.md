@@ -14,19 +14,38 @@
 
 # About
 
-straintables is a tool that helps evaluate the difference among gene loci across an organism genomes, based on primer matching across the sequenced genome files.
+`straintables` is a tool that helps to evaluate differences
+among gene loci across mutiple genomes of the same species.
+This software is composed of two parts.
+The first component is an in-silico version of the PCR reaction,
+where regions designated as primer pairs are matched across the genomes
+so the region between the primers can be retrieved.
+Secondly, there is a dissimilarity matrix generator that creates matrices 
+based in the differences across the retrieved sequences.
 
-Those primers may be user-defined or found by the software, which run brute force searches on top of the gene sequence, after retrieving its boundaries from an annotation file.
 
-Analysis proceeds while it counts the SNPs that diverge from the primer-bound sequences found at each genome, then builds a
- [dissimilarity matrix](https://en.wikipedia.org/wiki/Distance_matrix) for each region.
+## Overview
+
+`straintables` has different modes of operation. 
+The primers used to fetch genomic regions 
+may be user-defined or found by 
+brute force searches on top of the gene sequence.
+These searches use 
+an user-provided identifier that points to a sequence
+located inside an annotation file to
+retrieve the desired region's boundaries.
+
+Analysis proceeds while it counts the SNPs that diverge
+from the primer-bound sequences found at each genome,
+then builds a  [dissimilarity matrix](https://en.wikipedia.org/wiki/Distance_matrix) for each region.
 
 Further clustering is done, based on the DMs.
 
-The viewer interface then shows how the genomes are different at those regions in a simple, almost educative way.
+The viewer interface is simple and shows how the pairwise distances between regions from all analyzed genomes.
 
-This package is composed by few independent python scripts which are installed as system commands, they are listed at the botom of this readme.
-The analysis follows a linear path that can be executed with the help of a pipeline script, `stgenomepline`.
+This package is composed by few independent python scripts which are installed as system commands.
+The commands are listed [here](#executable-scripts).
+
 
 ## Inside The Pipeline
 
@@ -114,9 +133,9 @@ A `Dockerfile` is provided as an experimental way of running this software for a
 This file may also be used as reference of the required packages on Linux systems.
 
 
-## Required Software
+## External Software
 
-Here is a list of software required/optional for straintables.<br>
+Here is a list of external software that are required or optional straintables' operation.<br>
 The executables should be available at your `$PATH`.
 
 ### Clustal Omega [required]
@@ -151,8 +170,9 @@ Ten genomes of Saccharomyces cerevisiae:
 $stdownload --organism "Saccharomyces cerevisiae" --max 10
 ```
 
-Please note that although the script `stdownload` contatins various methods to ensure the correct file names for downloaded genomes,
-it's recommended to check the folder after the process.
+Although the script `stdownload` contatins various methods to ensure the correct file names for downloaded genomes,
+it's recommended to check the folder after the process for weird names
+that would otherwise be shown on the resulting matrices.
 
 The user can manually add desired genomes and annotations, as explained in the next subsections:
 
@@ -274,8 +294,6 @@ $stview DIRECTORY_WITH_FASTA_FILES
 
 ```
 
-The first command is a mini pipeline and should be executed only once. As of the current version, you'll need more than one region to execute this.
-
-
-
+The first command is a mini pipeline and should be executed only once.
+As of the current version, you'll need more than one region to execute this.
 
